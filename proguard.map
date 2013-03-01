@@ -1,0 +1,44 @@
+com.meneguello.coi.ProducaoMensal -> com.meneguello.coi.ProducaoMensal:
+    javax.swing.JPanel contentPane -> a
+    javax.swing.JTextField textArquivoDeEntrada -> a
+    javax.swing.JTextField textArquivoDeSaida -> b
+    java.util.prefs.Preferences preferences -> a
+    64:74:void main(java.lang.String[]) -> main
+    298:302:void flushPreferences() -> a
+    305:306:void warn(java.lang.String) -> a
+    34:34:void access$400(com.meneguello.coi.ProducaoMensal,java.lang.String) -> a
+com.meneguello.coi.ProducaoMensal$1 -> i:
+    67:72:void run() -> run
+com.meneguello.coi.ProducaoMensal$2 -> h:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    83:86:void componentMoved(java.awt.event.ComponentEvent) -> componentMoved
+    90:93:void componentResized(java.awt.event.ComponentEvent) -> componentResized
+com.meneguello.coi.ProducaoMensal$3 -> k:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    125:127:void focusLost(java.awt.event.FocusEvent) -> focusLost
+com.meneguello.coi.ProducaoMensal$4 -> j:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    134:135:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$5 -> b:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    142:144:void focusLost(java.awt.event.FocusEvent) -> focusLost
+com.meneguello.coi.ProducaoMensal$6 -> a:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    151:152:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$7 -> d:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    158:159:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$8 -> c:
+    javax.swing.JFileChooser val$fileChooser -> a
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    202:216:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$8$1 -> g:
+    com.meneguello.coi.ProducaoMensal$8 this$1 -> a
+    206:213:void run() -> run
+com.meneguello.coi.ProducaoMensal$9 -> e:
+    javax.swing.JFileChooser val$fileChooser -> a
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    226:240:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$9$1 -> f:
+    com.meneguello.coi.ProducaoMensal$9 this$1 -> a
+    230:237:void run() -> run
