@@ -1,44 +1,129 @@
 com.meneguello.coi.ProducaoMensal -> com.meneguello.coi.ProducaoMensal:
+    org.slf4j.Logger logger -> a
     javax.swing.JPanel contentPane -> a
+    javax.swing.JPanel panel -> b
     javax.swing.JTextField textArquivoDeEntrada -> a
     javax.swing.JTextField textArquivoDeSaida -> b
-    java.util.prefs.Preferences preferences -> a
-    64:74:void main(java.lang.String[]) -> main
-    298:302:void flushPreferences() -> a
-    305:306:void warn(java.lang.String) -> a
-    34:34:void access$400(com.meneguello.coi.ProducaoMensal,java.lang.String) -> a
-com.meneguello.coi.ProducaoMensal$1 -> i:
-    67:72:void run() -> run
-com.meneguello.coi.ProducaoMensal$2 -> h:
+    javax.swing.JButton btnArquivoDeEntrada -> a
+    javax.swing.JButton btnArquivoDeSaida -> b
+    javax.swing.JButton btnGerarRelatrio -> c
+    java.util.prefs.Preferences preferencias -> a
+    com.meneguello.coi.ProducaoMensal$No no -> a
+    java.util.Map planos -> a
+    java.util.Map medicos -> b
+    java.util.Map categorias -> c
+    java.util.Map contadores -> d
+    javax.swing.JFileChooser arquivoDeEntradaFileChooser -> a
+    javax.swing.JFileChooser arquivoDeSaidaFileChooser -> b
+    javax.swing.JProgressBar progressBar -> a
+    int totalRegistrosLer -> a
+    int registrosLidos -> b
+    int totalRegistrosGravar -> c
+    int registrosGravados -> d
+    javax.swing.JTabbedPane tabbedPane -> a
+    javax.swing.JTextArea textCategorias -> a
+    java.lang.String charset -> a
+    javax.swing.JTextArea textMedicos -> b
+    javax.swing.JTextArea textPlanos -> c
+    java.util.Properties planosMap -> a
+    java.util.Properties medicosMap -> b
+    org.apache.poi.ss.usermodel.Workbook workbook -> a
+    org.apache.poi.ss.usermodel.CellStyle dataCellStyle -> a
+    org.apache.poi.ss.usermodel.CellStyle headerCellStyle -> b
+    org.apache.poi.ss.usermodel.CellStyle totalCellStyle -> c
+    org.apache.poi.ss.usermodel.CellStyle totalHeaderStyle -> d
+    java.io.File arquivoDeEntrada -> a
+    java.io.File arquivoDeSaida -> b
+    java.io.File arquivoDeSaidaDir -> c
+    248:262:void main(java.lang.String[]) -> main
+    406:416:java.lang.String carregaText(java.lang.String) -> a
+    465:475:void adicionaCategoria(com.meneguello.coi.ProducaoMensal$No,java.lang.String,java.lang.String,int) -> a
+    480:482:void selecionarArquivoDeEntrada() -> a
+    502:504:void selecionarArquivoDeSaida() -> b
+    524:550:void gerarRelatorio() -> c
+    607:629:void caregaArquivoDeDefinicoes(java.lang.String,javax.swing.JTextArea,java.lang.String) -> a
+    633:652:void carregaDefinicoesDeCategorias() -> d
+    656:668:void carregaAliases(java.util.Properties,java.io.BufferedReader,java.lang.String) -> a
+    671:707:void importarRegistros(java.io.File) -> a
+    750:760:org.apache.poi.ss.usermodel.CellStyle buildCellStyle() -> a
+    764:861:void exportarPlanilha(java.io.File) -> b
+    870:872:org.apache.poi.ss.usermodel.Cell buildHeaderCell(org.apache.poi.ss.usermodel.Row,short) -> a
+    876:878:org.apache.poi.ss.usermodel.Cell buildTotalCell(org.apache.poi.ss.usermodel.Row,short) -> b
+    882:884:org.apache.poi.ss.usermodel.Cell buildTotalHeaderCell(org.apache.poi.ss.usermodel.Row,short) -> c
+    888:897:java.lang.String buscaCategoria(com.meneguello.coi.ProducaoMensal$No,java.lang.String,int) -> a
+    901:901:java.lang.String unquote(java.lang.String) -> b
+    906:911:void flushPreferencias() -> e
+    914:915:void warn(java.lang.String) -> a
+    918:919:void warn(java.lang.Exception) -> a
+    922:924:void error(java.lang.String) -> b
+    927:928:void error(java.lang.Exception) -> b
+    71:71:org.slf4j.Logger access$100() -> a
+    71:71:java.util.prefs.Preferences access$200(com.meneguello.coi.ProducaoMensal) -> a
+    71:71:void access$300(com.meneguello.coi.ProducaoMensal) -> a
+    71:71:javax.swing.JTextField access$400(com.meneguello.coi.ProducaoMensal) -> a
+    71:71:javax.swing.JTextField access$500(com.meneguello.coi.ProducaoMensal) -> b
+    71:71:void access$600(com.meneguello.coi.ProducaoMensal) -> b
+    71:71:void access$700(com.meneguello.coi.ProducaoMensal) -> c
+    71:71:javax.swing.JFileChooser access$800(com.meneguello.coi.ProducaoMensal) -> a
+    71:71:void access$900(com.meneguello.coi.ProducaoMensal,java.lang.String) -> a
+    71:71:javax.swing.JFileChooser access$1000(com.meneguello.coi.ProducaoMensal) -> b
+    71:71:int access$1104(com.meneguello.coi.ProducaoMensal) -> a
+    71:71:int access$1200(com.meneguello.coi.ProducaoMensal) -> b
+    71:71:int access$1100(com.meneguello.coi.ProducaoMensal) -> c
+    71:71:javax.swing.JProgressBar access$1300(com.meneguello.coi.ProducaoMensal) -> a
+    71:71:int access$1404(com.meneguello.coi.ProducaoMensal) -> d
+    71:71:int access$1500(com.meneguello.coi.ProducaoMensal) -> e
+    71:71:int access$1400(com.meneguello.coi.ProducaoMensal) -> f
+com.meneguello.coi.ProducaoMensal$1 -> h:
+    255:260:void run() -> run
+com.meneguello.coi.ProducaoMensal$10 -> p:
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    83:86:void componentMoved(java.awt.event.ComponentEvent) -> componentMoved
-    90:93:void componentResized(java.awt.event.ComponentEvent) -> componentResized
+    489:497:void run() -> run
+com.meneguello.coi.ProducaoMensal$11 -> o:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    511:519:void run() -> run
+com.meneguello.coi.ProducaoMensal$12 -> n:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    741:745:void run() -> run
+com.meneguello.coi.ProducaoMensal$13 -> m:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    825:829:void run() -> run
+com.meneguello.coi.ProducaoMensal$2 -> g:
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    268:275:void componentMoved(java.awt.event.ComponentEvent) -> componentMoved
+    279:286:void componentResized(java.awt.event.ComponentEvent) -> componentResized
 com.meneguello.coi.ProducaoMensal$3 -> k:
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    125:127:void focusLost(java.awt.event.FocusEvent) -> focusLost
+    321:323:void focusLost(java.awt.event.FocusEvent) -> focusLost
 com.meneguello.coi.ProducaoMensal$4 -> j:
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    134:135:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+    330:331:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
 com.meneguello.coi.ProducaoMensal$5 -> b:
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    142:144:void focusLost(java.awt.event.FocusEvent) -> focusLost
+    338:340:void focusLost(java.awt.event.FocusEvent) -> focusLost
 com.meneguello.coi.ProducaoMensal$6 -> a:
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    151:152:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+    347:348:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
 com.meneguello.coi.ProducaoMensal$7 -> d:
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    158:159:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+    370:376:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$7$1 -> l:
+    com.meneguello.coi.ProducaoMensal$7 this$1 -> a
+    373:374:void run() -> run
 com.meneguello.coi.ProducaoMensal$8 -> c:
-    javax.swing.JFileChooser val$fileChooser -> a
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    202:216:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
-com.meneguello.coi.ProducaoMensal$8$1 -> g:
-    com.meneguello.coi.ProducaoMensal$8 this$1 -> a
-    206:213:void run() -> run
+    386:389:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
 com.meneguello.coi.ProducaoMensal$9 -> e:
-    javax.swing.JFileChooser val$fileChooser -> a
     com.meneguello.coi.ProducaoMensal this$0 -> a
-    226:240:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
-com.meneguello.coi.ProducaoMensal$9$1 -> f:
-    com.meneguello.coi.ProducaoMensal$9 this$1 -> a
-    230:237:void run() -> run
+    397:400:void actionPerformed(java.awt.event.ActionEvent) -> actionPerformed
+com.meneguello.coi.ProducaoMensal$Chave -> f:
+    java.lang.String plano -> a
+    java.lang.String medico -> b
+    java.lang.String categoria -> c
+    com.meneguello.coi.ProducaoMensal this$0 -> a
+    93:101:int hashCode() -> hashCode
+    106:130:boolean equals(java.lang.Object) -> equals
+    139:145:java.lang.String toString() -> toString
+com.meneguello.coi.ProducaoMensal$No -> i:
+    java.util.Map filhos -> a
+    java.lang.String categoria -> a

@@ -18,15 +18,22 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +46,10 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.EmptyBorder;
@@ -47,6 +58,8 @@ import org.apache.commons.lang.text.StrBuilder;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -57,6 +70,12 @@ import org.slf4j.LoggerFactory;
 
 public class ProducaoMensal extends JFrame {
 	
+	private static final String FILE_CATEGORIAS = "categorias.txt";
+	
+	private static final String FILE_PLANOS = "planos.txt";
+	
+	private static final String FILE_MEDICOS = "medicos.txt";
+
 	private class Chave {
 
 		public final String plano;
@@ -153,7 +172,7 @@ public class ProducaoMensal extends JFrame {
 	
 	private static final String PROP_OUTPUT_FILE = "output.file";
 
-	private static final int MIN_HEIGHT = 170;
+	private static final int MIN_HEIGHT = 400;
 
 	private static final int MIN_WIDTH = 650;
 	
@@ -187,8 +206,48 @@ public class ProducaoMensal extends JFrame {
 
 	private JFileChooser arquivoDeSaidaFileChooser;
 
+	private JProgressBar progressBar;
+
+	private int totalRegistrosLer;
+	
+	private int registrosLidos;
+
+	private int totalRegistrosGravar;
+
+	private int registrosGravados;
+
+	private JTabbedPane tabbedPane;
+	
+	private JTextArea textCategorias;
+
+	private static String charset;
+	private JTextArea textMedicos;
+	private JTextArea textPlanos;
+
+	private Properties planosMap;
+
+	private Properties medicosMap;
+
+	private Workbook workbook;
+
+	private CellStyle dataCellStyle;
+
+	private CellStyle headerCellStyle;
+
+	private CellStyle totalCellStyle;
+
+	private CellStyle totalHeaderStyle;
+
+	private File arquivoDeEntrada;
+
+	private File arquivoDeSaida;
+
+	private File arquivoDeSaidaDir;
+
 	public static void main(String[] args) {
 		logger.info("Aplicação iniciada");
+		charset = System.getProperty("charset", "ISO-8859-15");
+		
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
@@ -226,27 +285,6 @@ public class ProducaoMensal extends JFrame {
 				flushPreferencias();
 			}
 		});
-		
-		try {
-			logger.info("Lendo definições de categorias");
-			BufferedReader inputReader = new BufferedReader(new InputStreamReader(new FileInputStream("categorias.txt"), "ISO-8859-15"));
-			String linha = null;
-			String categoria = null;
-			while((linha = inputReader.readLine()) != null) {
-				
-				linha = trim(linha);
-				if (linha.endsWith(":")) {
-					categoria = linha.substring(0, linha.length() - 1);
-					logger.debug("categoria: {}", categoria);
-				} else {
-					logger.debug("definição: {}", linha);
-					adicionaCategoria(no, categoria, linha, 0);
-				}
-			}
-			logger.info("Definições de categoria carregadas");
-		} catch(IOException e) {
-			error(e);
-		}
 		
 		preferencias = Preferences.userNodeForPackage(ProducaoMensal.class);
 		
@@ -310,11 +348,31 @@ public class ProducaoMensal extends JFrame {
 			}
 		});
 		
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		
+		textCategorias = new JTextArea(carregaText(FILE_CATEGORIAS));
+		tabbedPane.addTab("Categorias", null, new JScrollPane(textCategorias), null);
+		
+		textPlanos = new JTextArea(carregaText(FILE_PLANOS));
+		tabbedPane.addTab("Planos", null, new JScrollPane(textPlanos), null);
+		
+		textMedicos = new JTextArea(carregaText(FILE_MEDICOS));
+		tabbedPane.addTab("Médicos", null, new JScrollPane(textMedicos), null);
+		
+		progressBar = new JProgressBar();
+		progressBar.setMinimum(0);
+		progressBar.setMaximum(100);
+		
 		btnGerarRelatrio = new JButton("Gerar Relatório");
 		btnGerarRelatrio.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				gerarRelatorio();
+				new Thread() {
+					@Override
+					public void run() {
+						gerarRelatorio();
+					}
+				}.start();
 			}
 		});
 		
@@ -343,6 +401,22 @@ public class ProducaoMensal extends JFrame {
 		});
 	}
 	
+	private String carregaText(String filename) {
+		try {
+			FileInputStream stream = new FileInputStream(filename);
+			try {
+				FileChannel fc = stream.getChannel();
+				MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+				return Charset.forName(charset).decode(bb).toString();
+			} finally {
+				stream.close();
+			}
+		} catch (IOException e) {
+			error(e);
+			return "";
+		}
+	}
+
 	private void configuraLayout() {
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
@@ -358,7 +432,11 @@ public class ProducaoMensal extends JFrame {
 							.addGroup(gl_panel.createParallelGroup(Alignment.TRAILING, false)
 								.addComponent(btnArquivoDeSaida, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addComponent(btnArquivoDeEntrada, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-						.addComponent(btnGerarRelatrio, Alignment.TRAILING))
+						.addComponent(btnGerarRelatrio, Alignment.TRAILING)
+						.addComponent(progressBar, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 614, Short.MAX_VALUE)
+						.addGroup(Alignment.TRAILING, gl_panel.createSequentialGroup()
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(tabbedPane)))
 					.addContainerGap())
 		);
 		gl_panel.setVerticalGroup(
@@ -372,7 +450,11 @@ public class ProducaoMensal extends JFrame {
 					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
 						.addComponent(textArquivoDeSaida, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
 						.addComponent(btnArquivoDeSaida))
-					.addPreferredGap(ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(tabbedPane)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(progressBar, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addGap(12)
 					.addComponent(btnGerarRelatrio)
 					.addContainerGap())
 		);
@@ -441,60 +523,145 @@ public class ProducaoMensal extends JFrame {
 	public void gerarRelatorio() {
 		logger.info("Validando as informações");
 		
+		if (!validaParametros()) {
+			return;
+		}
+		
+		caregaArquivoDeDefinicoes(FILE_CATEGORIAS, textCategorias, "categorias");
+		caregaArquivoDeDefinicoes(FILE_PLANOS, textPlanos, "planos");
+		caregaArquivoDeDefinicoes(FILE_MEDICOS, textMedicos, "medicos");
+		
+		logger.info("Informações válidas");
+		
+		carregaDefinicoesDeCategorias();
+		
+		planosMap = new Properties();
+		carregaAliases(planosMap, new BufferedReader(new StringReader(textPlanos.getText())), "planos");
+
+		medicosMap = new Properties();
+		carregaAliases(medicosMap, new BufferedReader(new StringReader(textMedicos.getText())), "médicos");
+		
+		try {
+			importarRegistros(arquivoDeEntrada);
+			exportarPlanilha(arquivoDeSaida);
+		} catch (IOException e) {
+			error(e);
+		}
+	}
+
+	public boolean validaParametros() {
 		if (StringUtils.isBlank(textArquivoDeEntrada.getText())) {
 			warn("O arquivo de entrada é obrigatório");
-			return;
+			return false;
 		}
 		
 		if (StringUtils.isBlank(textArquivoDeSaida.getText())) {
 			warn("O arquivo de saida é obrigatório");
-			return;
+			return false;
 		}
 		
-		File arquivoDeEntrada = new File(textArquivoDeEntrada.getText());
+		arquivoDeEntrada = new File(textArquivoDeEntrada.getText());
 		if (!arquivoDeEntrada.exists()) {
 			warn("O arquivo de entrada não existe");
-			return;
+			return false;
 		}
 		if (!arquivoDeEntrada.isFile()) {
 			warn("O arquivo de entrada não é um arquivo");
-			return;
+			return false;
 		}
 		if (!arquivoDeEntrada.canRead()) {
 			warn("O arquivo de entrada não está acessível");
-			return;
+			return false;
 		}
 		
-		File arquivoDeSaida = new File(textArquivoDeSaida.getText());
+		arquivoDeSaida = new File(textArquivoDeSaida.getText());
 		if (arquivoDeSaida.exists()) {
 			if (!arquivoDeSaida.isFile()) {
 				warn("O arquivo de saida é inválido");
-				return;
+				return false;
 			}
 			if (!arquivoDeSaida.canWrite()) {
 				warn("O arquivo de saida está protegido contra escrita");
-				return;
+				return false;
 			}
 		}
 		
-		File arquivoDeSaidaDir = arquivoDeSaida.getParentFile();
+		arquivoDeSaidaDir = arquivoDeSaida.getParentFile();
 		if (arquivoDeSaidaDir == null && !arquivoDeSaida.isAbsolute()) {
 			arquivoDeSaidaDir = new File(".");
 		}
 		if (arquivoDeSaidaDir.exists()) {
 			if (!arquivoDeSaidaDir.canWrite()) {
 				warn("O diretório do arquivo de saida está protegido contra escrita");
+				return false;
 			}
 		} else if (!arquivoDeSaidaDir.mkdirs()) {
 			warn("O diretório do arquivo de saida não pôde ser criado");
-			return;
+			return false;
 		}
 		
-		logger.info("Informações válidas");
+		return true;
+	}
+
+	private void caregaArquivoDeDefinicoes(String filename, JTextArea textArea, String desc) {
+		File file = new File(filename);
+		File fileBackup = new File(filename + ".bkp");
 		
+		if (file.exists()) {
+			file.renameTo(fileBackup);
+			
+			try {
+				BufferedWriter writter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), charset));
+				BufferedReader reader = new BufferedReader(new StringReader(textArea.getText()));
+				String linha = null;
+				while((linha = reader.readLine()) != null) {
+					writter.write(linha + System.getProperty("line.separator"));
+				}
+				writter.close();
+			} catch (IOException e) {
+				warn(e);
+				fileBackup.renameTo(file);
+				textArea.setText(carregaText(filename));
+			}
+		} else {
+			error("O arquivo de configurações de "+ desc +" não foi encontrado. Crie o arquivo com o nome " + filename);
+		}
+	}
+
+	public void carregaDefinicoesDeCategorias() {
 		try {
-			importarRegistros(arquivoDeEntrada);
-			exportarPlanilha(arquivoDeSaida);
+			logger.info("Lendo definições de categorias");
+			BufferedReader categoriasReader = new BufferedReader(new StringReader(textCategorias.getText()));
+			String linha = null;
+			String categoria = null;
+			while((linha = categoriasReader.readLine()) != null) {
+				
+				linha = trim(linha);
+				if (linha.endsWith(":")) {
+					categoria = linha.substring(0, linha.length() - 1);
+					logger.debug("categoria: {}", categoria);
+				} else {
+					logger.debug("definição: {}", linha);
+					adicionaCategoria(no, categoria, linha, 0);
+				}
+			}
+			logger.info("Definições de categoria carregadas");
+		} catch(IOException e) {
+			error(e);
+		}
+	}
+	
+	private void carregaAliases(Properties properties, BufferedReader reader, String desc) {
+		try {
+			String linha = null;
+			while ((linha = reader.readLine()) != null) {
+				String[] partes = linha.split("=");
+				if (partes.length != 2) {
+					warn("O arquivo de "+ desc +" está mal formado");
+					continue;
+				}
+				properties.put(partes[0], partes[1]);
+			}
 		} catch (IOException e) {
 			error(e);
 		}
@@ -508,14 +675,24 @@ public class ProducaoMensal extends JFrame {
 		categorias = new TreeMap<String, Set<Chave>>();
 		contadores = new HashMap<Chave, AtomicInteger>();
 		
-		BufferedReader inputReader = new BufferedReader(new InputStreamReader(new FileInputStream(arquivoDeEntrada), "ISO-8859-15"));
+		BufferedReader inputReaderCounter = new BufferedReader(new InputStreamReader(new FileInputStream(arquivoDeEntrada), charset));
+		int linhas = 0;
+		while(inputReaderCounter.readLine() != null) linhas++;
+		inputReaderCounter.close();
+		totalRegistrosLer = linhas;
+		logger.debug("{} registros para ler", totalRegistrosLer);
+		registrosLidos = 0;
+		
+		BufferedReader inputReader = new BufferedReader(new InputStreamReader(new FileInputStream(arquivoDeEntrada), charset));
 		String line = null;
 		while((line = inputReader.readLine()) != null) {
 			if (isBlank(line)) continue;
 			
 			String[] columns = line.split(",");
 			String plano = unquote(columns[13]);
+			plano = planosMap.getProperty(plano, plano);
 			String medico = unquote(columns[14]);
+			medico = medicosMap.getProperty(medico, medico);
 			String procedimento = unquote(columns[18]);
 			String codigo = procedimento.split(" - ")[0];
 			
@@ -524,6 +701,7 @@ public class ProducaoMensal extends JFrame {
 			Chave chave = new Chave(plano, medico, categoria);
 			acumulaRegistro(chave);
 		}
+		inputReader.close();
 		
 		logger.info("Registros importados");
 	}
@@ -556,25 +734,66 @@ public class ProducaoMensal extends JFrame {
 			categorias.put(chave.categoria, categoriaList);
 		}
 		categoriaList.add(chave);
+		
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				int porcentagemConcluido = (int)((++registrosLidos / (float)totalRegistrosLer) * 50);
+				logger.debug("{} registros lidos", registrosLidos);
+				logger.debug("leitura {}% conluido", porcentagemConcluido);
+				progressBar.setValue(porcentagemConcluido);
+			}
+		});
+	}
+	
+	private CellStyle buildCellStyle() {
+		CellStyle cellStyle = workbook.createCellStyle();
+		cellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+		cellStyle.setBorderTop(CellStyle.BORDER_THIN);
+		cellStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+		cellStyle.setBorderLeft(CellStyle.BORDER_THIN);
+		cellStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+		cellStyle.setBorderRight(CellStyle.BORDER_THIN);
+		cellStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+		cellStyle.setBorderBottom(CellStyle.BORDER_THIN);
+		cellStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+		return cellStyle;
 	}
 
 	public void exportarPlanilha(File arquivoDeSaida) throws FileNotFoundException, IOException {
 		logger.info("Gerando relatório");
 		
-		Workbook wb = new HSSFWorkbook();
+		workbook = new HSSFWorkbook();
+		
+		dataCellStyle = buildCellStyle();
+		
+		headerCellStyle = buildCellStyle();
+		
+		totalHeaderStyle = buildCellStyle();
+		totalHeaderStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		totalHeaderStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
+		totalCellStyle = buildCellStyle();
+		totalCellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+		totalCellStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		totalCellStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
+		totalRegistrosGravar = categorias.size() * medicos.size() * planos.size();
+		logger.debug("{} registros para gravar", totalRegistrosGravar);
+		registrosGravados = 0;
+		
 		for (String categoria : categorias.keySet()) {
-			Sheet sheet = wb.createSheet(WorkbookUtil.createSafeSheetName(categoria));
+			Sheet sheet = workbook.createSheet(WorkbookUtil.createSafeSheetName(categoria));
 			
 			Row rowPlanos = sheet.createRow(0);
-			rowPlanos.createCell(0);
+			buildHeaderCell(rowPlanos, (short)0);
 			Map<String, AtomicInteger> totaisPlanos = new HashMap<String, AtomicInteger>();
 			for (String plano : planos.keySet()) {
 				buildHeaderCell(rowPlanos, rowPlanos.getLastCellNum()).setCellValue(plano);
 				
 				totaisPlanos.put(plano, new AtomicInteger());
 			}
-			Cell cellTotalHeader = buildHeaderCell(rowPlanos, rowPlanos.getLastCellNum());
+			Cell cellTotalHeader = buildTotalHeaderCell(rowPlanos, rowPlanos.getLastCellNum());
 			cellTotalHeader.setCellValue("TOTAL");
 			
 			AtomicInteger totalGeral = new AtomicInteger();
@@ -582,7 +801,7 @@ public class ProducaoMensal extends JFrame {
 			for(String medico : medicos.keySet()) {
 				Row row = sheet.createRow(sheet.getLastRowNum() + 1);
 				
-				Cell cellMedico = row.createCell(0);
+				Cell cellMedico = buildHeaderCell(row, (short)0);
 				cellMedico.setCellValue(medico);
 				
 				AtomicInteger totalMedico = new AtomicInteger();
@@ -599,24 +818,34 @@ public class ProducaoMensal extends JFrame {
 					} else {
 						cell.setCellValue("*");
 					}
+					
+					EventQueue.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							int porcentagemConcluido = 50 + (int)((++registrosGravados / (float)totalRegistrosGravar) * 50);
+							logger.debug("{} registros gravados", registrosGravados);
+							logger.debug("escrita {}% conluido", porcentagemConcluido);
+							progressBar.setValue(porcentagemConcluido);
+						}
+					});
 				}
 				
-				Cell cellTotal = buildDataCell(row, row.getLastCellNum());
+				Cell cellTotal = buildTotalCell(row, row.getLastCellNum());
 				cellTotal.setCellValue(totalMedico.get());
 				
 				totalGeral.addAndGet(totalMedico.get());
 			}
 			
 			Row rowTotais = sheet.createRow(sheet.getLastRowNum() + 1);
-			Cell cellTotalPlanosHeader = rowTotais.createCell(0);
+			Cell cellTotalPlanosHeader = buildTotalHeaderCell(rowTotais, (short)0);
 			cellTotalPlanosHeader.setCellValue("TOTAL");
 			
 			for (String plano : planos.keySet()) {
-				Cell cellTotal = buildDataCell(rowTotais, rowTotais.getLastCellNum());
+				Cell cellTotal = buildTotalCell(rowTotais, rowTotais.getLastCellNum());
 				cellTotal.setCellValue(totaisPlanos.get(plano).get());
 			}
 			
-			Cell cellTotalGeral = buildDataCell(rowTotais, rowTotais.getLastCellNum());
+			Cell cellTotalGeral = buildTotalCell(rowTotais, rowTotais.getLastCellNum());
 			cellTotalGeral.setCellValue(totalGeral.get());
 			
 			for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) { 
@@ -625,23 +854,39 @@ public class ProducaoMensal extends JFrame {
 		}
 		
 		FileOutputStream fileOut = new FileOutputStream(arquivoDeSaida);
-		wb.write(fileOut);
+		workbook.write(fileOut);
 		fileOut.close();
 		
 		logger.info("Relatório concluido");
 	}
 
-	public Cell buildDataCell(Row row, short column) {
-		return row.createCell(column);
+	private Cell buildDataCell(Row row, short column) {
+		Cell cell = row.createCell(column);
+		cell.setCellStyle(dataCellStyle);
+		return cell;
 	}
 	
-	public Cell buildHeaderCell(Row rowPlanos, short column) {
-		return rowPlanos.createCell(column);
+	private Cell buildHeaderCell(Row row, short column) {
+		Cell cell = row.createCell(column);
+		cell.setCellStyle(headerCellStyle);
+		return cell;
+	}
+
+	private Cell buildTotalCell(Row row, short column) {
+		Cell cell = row.createCell(column);
+		cell.setCellStyle(totalCellStyle);
+		return cell;
+	}
+	
+	private Cell buildTotalHeaderCell(Row row, short column) {
+		Cell cell = row.createCell(column);
+		cell.setCellStyle(totalHeaderStyle);
+		return cell;
 	}
 
 	private String buscaCategoria(No no, String codigo, int indice) {
 		if (no == null) {
-			return "CATEGORIA DESCONHECIDA";
+			return codigo;
 		}
 		if (no.categoria != null) {
 			return no.categoria;
@@ -681,5 +926,4 @@ public class ProducaoMensal extends JFrame {
 	private void error(Exception e) {
 		error(e.getMessage());
 	}
-		
 }
