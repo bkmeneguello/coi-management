@@ -5,11 +5,9 @@
 	<artifactId>coi-management</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>COI Management</name>
-
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -44,7 +42,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>com.pyx4me</groupId>
 				<artifactId>proguard-maven-plugin</artifactId>
@@ -76,6 +73,28 @@
 					</libs>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>com.akathist.maven.plugins.launch4j</groupId>
+				<artifactId>launch4j-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>l4j-clui</id>
+						<phase>package</phase>
+						<goals>
+							<goal>launch4j</goal>
+						</goals>
+						<configuration>
+							<headerType>gui</headerType>
+							<outfile>target/${project.artifactId}.exe</outfile>
+							<jar>target/coi-management-0.0.1-SNAPSHOT-jar-with-dependencies.jar</jar>
+							<chdir>.</chdir>
+							<jre>
+								<minVersion>1.6.0</minVersion>
+							</jre>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
@@ -100,4 +119,18 @@
 			<version>1.7.2</version>
 		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>akathist-repository</id>
+			<name>Akathist Repository</name>
+			<url>http://www.9stmaryrd.com/maven</url>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>akathist-repository</id>
+			<name>Akathist Repository</name>
+			<url>http://www.9stmaryrd.com/maven</url>
+		</pluginRepository>
+	</pluginRepositories>
 </project>
