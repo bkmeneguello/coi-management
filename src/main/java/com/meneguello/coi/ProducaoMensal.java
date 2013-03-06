@@ -5,7 +5,6 @@ import static javax.swing.JFileChooser.APPROVE_SELECTION;
 import static javax.swing.JFileChooser.FILES_ONLY;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.WARNING_MESSAGE;
-import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.trim;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -66,6 +65,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import au.com.bytecode.opencsv.CSVReader;
 
 
 public class ProducaoMensal extends JFrame {
@@ -655,6 +655,8 @@ public class ProducaoMensal extends JFrame {
 		try {
 			String linha = null;
 			while ((linha = reader.readLine()) != null) {
+				if (StringUtils.isBlank(linha)) continue;
+				
 				String[] partes = linha.split("=");
 				if (partes.length != 2) {
 					warn("O arquivo de "+ desc +" está mal formado");
@@ -683,36 +685,34 @@ public class ProducaoMensal extends JFrame {
 		logger.debug("{} registros para ler", totalRegistrosLer);
 		registrosLidos = 0;
 		
-		BufferedReader inputReader = new BufferedReader(new InputStreamReader(new FileInputStream(arquivoDeEntrada), charset));
-		String line = null;
-		while((line = inputReader.readLine()) != null) {
-			if (isBlank(line)) continue;
-			
-			String[] columns = line.split(",");
-			String plano = unquote(columns[13]);
+		CSVReader csvReader = new CSVReader(new InputStreamReader(new FileInputStream(arquivoDeEntrada), charset));
+		String[] columns = null;
+		while((columns = csvReader.readNext()) != null) {
+			String plano = columns[13];
 			plano = planosMap.getProperty(plano, plano);
-			String medico = unquote(columns[14]);
+			String medico = columns[14];
 			medico = medicosMap.getProperty(medico, medico);
-			String procedimento = unquote(columns[18]);
+			String procedimento = columns[18];
 			String codigo = procedimento.split(" - ")[0];
+			int quantidade = Integer.parseInt(columns[19]);
 			
 			String categoria = buscaCategoria(no, codigo, 0);
 			
 			Chave chave = new Chave(plano, medico, categoria);
-			acumulaRegistro(chave);
+			acumulaRegistro(chave, quantidade);
 		}
-		inputReader.close();
+		csvReader.close();
 		
 		logger.info("Registros importados");
 	}
 
-	private void acumulaRegistro(Chave chave) {
+	private void acumulaRegistro(Chave chave, final int quantidade) {
 		AtomicInteger contador = contadores.get(chave);
 		if (contador == null) {
 			contador = new AtomicInteger();
 			contadores.put(chave, contador);
 		}
-		contador.incrementAndGet();
+		contador.addAndGet(quantidade);
 		
 		Set<Chave> planoList = planos.get(chave.plano);
 		if (planoList == null) {
@@ -738,9 +738,8 @@ public class ProducaoMensal extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				int porcentagemConcluido = (int)((++registrosLidos / (float)totalRegistrosLer) * 50);
-				logger.debug("{} registros lidos", registrosLidos);
-				logger.debug("leitura {}% conluido", porcentagemConcluido);
+				registrosLidos += quantidade;
+				int porcentagemConcluido = (int)((registrosLidos / (float)totalRegistrosLer) * 50);
 				progressBar.setValue(porcentagemConcluido);
 			}
 		});
@@ -823,8 +822,6 @@ public class ProducaoMensal extends JFrame {
 						@Override
 						public void run() {
 							int porcentagemConcluido = 50 + (int)((++registrosGravados / (float)totalRegistrosGravar) * 50);
-							logger.debug("{} registros gravados", registrosGravados);
-							logger.debug("escrita {}% conluido", porcentagemConcluido);
 							progressBar.setValue(porcentagemConcluido);
 						}
 					});
@@ -897,10 +894,6 @@ public class ProducaoMensal extends JFrame {
 		return buscaCategoria(no.filhos.get(codigo.charAt(indice)), codigo, indice + 1);
 	}
 	
-	private String unquote(String value) {
-		return value.replaceAll("(^\")|(\"$)","");
-	}
-
 	private void flushPreferencias() {
 		try {
 			preferencias.flush();
