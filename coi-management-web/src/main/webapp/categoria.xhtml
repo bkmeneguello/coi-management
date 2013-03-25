@@ -1,0 +1,90 @@
+<ui:composition template="/WEB-INF/template/main.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets">
+	<style>
+	fieldset {
+		border:none;
+	}
+	legend {
+		font-size:20px;
+	}
+	label {
+		font-weight:bold;
+	}
+	label.field {
+		display:block;
+	}
+	label.label {
+		text-align:right;
+		width:150px;
+		float:left;
+	}
+	input.textbox {
+		width:300px;
+	}
+	input.valuebox {
+		width:300px;
+		float:right;
+	}
+	fieldset p {
+		clear:both;
+		padding:5px;
+		margin:0;
+	}
+	#panel\:produto {
+		display:none;
+	}
+	#panel\:comissoes {
+		width:470px;
+	}
+	</style>
+	<script type="text/javascript" src="/js/coi/categoria.js"></script>
+	<form id="form">
+		<fieldset id="panel:categoria">
+			<legend>Categoria</legend>
+			<p>
+				<label class="field">Descrição:</label>
+				<input id="input:descricao-categoria" class="textbox" type="text"/>
+			</p>
+		</fieldset>
+		<fieldset id="panel:produtos">
+			<legend>Produtos</legend>
+			<table id="table:produtos"/>
+			<fieldset id="panel:produto">
+				<legend>Produto</legend>
+				<p>
+					<label class="field">Código:</label>
+					<input id="input:codigo-produto" class="textbox" type="text"/>
+				</p>
+				<p>
+					<label class="field">Descrição:</label>
+					<input id="input:descricao-produto" class="textbox" type="text"/>
+				</p>
+				<p>
+					<label class="field">Custo:</label>
+					<input id="input:custo-produto" class="textbox" type="text"/>
+				</p>
+				<p>
+					<label class="field">Preço:</label>
+					<input id="input:preco-produto" class="textbox" type="text"/>
+				</p>
+				<fieldset>
+					<button id="action:cancelar-produto">Cancelar</button>
+					<button id="action:confirmar-produto">Confirmar</button>
+				</fieldset>
+			</fieldset>
+			<fieldset>
+				<button id="action:adicionar-produto">Adicionar</button>
+			</fieldset>
+		</fieldset>
+		<fieldset id="panel:comissoes">
+			<legend>Comissões</legend>
+			<div id="list:partes"/>
+		</fieldset>
+		<fieldset>
+			<a id="action:cancelar-categoria" href="/categorias.xhtml">Cancelar</a>
+			<a id="action:confirmar-categoria" href="/categorias.xhtml">Confirmar</a>
+		</fieldset>
+	</form>
+</ui:composition>
