@@ -3,6 +3,18 @@
 	xmlns:h="http://java.sun.com/jsf/html"
 	xmlns:ui="http://java.sun.com/jsf/facelets">
 	<style>
+	body {
+		background: gray;
+	}
+	form {
+		width: 750px;
+		margin: 0 auto;
+		background: white;
+	}
+	fieldset.panel\:form-actions {
+		text-align: right;
+	}
+	
 	fieldset {
 		border:none;
 	}
@@ -82,9 +94,9 @@
 			<legend>Comissões</legend>
 			<div id="list:partes"/>
 		</fieldset>
-		<fieldset>
+		<fieldset class="panel:form-actions">
 			<a id="action:cancelar-categoria" href="/categorias.xhtml">Cancelar</a>
-			<a id="action:confirmar-categoria" href="/categorias.xhtml">Confirmar</a>
+			<a id="action:confirmar-categoria">Confirmar</a>
 		</fieldset>
 	</form>
 </ui:composition>

@@ -24,21 +24,44 @@ $(function() {
 	$('#action\\:cancelar-categoria').button().click(function(e) {
 		
 	});
-	$('#action\\:confirmar-categoria').button().click(function(e) {
+	$('#action\\:confirmar-categoria').button().disable().click(function(e) {
 		e.preventDefault();
-		var request = $.ajax('/rest/categorias', {
-			type: 'POST',
-			contentType : 'application/json',
-			data: JSON.stringify(getCategoriaForm())
-		});
 		
-		request.done(function() {
-			window.noty({text: 'Produto incluido com sucesso', type: 'success', timeout: 2000});
-		});
-		
-		request.fail(function(jqXHR, textStatus) {
-			window.noty({text: 'Falha ao persistir o produto', type: 'error'});
-		});
+		var action = $.urlParam('action');
+		switch(action) {
+		case 'create':
+			var request = $.ajax('/rest/categorias', {
+				type: 'POST',
+				contentType : 'application/json',
+				data: JSON.stringify(getCategoriaForm())
+			});
+			
+			request.done(function() {
+				window.location = '/categorias.xhtml?action=create&status=success';
+			});
+			
+			request.fail(function(jqXHR, textStatus) {
+				window.noty({text: 'Falha ao persistir o produto', type: 'error'});
+			});
+			
+			break;
+		case 'update':
+			var request = $.ajax('/rest/categorias/' + $.urlParam('categoria'), {
+				type: 'PUT',
+				contentType : 'application/json',
+				data: JSON.stringify(getCategoriaForm())
+			});
+			
+			request.done(function() {
+				window.location = '/categorias.xhtml?action=update&status=success';
+			});
+			
+			request.fail(function(jqXHR, textStatus) {
+				window.noty({text: 'Falha ao atualizar o produto', type: 'error'});
+			});
+			
+			break;
+		}
 	});
 
 	function getCategoriaForm() {
@@ -80,7 +103,7 @@ $(function() {
 	}
 
 	function load(categoria) {
-		$('#input\\:descricao-categoria').val(categoria.descricao);
+		$('#input\\:descricao-categoria').focus().val(categoria.descricao);
 
 		$('#table\\:produtos > tbody').empty();
 		$.each(categoria.produtos, function(index, produto) {
@@ -100,6 +123,8 @@ $(function() {
 				value: comissao.porcentagem
 			}).appendTo(p);
 		});
+		
+		$('#action\\:confirmar-categoria').enable();
 	}
 
 	function addProduto(produto) {
@@ -147,36 +172,26 @@ $(function() {
 	}
 
 	function loadURL(url) {
-		var noty = window.noty({
-			text: 'Carregando...', 
-			layout: 'center', 
-			type: 'information', 
-			modal: true, 
-			closeWith: 'button'
-		});
-		
 		var request = $.ajax(url, {
 			type:'GET'
 		});
 		 
 		request.done(function(element) {
 			load(element);
-			noty.close();
 		});
 
 		request.fail(function(jqXHR, textStatus) {
-			noty.close();
 			window.noty({text: 'Falha ao carregar o produto', type: 'error'});
 		});
 	}
 
 	var action = $.urlParam('action');
 	switch(action) {
-	case 'new':
+	case 'create':
 		loadURL('/rest/categorias/new');
 		break;
-	case 'edit':
-		loadURL('/rest/categorias/' + $.urlParam('id'));
+	case 'update':
+		loadURL('/rest/categorias/' + $.urlParam('categoria'));
 		break;
 	}
 
