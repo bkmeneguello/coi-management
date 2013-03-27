@@ -3,96 +3,23 @@
 	xmlns="http://www.w3.org/1999/xhtml" 
 	xmlns:h="http://java.sun.com/jsf/html"
 	xmlns:ui="http://java.sun.com/jsf/facelets">
-	<script type="text/javascript">
-	//<![CDATA[
-		$(function() {
-			switch($.urlParam('action')) {
-			case 'create':
-				switch($.urlParam('status')) {
-				case 'success':
-					window.noty({text: 'Produto incluido com sucesso', type: 'success', timeout: 2000});
-				}
-				break;
-			case 'update':
-				switch($.urlParam('status')) {
-				case 'success':
-					window.noty({text: 'Produto alterado com sucesso', type: 'success', timeout: 2000});
-				}
-				break;
-			case 'delete':
-				switch($.urlParam('status')) {
-				case 'success':
-					window.noty({text: 'Produto excluido com sucesso', type: 'success', timeout: 2000});
-				}
-				break;
-			}
-			
-			$('#action\\:adicionar-categoria').button();
-
-			$('#table\\:categorias').dataTable('/rest/categorias', {
-				headers: [
-					{
-						text: 'Descriçao',
-						property: 'descricao'
-					},
-					{
-						text: 'Ações',
-						colspan: 2,
-						renderer: function(tr, element, property) {
-							var tdEdit = $('<td/>').appendTo(tr);
-							$('<button/>', {text: 'Editar'}).button().click(function(e) {
-								e.preventDefault();
-								window.location = '/categoria.xhtml?action=update&categoria=' + encodeURIComponent(element.descricao);
-							}).appendTo(tdEdit);
-							var tdDel = $('<td/>').appendTo(tr);
-							$('<button/>', {text: 'Excluir'}).button().click(function(e) {
-								e.preventDefault();
-								noty({
-									text: 'Deseja realmente excluir a categoria?',
-									layout: 'center',
-									buttons: [
-									    {
-										    addClass: 'btn',
-										    text: 'Cancelar',
-										    onClick: function($noty) {
-										        $noty.close();
-									    	}
-									 	},
-										{
-											addClass: 'btn', 
-											text: 'Confirmar', 
-											onClick: function($noty) {
-												var request = $.ajax('/rest/categorias/' + encodeURIComponent(element.descricao), {
-													type:'DELETE'
-												});
-												 
-												request.done(function(element) {
-											        $noty.close();
-											        window.location = '/categorias.xhtml?action=delete&status=success';
-												});
-
-												request.fail(function(jqXHR, textStatus) {
-													$noty.close();
-											        noty({text: 'Falha na exclusão da categoria', type: 'error'});
-												});
-									      	}
-									    }
-									],
-									callback: {
-										onShow: function() {
-											$('button.btn').button();
-										}
-									}
-								});
-							}).appendTo(tdDel);
-						}
-					}
-				]
-			});
-		});
-	//]]>
-	</script>
-	<h1>Categorias</h1>
-	<table id="table:categorias"/>
-	<a id="action:adicionar-categoria" href="/categoria.xhtml?action=create">Adicionar</a>
+	<style type="text/css">
+		#table\:categorias {
+			width: 100%;
+		}
+		#table\:categorias > thead > tr > td:nth-child(2) {
+			text-align: center;
+		}
+		#table\:categorias > tbody > tr > td:nth-child(2) {
+			text-align: center;
+		}
+	</style>
+	<script type="text/javascript" src="/js/coi/categorias.js"></script>
+	<form>
+		<header>Categorias</header>
+		<fieldset id="panel:categorias">
+			<table id="table:categorias"/>
+			<a id="action:adicionar-categoria" href="/categoria.xhtml?action=create">Adicionar</a>
+		</fieldset>
+	</form>
 </ui:composition>

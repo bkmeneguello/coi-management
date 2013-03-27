@@ -140,19 +140,18 @@ $(function() {
 		$('<td/>', {text: produto.descricao}).appendTo(tr);
 		$('<td/>', {text: produto.custo}).appendTo(tr);
 		$('<td/>', {text: produto.preco}).appendTo(tr);
-		var tdEdit = $('<td/>').appendTo(tr);
+		var td = $('<td/>').appendTo(tr);
 		$('<button/>', {text: 'Editar'}).button().click(function(e) {
 			e.preventDefault();
 			trProdutoEdit = tr;
 			setProdutoForm(produto);
 			showPanelProduto();
-		}).appendTo(tdEdit);
-		var tdDel = $('<td/>').appendTo(tr);
+		}).appendTo(td);
 		$('<button/>', {text: 'Excluir'}).button().click(function(e) {
 			e.preventDefault();
 			hidePanelProduto();
 			tr.remove();
-		}).appendTo(tdDel);
+		}).appendTo(td);
 	}
 
 	function getProdutoForm() {
@@ -201,7 +200,7 @@ $(function() {
 			{text: 'Descrição'},
 			{text: 'Custo'},
 			{text: 'Preço'},
-			{text: 'Ações', colspan: 2}
+			{text: 'Ações'}
 		]
 	});
 });

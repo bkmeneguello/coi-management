@@ -3,49 +3,17 @@
 	xmlns:h="http://java.sun.com/jsf/html"
 	xmlns:ui="http://java.sun.com/jsf/facelets">
 	<style>
-	body {
-		background: gray;
-	}
-	form {
-		width: 750px;
-		margin: 0 auto;
-		background: white;
-	}
-	fieldset.panel\:form-actions {
-		text-align: right;
-	}
-	
-	fieldset {
-		border:none;
-	}
-	legend {
-		font-size:20px;
-	}
-	label {
-		font-weight:bold;
-	}
-	label.field {
-		display:block;
-	}
-	label.label {
-		text-align:right;
-		width:150px;
-		float:left;
-	}
-	input.textbox {
-		width:300px;
-	}
-	input.valuebox {
-		width:300px;
-		float:right;
-	}
-	fieldset p {
-		clear:both;
-		padding:5px;
-		margin:0;
-	}
 	#panel\:produto {
 		display:none;
+	}
+	#table\:produtos {
+		width: 100%;
+	}
+	#table\:produtos > thead > tr > td:nth-child(5) {
+		text-align: center;
+	}
+	#table\:produtos > tbody > tr > td:nth-child(5) {
+		text-align: center;
 	}
 	#panel\:comissoes {
 		width:470px;
@@ -53,8 +21,8 @@
 	</style>
 	<script type="text/javascript" src="/js/coi/categoria.js"></script>
 	<form id="form">
+		<header>Categoria</header>
 		<fieldset id="panel:categoria">
-			<legend>Categoria</legend>
 			<p>
 				<label class="field">Descrição:</label>
 				<input id="input:descricao-categoria" class="textbox" type="text"/>
@@ -94,7 +62,7 @@
 			<legend>Comissões</legend>
 			<div id="list:partes"/>
 		</fieldset>
-		<fieldset class="panel:form-actions">
+		<fieldset class="form-actions">
 			<a id="action:cancelar-categoria" href="/categorias.xhtml">Cancelar</a>
 			<a id="action:confirmar-categoria">Confirmar</a>
 		</fieldset>
