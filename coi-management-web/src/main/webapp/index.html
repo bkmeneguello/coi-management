@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8"/>
+	<title>Centro Ortopédico Ingá</title>
+	<link rel="stylesheet" href="/themes/base/jquery.ui.all.css"/>
+	<link rel="stylesheet" href="/themes/smoothness/jquery-ui.css"/>
+	<link rel="stylesheet" href="/css/global.css"/>
+	<script type="text/javascript" src="/js/jquery-1.9.1.js"></script>
+	<script type="text/javascript" src="/js/ui/jquery-ui.js"></script>
+	<script type="text/javascript" src="/js/noty/jquery.noty.js"></script>
+	<script type="text/javascript" src="/js/noty/layouts/top.js"></script>
+	<script type="text/javascript" src="/js/noty/layouts/center.js"></script>
+	<script type="text/javascript" src="/js/noty/themes/default.js"></script>
+	<script type="text/javascript" src="/js/underscore.js"></script>
+	<script type="text/javascript" src="/js/backbone.js"></script>
+	<script type="text/javascript" src="/js/backbone.marionette.js"></script>
+	<script type="text/javascript" src="/js/Backbone.ModelBinder.js"></script>
+	<script type="text/javascript" src="/js/autoNumeric.js"></script>
+	<script type="text/javascript" src="/js/main.js"></script>
+	<script type="text/javascript" src="/js/coi.js"></script>
+	<script type="text/template" id="index_template">
+<button id="categorias">Categorias</button>
+	</script>
+	<script type="text/template" id="categorias_template">
+<header>Categorias</header>
+<table id="categorias">
+	<thead>
+		<tr>
+			<th>Descrição</th>
+			<th>Ações</th>
+		</tr>
+	</thead>
+	<tbody/>
+</table>
+<footer>
+	<button class="cancel">Cancelar</button>
+	<button class="create">Adicionar</button>
+</footer>
+	</script>
+	<script type="text/template" id="categoria_row_template">
+<td><%= descricao %></td>
+<td>
+	<button class="update">Editar</button>
+	<button class="delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="categoria_template">
+<header>Categoria</header>
+<input type="text" name="descricao" class="required" data-label="Descrição:"/>
+<div class="coi-form-item" id="produtos"/>
+<div class="coi-form-item" id="comissoes"/>
+<footer>
+	<button class="cancelar">Cancelar</button>
+	<button class="confirmar">Confirmar</button>
+</footer>
+	</script>
+	<script type="text/template" id="categoria_produtos_template">
+<label>Produtos:</label>
+<table>
+	<thead>
+		<tr>
+			<th>Código</th>
+			<th>Descrição</th>
+			<th>Custo</th>
+			<th>Preço</th>
+			<th>Ações</th>
+		<tr>
+	</thead>
+	<tbody/>
+</table>
+	</script>
+	<script type="text/template" id="categoria_comissoes_template">
+<label>Comissões:</label>
+<table/>
+	</script>
+	<script type="text/template" id="categoria_comissao_template">
+<td class="coi-row-label"><%= parte %>:</td>
+<td class="coi-row-item">
+	<input type="text" class="percentage" name="porcentagem"/>
+</td>
+	</script>
+	<script type="text/template" id="categoria_produtos_row_template">
+<td><%= codigo %></td>
+<td><%= descricao %></td>
+<td class="decimal"><%= custo %></td>
+<td class="decimal"><%= preco %></td>
+<td>
+	<button class="update">Editar</button>
+	<button class="delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="categoria_produtos_empty_template">
+<td colspan="5">empty</td>
+	</script>
+	<script type="text/template" id="categoria_produto_template">
+<input id="codigo-produto" type="text" class="required" name="codigo" data-label="Código:"/>
+<input id="descricao-produto" type="text" class="required" name="descricao" data-label="Descrição:"/>
+<input id="custo-produto" class="money required" type="text" name="custo" data-label="Custo:"/>
+<input id="preco-produto" class="money required" type="text" name="preco" data-label="Preço:"/>
+	</script>
+</head>
+<body>
+</body>
+</html>

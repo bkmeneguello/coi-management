@@ -4,9 +4,11 @@ import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -16,34 +18,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
 import org.jooq.Record2;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
+
 import com.meneguello.coi.model.tables.records.CategoriaRecord;
 import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.ProdutoRecord;
  
 @Path("/categorias")
 public class CategoriaEndpoint {
-	
-	@GET
-	@Path("/new")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Categoria createNew() throws Exception {
-		return new Transaction<Categoria>() {
-			@Override
-			protected Categoria execute(Executor database) {
-				final Categoria categoria = new Categoria();
-				Result<ParteRecord> partesRecord = database.fetch(PARTE);
-				for (ParteRecord parteRecord : partesRecord) {
-					Comissao comissao = new Comissao();
-					comissao.setParte(parteRecord.getDescricao());
-					categoria.getComissoes().add(comissao);
-				}
-				return categoria;
-			}
-		}.execute();
-	}
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -55,6 +40,7 @@ public class CategoriaEndpoint {
 				Result<CategoriaRecord> resultCategoriaRecord = database.fetch(CATEGORIA);
 				for (CategoriaRecord categoriaRecord : resultCategoriaRecord) {
 					Categoria categoria = new Categoria();
+					categoria.setId(categoriaRecord.getId());
 					categoria.setDescricao(categoriaRecord.getDescricao());
 					categorias.add(categoria);
 				}
@@ -62,13 +48,59 @@ public class CategoriaEndpoint {
 			}
 		}.execute();
 	}
+ 
+	@GET
+	@Path("/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Categoria read(final @PathParam("id") Long id) throws Exception {
+		return new Transaction<Categoria>() {
+			@Override
+			protected Categoria execute(Executor database) {
+				final CategoriaRecord categoriaRecord = database.selectFrom(CATEGORIA)
+						.where(CATEGORIA.ID.eq(id))
+						.fetchOne();
+				final Categoria categoria = new Categoria();
+				categoria.setId(categoriaRecord.getId());
+				categoria.setDescricao(categoriaRecord.getDescricao());
+				
+				final Result<ProdutoRecord> resultProdutoRecord = database.selectFrom(PRODUTO)
+					.where(PRODUTO.CATEGORIA_ID.eq(categoriaRecord.getId()))
+					.fetch();
+				for (ProdutoRecord produtoRecord : resultProdutoRecord) {
+					final Produto produto = new Produto();
+					produto.setCodigo(produtoRecord.getCodigo());
+					produto.setDescricao(produtoRecord.getDescricao());
+					produto.setCusto(produtoRecord.getCusto());
+					produto.setPreco(produtoRecord.getPreco());
+					categoria.getProdutos().add(produto);
+				}
+				
+				final Result<Record2<String, BigDecimal>> result = database.select(
+						PARTE.DESCRICAO,
+						COMISSAO.PORCENTAGEM)
+					.from(COMISSAO)
+					.join(PARTE).onKey()
+					.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
+					.fetch();
+				for (Record2<String, BigDecimal> record : result) {
+					final Comissao comissao = new Comissao();
+					comissao.setParte(record.getValue(PARTE.DESCRICAO));
+					comissao.setPorcentagem(record.getValue(COMISSAO.PORCENTAGEM));
+					categoria.getComissoes().add(comissao);
+				}
+				
+				return categoria;
+			}
+		}.execute();
+	}
 	
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public void create(final Categoria categoria) throws Exception {
-		new Transaction<Void>(true) {
+	@Produces(MediaType.APPLICATION_JSON)
+	public Categoria create(final Categoria categoria) throws Exception {
+		final Long categoriaId = new Transaction<Long>(true) {
 			@Override
-			public Void execute(Executor database) {
+			public Long execute(Executor database) {
 				final CategoriaRecord categoriaRecord = database.insertInto(
 						CATEGORIA, 
 						CATEGORIA.DESCRICAO)
@@ -107,24 +139,22 @@ public class CategoriaEndpoint {
 								comissao.getPorcentagem())
 						.execute();
 				}
-				return null;
+				
+				return categoriaId;
 			}
 		}.execute();
+		
+		return read(categoriaId);
 	}
 	
 	@PUT
-	@Path("/{descricao}")
+	@Path("/{id}")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public void update(final @PathParam("descricao") String descricao, final Categoria categoria) throws Exception {
+	@Produces(MediaType.APPLICATION_JSON)
+	public Categoria update(final @PathParam("id") Long id, final Categoria categoria) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
 			public Void execute(Executor database) {
-				final CategoriaRecord categoriaRecord = database.selectFrom(CATEGORIA)
-						.where(CATEGORIA.DESCRICAO.eq(descricao))
-						.fetchOne();
-				
-				final Long id = categoriaRecord.getId();
-				
 				database.update(CATEGORIA)
 					.set(CATEGORIA.DESCRICAO, categoria.getDescricao())
 					.where(CATEGORIA.ID.eq(id))
@@ -172,64 +202,16 @@ public class CategoriaEndpoint {
 				return null;
 			}
 		}.execute();
-	}
- 
-	@GET
-	@Path("/{descricao}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Categoria read(final @PathParam("descricao") String descricao) throws Exception {
-		return new Transaction<Categoria>() {
-			@Override
-			protected Categoria execute(Executor database) {
-				final CategoriaRecord categoriaRecord = database.selectFrom(CATEGORIA)
-						.where(CATEGORIA.DESCRICAO.eq(descricao))
-						.fetchOne();
-				final Categoria categoria = new Categoria();
-				categoria.setDescricao(categoriaRecord.getDescricao());
-				
-				final Result<ProdutoRecord> resultProdutoRecord = database.selectFrom(PRODUTO)
-					.where(PRODUTO.CATEGORIA_ID.eq(categoriaRecord.getId()))
-					.fetch();
-				for (ProdutoRecord produtoRecord : resultProdutoRecord) {
-					final Produto produto = new Produto();
-					produto.setCodigo(produtoRecord.getCodigo());
-					produto.setDescricao(produtoRecord.getDescricao());
-					produto.setCusto(produtoRecord.getCusto());
-					produto.setPreco(produtoRecord.getPreco());
-					categoria.getProdutos().add(produto);
-				}
-				
-				final Result<Record2<String, BigDecimal>> result = database.select(
-						PARTE.DESCRICAO,
-						COMISSAO.PORCENTAGEM)
-					.from(COMISSAO)
-					.join(PARTE).onKey()
-					.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
-					.fetch();
-				for (Record2<String, BigDecimal> record : result) {
-					final Comissao comissao = new Comissao();
-					comissao.setParte(record.getValue(PARTE.DESCRICAO));
-					comissao.setPorcentagem(record.getValue(COMISSAO.PORCENTAGEM));
-					categoria.getComissoes().add(comissao);
-				}
-				
-				return categoria;
-			}
-		}.execute();
+		
+		return read(id);
 	}
 	
 	@DELETE
-	@Path("/{descricao}")
-	public void delete(final @PathParam("descricao") String descricao) throws Exception {
+	@Path("/{id}")
+	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(Executor database) {
-				final CategoriaRecord categoriaRecord = database.selectFrom(CATEGORIA)
-						.where(CATEGORIA.DESCRICAO.eq(descricao))
-						.fetchOne();
-				
-				final Long id = categoriaRecord.getId();
-				
 				database.delete(PRODUTO)
 					.where(PRODUTO.CATEGORIA_ID.eq(id))
 					.execute();
@@ -251,11 +233,21 @@ public class CategoriaEndpoint {
 
 class Categoria {
 	
+	private Long id;
+	
 	private String descricao;
 	
 	private List<Produto> produtos = new ArrayList<>();
 	
 	private List<Comissao> comissoes = new ArrayList<>();
+	
+	public Long getId() {
+		return id;
+	}
+	
+	public void setId(Long id) {
+		this.id = id;
+	}
 	
 	public String getDescricao() {
 		return descricao;
@@ -284,7 +276,7 @@ class Produto {
 	private BigDecimal custo = BigDecimal.ZERO;
 	
 	private BigDecimal preco = BigDecimal.ZERO;
-
+	
 	public String getCodigo() {
 		return codigo;
 	}

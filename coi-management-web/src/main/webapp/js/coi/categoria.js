@@ -11,6 +11,12 @@ $(function() {
 	var trProdutoEdit = null;
 	$('#action\\:confirmar-produto').button().click(function(e) {
 		e.preventDefault();
+		
+		if($('#action\\:confirmar-produto').find('.error').length) {
+			noty({text: 'Corrija os erros para prosseguir', type: 'warning', timeout: 10000});
+			return;
+		}
+		
 		if (trProdutoEdit) {
 			trProdutoEdit.empty();
 			setProduto(trProdutoEdit, getProdutoForm());
@@ -26,6 +32,20 @@ $(function() {
 	});
 	$('#action\\:confirmar-categoria').button().disable().click(function(e) {
 		e.preventDefault();
+		
+		if($('form').find('.error').length) {
+			noty({text: 'Corrija os erros para prosseguir', type: 'warning', timeout: 10000});
+			return;
+		}
+		
+		var comissoes = 0;
+		$('#list\\:partes').find('input').each(function() {
+			comissoes += parseFloat($(this).val());
+		});
+		if(Math.abs(100 - comissoes) > .01) {
+			noty({text: 'As comissões devem somar 100%', type: 'warning', timeout: 10000});
+			return;
+		}
 		
 		var action = $.urlParam('action');
 		switch(action) {
@@ -63,6 +83,12 @@ $(function() {
 			break;
 		}
 	});
+	
+	$('#input\\:descricao-categoria').validateEmpty();
+	$('#input\\:codigo-produto').validateEmpty();
+	$('#input\\:descricao-produto').validateEmpty();
+	$('#input\\:custo-produto').validatePositive();
+	$('#input\\:preco-produto').validatePositive();
 
 	function getCategoriaForm() {
 		return {
@@ -121,7 +147,8 @@ $(function() {
 				'class': 'valuebox', 
 				type: 'text', 
 				value: comissao.porcentagem
-			}).appendTo(p);
+			}).validatePositive().appendTo(p);
+			$('<span/>', {text: '*', 'class': 'error-mark'}).appendTo(p);
 		});
 		
 		$('#action\\:confirmar-categoria').enable();

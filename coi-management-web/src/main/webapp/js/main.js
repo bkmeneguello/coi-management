@@ -3,116 +3,8 @@
 		return (RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.search)||[,null])[1];
 	};
 	
-	$.fn.table = function(options) {
-		var settings = $.extend({}, options);
-		
-		return this.each(function() {
-			var table = $(this);
-			table.empty();
-			var thead =  $('<thead/>').appendTo(table);
-			var tr =  $('<tr/>').appendTo(thead);
-			$.each(settings.headers, function(index, header) {
-				if (typeof header == 'string') {
-					header = {
-						text: header
-					};
-				}
-				header = $.extend({
-					colspan:1
-				}, header);
-				
-				var td = {};
-				td.text = header.text;
-				if (header.colspan > 1) {
-					td.colspan = header.colspan;
-				}
-				$('<td/>', td).appendTo(tr);
-			});
-			var tbody =  $('<tbody/>').appendTo(table);
-		});
-	};
-	
-	$.fn.dataTable = function(data, options) {
-		var settings = $.extend({
-			headers: []
-		}, options);
-		
-		$.each(settings.headers, function(index, header) {
-			if (!header.renderer) {
-				header.renderer = function(tr, element, property) {
-					$('<td/>', {text: element[property]}).appendTo(tr);
-				};
-			}
-		});
-		
-		function colCount(table) {
-			var count = 0;
-			table.find("thead > tr > td").each(function() {
-				if ($(this).attr('colspan')) {
-					count += +$(this).attr('colspan');
-				} else {
-					count++;
-				}
-			});
-			return count;
-		}
-		
-		var table = this.table(options);
-		table.each(function() {
-			$(this).children('tbody').loadData(data, {
-				onLoading: function(container) {
-					container.empty();
-					var tr = $('<tr/>').appendTo(container);
-					$('<td/>', {colspan:colCount(table), text: 'carregando...'}).appendTo(tr);
-				},
-				onData: function(container) {
-					container.empty();
-				},
-				onElement: function(container, index, element) {
-					var tr = $('<tr/>').appendTo(container);
-					$.each(settings.headers, function(index, header) {
-						header.renderer.apply(this, [tr, element, header.property]);
-					});
-				},
-				onFail: function(container) {
-					container.empty();
-					var tr = $('<tr/>').appendTo(container);
-					$('<td/>', {colspan:colCount(table), text: 'falha'}).appendTo(tr);
-				}
-			});
-		});
-	};
-	
-	//Carrega dados remotos 
-	$.fn.loadData = function(data, options) {
-		var settings = $.extend({
-			onLoading: function() {},
-			onData: function() {},
-			onElement: function() {},
-			onFail: function() {}
-		}, options);
-		
-		this.each(function() {
-			var container = $(this);
-			settings.onLoading.apply(container, [container]);
-			
-			function done(data) {
-				settings.onData.apply(container, [container, data]);
-				$.each(data, function(key, val) {
-					settings.onElement.apply(container, [container, key, val]);
-				});
-			}
-			
-			function fail(jqXHR, textStatus) {
-				settings.onFail.apply(container, [container]);
-			}
-			
-			if (typeof data == 'string') {
-				$.getJSON(data, done).fail(fail);
-			} else if (typeof data == 'object') {
-				done(data);
-			}
-		});
+	$.isBlank = function isBlank(str) {
+	    return (!str || /^\s*$/.test(str));
 	};
 	
 	$.fn.disable = function() {
@@ -126,4 +18,228 @@
 			$(this).removeAttr('disabled');
 		});
 	};
+	
+	$.fn.money = function() {
+		return this.each(function() {
+			$(this).autoNumeric('init', {aSign:'R$ ', aSep: '.', aDec: ',', wEmpty: 'zero'});
+			$(this).on('change blur', function() {
+				$(this).autoNumeric('update');
+			});
+		});
+	};
+	
+	$.fn.decimal = function() {
+		return this.each(function() {
+			$(this).autoNumeric('init', {aSep: '.', aDec: ',', wEmpty: 'zero'});
+			$(this).on('change blur', function() {
+				$(this).autoNumeric('update');
+			});
+		});
+	};
+	
+	$.fn.percentage = function() {
+		return this.each(function() {
+			$(this).autoNumeric('init', {aSign:' %', pSign: 's', aSep: '.', aDec: ',', wEmpty: 'zero'});
+			$(this).on('change blur', function() {
+				$(this).autoNumeric('update');
+			});
+		});
+	};
+	
+	$.widget('coi.validate', {
+		options: {
+			isValid: function() {
+				return true;
+			}
+		},
+		_create: function() {
+			var that = this;
+			this.element
+				.on('focus', function() {
+					that.reset();
+				})
+				.on('change blur', function() {
+					that.validate();
+				});
+		},
+		validate: function() {
+			if (this.options.isValid(this.element.val())) {
+				this.reset();
+			} else {
+				this.element.addClass('invalid');
+				if (this.options.message) {
+					this.element.tooltip({
+						items: '*',
+						content: this.options.message,
+						tooltipClass: 'error'
+					});
+				}
+			}
+		},
+		reset: function() {
+			if (this.element.hasClass('invalid')) {
+				this.element.removeClass('invalid');
+				if (this.element.is(':ui-tooltip')) {
+					this.element.tooltip('destroy');
+				}
+			}
+		}
+	});
+	
+	$.widget('coi.required', {
+		_create: function() {
+			this.element
+				.validate({
+					isValid: function(value) {
+						return !$.isBlank(value);
+					},
+					message: 'Este campo é obrigatório'
+				});
+		}
+	});
+	
+	$.widget("coi.input", {
+		_init: function() {
+			var that = this;
+			this.element
+				.addClass('ui-widget ui-state-default ui-corner-all ui-button')
+				.bind('focus' + this.eventNamespace, function() {
+					that.element.addClass('ui-state-focus');
+				})
+				.bind('blur' + this.eventNamespace, function() {
+					that.element.removeClass('ui-state-focus');
+				});
+		}
+	});
+	
+	$.widget('coi.table', {
+		defaultElement: '<table>',
+		_create: function() {
+			var that = this;
+			if (this.element.is('table')) {
+				this.element
+					.addClass('ui-widget coi-table')
+					.css({borderSpacing: '0', borderCollapse: 'collapse'});
+				
+				if (this.element.data('label')) {
+					$('<label/>', {text: this.element.data('label')}).insertBefore(this.element);
+				}
+				
+				if (this.options.buttons) {
+					var uiDialogButtonPane = $("<div/>")
+						.addClass("ui-dialog-buttonpane ui-widget-content ui-helper-clearfix")
+						.insertAfter(this.element);
+					
+					var uiButtonSet = $("<div/>")
+						.addClass("ui-dialog-buttonset")
+						.appendTo(uiDialogButtonPane);
+					
+					var buttons = this.options.buttons;
+					
+					$.each(buttons, function(name, props) {
+						var click, buttonOptions;
+						props = $.isFunction(props) ? {click: props, text: name} : props;
+						// Default to a non-submitting button
+						props = $.extend({type: "button"}, props);
+						// Change the context for the click callback to be the main element
+						click = props.click;
+						props.click = function() {
+							click.apply( that.element[0], arguments );
+						};
+						buttonOptions = {
+								icons: props.icons,
+								text: props.showText
+						};
+						delete props.icons;
+						delete props.showText;
+						$("<button/>", props)
+							.button(buttonOptions)
+							.appendTo(uiButtonSet);
+					});
+				}
+			}
+		},
+		_init: function() {
+			if (this.element.is('table')) {
+				var header = this.element.children('thead');
+				header.find('th').addClass('ui-widget-header ui-state-default');
+				
+				var body = this.element.children('tbody');
+				body.find('td').addClass('ui-widget-content');
+				
+				body.find('tr').hover(
+					function() {
+						$(this).children('td').addClass('ui-state-hover');
+					},
+					function() {
+						$(this).children('td').removeClass('ui-state-hover');
+					}
+				)
+				.click(function() {
+					$(this).children('td').toggleClass('ui-state-highlight');
+				});
+			}
+		}
+	});
+	
+	$.widget('coi.form', {
+		_create: function() {
+			var form = this.element.closest('form');
+			form.addClass('coi-form ui-dialog ui-widget ui-widget-content ui-corner-all');
+			form.children('header').addClass('ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix');
+			form.children('footer').addClass('ui-dialog-buttonpane ui-widget-content ui-helper-clearfix ui-corner-botton').wrapInner('<div class="ui-dialog-buttonset"/>');
+		},
+		_init: function() {
+			var that = this;
+			var inputs = this.element.find('input,select,textarea,button');
+			$.each(inputs, function() {
+				var input = $(this);
+				
+				if (input.data('label')) {
+					that.label(input);
+				}
+				if(input.is('button', ':reset', ':submit', ':button')) {
+					that.buttons(input);
+				} else if(input.is(':checkbox')) {
+					that.checkboxes(input);
+				} else if(input.is('input[type=text]', 'textarea', 'input[type=password]')) {
+					that.text(input);
+				} else if(input.is(':radio')) {
+					that.radio(input);
+				} else if(input.is('select')) {
+					that.selector(input);
+				}
+			});
+			this.element.find('.money').money();
+			this.element.find('.decimal').decimal();
+			this.element.find('.percentage').percentage();
+			this.element.find('.required').required();
+		},
+		label: function(element) {
+			if (!element.hasClass('coi-form-input')) {
+				element.addClass('coi-form-input')
+					.wrap($('<dl/>', {'class': 'coi-form-item'}))
+					.before($('<dt/>', {text: element.data('label')}))
+					.wrap('<dd/>');
+			}
+		},
+		text: function(element) {
+			element.input();
+			if(element.hasClass('date')) {
+				element.datepicker();
+			}
+		},
+		buttons: function(element) {
+			element.button();
+		},
+		checkboxes: function(element) {
+			element.button();
+		},
+		radio: function(element) {
+			element.button();
+		},
+		selector: function(element) {
+			element.button();
+		}
+	});
 })(jQuery);

@@ -13,7 +13,7 @@ public abstract class Transaction<T> {
 	private boolean atomic;
 	
 	public Transaction() {
-		
+		this(false);
 	}
 
 	public Transaction(boolean atomic) {
