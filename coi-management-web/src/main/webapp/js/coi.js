@@ -280,12 +280,8 @@
 			template: '#categoria_produtos_template',
 			itemView: CategoriaProdutosRowView,
 			itemViewContainer: 'tbody',
-			events: {
-				'click .adicionar': 'doCreate'
-			},
 			ui: {
-				'produtos': 'table',
-				'actions': 'footer'
+				'produtos': 'table'
 			},
 			initialize: function() {
 				_.bindAll(this);
@@ -363,7 +359,7 @@
 			doConfirm: function(e) {
 				e.preventDefault();
 				if (_validate(this)) {
-					if (this.model.save()) {
+					if (this.model.save(null, {wait: true})) {
 						Backbone.history.navigate('categorias', true);
 						_notifySuccess();
 					}
