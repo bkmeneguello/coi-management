@@ -37,25 +37,25 @@
 	<tbody/>
 </table>
 <footer>
-	<button class="cancel">Cancelar</button>
-	<button class="create">Adicionar</button>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
 	<script type="text/template" id="categoria_row_template">
 <td><%= descricao %></td>
 <td>
-	<button class="update">Editar</button>
-	<button class="delete">Remover</button>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
 </td>
 	</script>
 	<script type="text/template" id="categoria_template">
 <header>Categoria</header>
-<input type="text" name="descricao" class="required" data-label="Descrição:"/>
+<input type="text" name="descricao" class="coi-validation-required" data-label="Descrição:"/>
 <div class="coi-form-item" id="produtos"/>
 <div class="coi-form-item" id="comissoes"/>
 <footer>
-	<button class="cancelar">Cancelar</button>
-	<button class="confirmar">Confirmar</button>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
 	<script type="text/template" id="categoria_produtos_template">
@@ -80,24 +80,24 @@
 	<script type="text/template" id="categoria_comissao_template">
 <td class="coi-row-label"><%= parte %>:</td>
 <td class="coi-row-item">
-	<input type="text" class="percentage" name="porcentagem"/>
+	<input type="text" class="coi-format-percentage" name="porcentagem"/>
 </td>
 	</script>
 	<script type="text/template" id="categoria_produtos_row_template">
 <td><%= codigo %></td>
 <td><%= descricao %></td>
-<td class="decimal"><%= custo %></td>
-<td class="decimal"><%= preco %></td>
+<td class="coi-format-decimal"><%= custo %></td>
+<td class="coi-format-decimal"><%= preco %></td>
 <td>
-	<button class="update">Editar</button>
-	<button class="delete">Remover</button>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
 </td>
 	</script>
 	<script type="text/template" id="categoria_produto_template">
-<input id="codigo-produto" type="text" class="required" name="codigo" data-label="Código:"/>
-<input id="descricao-produto" type="text" class="required" name="descricao" data-label="Descrição:"/>
-<input id="custo-produto" class="money required" type="text" name="custo" data-label="Custo:"/>
-<input id="preco-produto" class="money required" type="text" name="preco" data-label="Preço:"/>
+<input id="codigo-produto" type="text" class="coi-validation-required" name="codigo" data-label="Código:"/>
+<input id="descricao-produto" type="text" class="coi-validation-required" name="descricao" data-label="Descrição:"/>
+<input id="custo-produto" class="coi-format-money coi-validation-required" type="text" name="custo" data-label="Custo:"/>
+<input id="preco-produto" class="coi-format-money coi-validation-required" type="text" name="preco" data-label="Preço:"/>
 	</script>
 	<script type="text/template" id="pessoas_template">
 <header>Pessoas</header>
@@ -112,42 +112,42 @@
 	<tbody/>
 </table>
 <footer>
-	<button class="cancel">Cancelar</button>
-	<button class="create">Adicionar</button>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
 	<script type="text/template" id="categoria_row_template">
 <td><%= nome %></td>
 <td><%= codigo %></td>
 <td>
-	<button class="update">Editar</button>
-	<button class="delete">Remover</button>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
 </td>
 	</script>
 	<script type="text/template" id="pessoa_template">
 <header>Pessoa</header>
-<input type="text" name="nome" class="required" data-label="Nome:"/>
-<input type="text" name="codigo" class="required" data-label="Código:"/>
+<input type="text" name="nome" class="coi-validation-required" data-label="Nome:"/>
+<input type="text" name="codigo" class="coi-validation-required" data-label="Código:"/>
 <div class="coi-form-item" id="partes"/>
 <footer>
-	<button class="cancelar">Cancelar</button>
-	<button class="confirmar">Confirmar</button>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
 	<script type="text/template" id="pessoa_partes_template">
 <label>Partes:</label>
 <div class="coi-form-item">
-<select>
-	<% _.each(partes_list, function(parte) { %>
-	<option><%= parte %></option>
-	<%}); %>
-</select>
-<button class="add">Adicionar</button>
+	<select>
+		<% _.each(partes_list, function(parte) { %>
+		<option><%= parte %></option>
+		<%}); %>
+	</select>
+	<button class="coi-action-include">Adicionar</button>
 </div>
 <dl/>
 	</script>
 	<script type="text/template" id="pessoa_parte_template">
-<span></span>
+<span><%= descricao %></span>
 <button>Remover</button>
 	</script>
 </head>

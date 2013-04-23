@@ -2,7 +2,7 @@
 	$(function() {
 		function _validate(element) {
 			element.$(':coi-validate').validate('validate');
-			if(element.$('.invalid').length) {
+			if(element.$('.coi-validation-invalid').length) {
 				_notifyValidation();
 				return false;
 			}
@@ -173,8 +173,8 @@
 			tagName: 'tr',
 			template: '#categoria_row_template',
 			events: {
-				'click .update': 'doUpdate',
-				'click .delete': 'doDelete'
+				'click .coi-action-update': 'doUpdate',
+				'click .coi-action-delete': 'doDelete'
 			},
 			initialize: function() {
 				_.bindAll(this);
@@ -210,8 +210,8 @@
 			itemViewContainer: 'tbody',
 			template: '#categorias_template',
 			events: {
-				'click .cancel': 'doCancel',
-				'click .create': 'doCreate'
+				'click .coi-action-cancel': 'doCancel',
+				'click .coi-action-create': 'doCreate'
 			},
 			ui: {
 				'table': 'table'
@@ -284,8 +284,8 @@
 			tagName: 'tr',
 			template: '#categoria_produtos_row_template',
 			events: {
-				'click .update': 'onUpdate',
-				'click .delete': 'onDelete'
+				'click .coi-action-update': 'onUpdate',
+				'click .coi-action-delete': 'onDelete'
 			},
 			initialize: function() {
 				_.bindAll(this);
@@ -364,8 +364,8 @@
 				return new Backbone.ModelBinder();
 			},
 			events: {
-				'click .confirmar': 'doConfirm',
-				'click .cancelar': 'doCancel'
+				'click .coi-action-confirm': 'doConfirm',
+				'click .coi-action-cancel': 'doCancel'
 			},
 			regions: {
 				'produtos': '#produtos',
@@ -415,10 +415,16 @@
 			doConfirm: function(e) {
 				e.preventDefault();
 				if (_validate(this)) {
-					if (this.model.save(null, {wait: true})) {
-						Backbone.history.navigate('categorias', true);
-						_notifySuccess();
-					}
+					this.model.save(
+						null, 
+						{
+							wait: true, 
+							success: function() {
+								Backbone.history.navigate('categorias', true);
+								_notifySuccess();
+							}
+						}
+					);
 				}
 			}
 		});
@@ -427,8 +433,8 @@
 			tagName: 'tr',
 			template: '#pessoa_row_template',
 			events: {
-				'click .update': 'doUpdate',
-				'click .delete': 'doDelete'
+				'click .coi-action-update': 'doUpdate',
+				'click .coi-action-delete': 'doDelete'
 			},
 			initialize: function() {
 				_.bindAll(this);
@@ -464,8 +470,8 @@
 			itemViewContainer: 'tbody',
 			template: '#pessoas_template',
 			events: {
-				'click .cancel': 'doCancel',
-				'click .create': 'doCreate'
+				'click .coi-action-cancel': 'doCancel',
+				'click .coi-action-create': 'doCreate'
 			},
 			ui: {
 				'table': 'table'
@@ -534,8 +540,8 @@
 				return new Backbone.ModelBinder();
 			},
 			events: {
-				'click .confirmar': 'doConfirm',
-				'click .cancelar': 'doCancel'
+				'click .coi-action-confirm': 'doConfirm',
+				'click .coi-action-cancel': 'doCancel'
 			},
 			regions: {
 				'partes': '#partes'
