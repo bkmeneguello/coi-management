@@ -66,3 +66,23 @@ th.ui-widget-header {
 .no-close .ui-dialog-titlebar-close {
 	display: none;
 }
+
+.coi-action-cancel, 
+.coi-action-create, 
+.coi-action-update, 
+.coi-action-delete, 
+.coi-action-confirm, 
+.coi-action-include {
+	
+}
+
+.coi-validation-invalid,
+.coi-validation-required {
+	
+}
+
+.coi-format-money,
+.coi-format-decimal,
+.coi-format-percentage {
+	
+}

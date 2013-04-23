@@ -39,16 +39,21 @@ public class CategoriaEndpoint {
 				ArrayList<Categoria> categorias = new ArrayList<Categoria>();
 				Result<CategoriaRecord> resultCategoriaRecord = database.fetch(CATEGORIA);
 				for (CategoriaRecord categoriaRecord : resultCategoriaRecord) {
-					Categoria categoria = new Categoria();
-					categoria.setId(categoriaRecord.getId());
-					categoria.setDescricao(categoriaRecord.getDescricao());
-					categorias.add(categoria);
+					categorias.add(buildCategoria(categoriaRecord));
 				}
 				return categorias;
 			}
+
 		}.execute();
 	}
- 
+	
+	private Categoria buildCategoria(CategoriaRecord categoriaRecord) {
+		final Categoria categoria = new Categoria();
+		categoria.setId(categoriaRecord.getId());
+		categoria.setDescricao(categoriaRecord.getDescricao());
+		return categoria;
+	}
+	
 	@GET
 	@Path("/{id}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -59,29 +64,24 @@ public class CategoriaEndpoint {
 				final CategoriaRecord categoriaRecord = database.selectFrom(CATEGORIA)
 						.where(CATEGORIA.ID.eq(id))
 						.fetchOne();
-				final Categoria categoria = new Categoria();
-				categoria.setId(categoriaRecord.getId());
-				categoria.setDescricao(categoriaRecord.getDescricao());
+				final Categoria categoria = buildCategoria(categoriaRecord);
 				
 				final Result<ProdutoRecord> resultProdutoRecord = database.selectFrom(PRODUTO)
-					.where(PRODUTO.CATEGORIA_ID.eq(categoriaRecord.getId()))
-					.fetch();
+						.where(PRODUTO.CATEGORIA_ID.eq(categoriaRecord.getId()))
+						.fetch();
 				for (ProdutoRecord produtoRecord : resultProdutoRecord) {
-					final Produto produto = new Produto();
-					produto.setCodigo(produtoRecord.getCodigo());
-					produto.setDescricao(produtoRecord.getDescricao());
-					produto.setCusto(produtoRecord.getCusto());
-					produto.setPreco(produtoRecord.getPreco());
-					categoria.getProdutos().add(produto);
+					categoria.getProdutos().add(buildProduto(produtoRecord));
 				}
 				
 				final Result<Record2<String, BigDecimal>> result = database.select(
-						PARTE.DESCRICAO,
-						COMISSAO.PORCENTAGEM)
-					.from(COMISSAO)
-					.join(PARTE).onKey()
-					.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
-					.fetch();
+							PARTE.DESCRICAO,
+							COMISSAO.PORCENTAGEM
+						)
+						.from(COMISSAO)
+						.join(PARTE).onKey()
+						.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
+						.fetch();
+				
 				for (Record2<String, BigDecimal> record : result) {
 					final Comissao comissao = new Comissao();
 					comissao.setParte(record.getValue(PARTE.DESCRICAO));
@@ -91,7 +91,17 @@ public class CategoriaEndpoint {
 				
 				return categoria;
 			}
+
 		}.execute();
+	}
+	
+	private Produto buildProduto(ProdutoRecord produtoRecord) {
+		final Produto produto = new Produto();
+		produto.setCodigo(produtoRecord.getCodigo());
+		produto.setDescricao(produtoRecord.getDescricao());
+		produto.setCusto(produtoRecord.getCusto());
+		produto.setPreco(produtoRecord.getPreco());
+		return produto;
 	}
 	
 	@POST
@@ -156,33 +166,33 @@ public class CategoriaEndpoint {
 			@Override
 			public Void execute(Executor database) {
 				database.update(CATEGORIA)
-					.set(CATEGORIA.DESCRICAO, categoria.getDescricao())
-					.where(CATEGORIA.ID.eq(id))
-					.execute();
+						.set(CATEGORIA.DESCRICAO, categoria.getDescricao())
+						.where(CATEGORIA.ID.eq(id))
+						.execute();
 
 				database.delete(PRODUTO)
-					.where(PRODUTO.CATEGORIA_ID.eq(id))
-					.execute();
+						.where(PRODUTO.CATEGORIA_ID.eq(id))
+						.execute();
 				
 				for (Produto produto : categoria.getProdutos()) {
 					database.insertInto(PRODUTO, 
-							PRODUTO.CATEGORIA_ID, 
-							PRODUTO.CODIGO, 
-							PRODUTO.DESCRICAO, 
-							PRODUTO.CUSTO, 
-							PRODUTO.PRECO)
-						.values(
-								id, 
-								produto.getCodigo(), 
-								produto.getDescricao(), 
-								produto.getCusto(), 
-								produto.getPreco())
-						.execute();
+								PRODUTO.CATEGORIA_ID, 
+								PRODUTO.CODIGO, 
+								PRODUTO.DESCRICAO, 
+								PRODUTO.CUSTO, 
+								PRODUTO.PRECO)
+							.values(
+									id, 
+									produto.getCodigo(), 
+									produto.getDescricao(), 
+									produto.getCusto(), 
+									produto.getPreco())
+							.execute();
 				}
 				
 				database.delete(COMISSAO)
-					.where(COMISSAO.CATEGORIA_ID.eq(id))
-					.execute();
+						.where(COMISSAO.CATEGORIA_ID.eq(id))
+						.execute();
 				
 				for (Comissao comissao : categoria.getComissoes()) {
 					final ParteRecord parteRecord = database.selectFrom(PARTE)
@@ -190,14 +200,14 @@ public class CategoriaEndpoint {
 							.fetchOne();
 					
 					database.insertInto(COMISSAO, 
-							COMISSAO.CATEGORIA_ID, 
-							COMISSAO.PARTE_ID, 
-							COMISSAO.PORCENTAGEM)
-						.values(
-								id, 
-								parteRecord.getId(), 
-								comissao.getPorcentagem())
-						.execute();
+								COMISSAO.CATEGORIA_ID, 
+								COMISSAO.PARTE_ID, 
+								COMISSAO.PORCENTAGEM)
+							.values(
+									id, 
+									parteRecord.getId(), 
+									comissao.getPorcentagem())
+							.execute();
 				}
 				return null;
 			}

@@ -19,32 +19,35 @@
 		});
 	};
 	
-	$.fn.money = function() {
-		return this.each(function() {
-			$(this).autoNumeric('init', {aSign:'R$ ', aSep: '.', aDec: ',', wEmpty: 'zero'});
-			$(this).on('change blur', function() {
-				$(this).autoNumeric('update');
+	$.widget('coi.money', {
+		_create: function() {
+			var element = this.element;
+			element.autoNumeric('init', {aSign:'R$ ', aSep: '.', aDec: ',', wEmpty: 'zero'});
+			element.on('change blur', function() {
+				element.autoNumeric('update');
 			});
-		});
-	};
+		}
+	});
 	
-	$.fn.decimal = function() {
-		return this.each(function() {
-			$(this).autoNumeric('init', {aSep: '.', aDec: ',', wEmpty: 'zero'});
-			$(this).on('change blur', function() {
-				$(this).autoNumeric('update');
+	$.widget('coi.decimal', {
+		_create: function() {
+			var element = this.element;
+			element.autoNumeric('init', {aSep: '.', aDec: ',', wEmpty: 'zero'});
+			element.on('change blur', function() {
+				element.autoNumeric('update');
 			});
-		});
-	};
+		}
+	});
 	
-	$.fn.percentage = function() {
-		return this.each(function() {
-			$(this).autoNumeric('init', {aSign:' %', pSign: 's', aSep: '.', aDec: ',', wEmpty: 'zero'});
-			$(this).on('change blur', function() {
-				$(this).autoNumeric('update');
+	$.widget('coi.percentage', {
+		_create: function() {
+			var element = this.element;
+			element.autoNumeric('init', {aSign:' %', pSign: 's', aSep: '.', aDec: ',', wEmpty: 'zero'});
+			element.on('change blur', function() {
+				element.autoNumeric('update');
 			});
-		});
-	};
+		}
+	});
 	
 	$.widget('coi.validate', {
 		options: {
@@ -66,7 +69,7 @@
 			if (this.options.isValid(this.element.val())) {
 				this.reset();
 			} else {
-				this.element.addClass('invalid');
+				this.element.addClass('coi-validation-invalid');
 				if (this.options.message) {
 					this.element.tooltip({
 						items: '*',
@@ -77,8 +80,8 @@
 			}
 		},
 		reset: function() {
-			if (this.element.hasClass('invalid')) {
-				this.element.removeClass('invalid');
+			if (this.element.hasClass('coi-validation-invalid')) {
+				this.element.removeClass('coi-validation-invalid');
 				if (this.element.is(':ui-tooltip')) {
 					this.element.tooltip('destroy');
 				}
@@ -210,10 +213,10 @@
 					that.selector(input);
 				}
 			});
-			this.element.find('.money').money();
-			this.element.find('.decimal').decimal();
-			this.element.find('.percentage').percentage();
-			this.element.find('.required').required();
+			this.element.find('.coi-format-money').money();
+			this.element.find('.coi-format-decimal').decimal();
+			this.element.find('.coi-format-percentage').percentage();
+			this.element.find('.coi-validation-required').required();
 		},
 		label: function(element) {
 			if (!element.hasClass('coi-form-input')) {
