@@ -17,8 +17,14 @@
 	<script type="text/javascript" src="/js/backbone.marionette.js"></script>
 	<script type="text/javascript" src="/js/Backbone.ModelBinder.js"></script>
 	<script type="text/javascript" src="/js/autoNumeric.js"></script>
-	<script type="text/javascript" src="/js/main.js"></script>
+	<script type="text/javascript" src="/js/coi-utils.js"></script>
 	<script type="text/javascript" src="/js/coi.js"></script>
+	<script type="text/javascript" src="/js/coi-categorias.js"></script>
+	<script type="text/javascript" src="/js/coi-categoria.js"></script>
+	<script type="text/javascript" src="/js/coi-pessoas.js"></script>
+	<script type="text/javascript" src="/js/coi-pessoa.js"></script>
+	<script type="text/javascript" src="/js/coi-entradas.js"></script>
+	<script type="text/javascript" src="/js/coi-start.js"></script>
 	<script type="text/template" id="index_template">
 <button id="categorias">Categorias</button>
 <button id="pessoas">Pessoas</button>
@@ -116,7 +122,7 @@
 	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
-	<script type="text/template" id="categoria_row_template">
+	<script type="text/template" id="pessoa_row_template">
 <td><%= nome %></td>
 <td><%= codigo %></td>
 <td>
@@ -137,18 +143,49 @@
 	<script type="text/template" id="pessoa_partes_template">
 <label>Partes:</label>
 <div class="coi-form-item">
-	<select>
+	<select id="parte">
 		<% _.each(partes_list, function(parte) { %>
 		<option><%= parte %></option>
 		<%}); %>
 	</select>
 	<button class="coi-action-include">Adicionar</button>
 </div>
-<dl/>
+<table/>
 	</script>
 	<script type="text/template" id="pessoa_parte_template">
-<span><%= descricao %></span>
-<button>Remover</button>
+<td class="coi-row-item"><%= descricao %></td>
+<td class="coi-row-item">
+	<button class="coi-action-remove">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="entradas_template">
+<header>Entradas</header>
+<table>
+	<thead>
+		<tr>
+			<th>Data</th>
+			<th>Cliente</th>
+			<th>Valor</th>
+			<th>Tipo</th>
+			<th>Ações</th>
+		</tr>
+	</thead>
+	<tbody/>
+</table>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-create">Adicionar</button>
+</footer>
+	</script>
+	<script type="text/template" id="entrada_row_template">
+<td><%= data %></td>
+<td><%= cliente %></td>
+<td><%= valor %></td>
+<td><%= tipo %></td>
+<td>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
 	</script>
 </head>
 <body>

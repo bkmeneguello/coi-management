@@ -74,7 +74,7 @@
 					this.element.tooltip({
 						items: '*',
 						content: this.options.message,
-						tooltipClass: 'error'
+						tooltipClass: 'coi-tooltip-error'
 					});
 				}
 			}

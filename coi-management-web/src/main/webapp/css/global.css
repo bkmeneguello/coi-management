@@ -55,11 +55,11 @@ th.ui-widget-header {
 	width: 200px;
 }
 
-.coi-form-item input[type=text].invalid {
+.coi-form-item input[type=text].coi-validation-invalid {
 	border: 2px solid red;
 }
 
-.ui-tooltip.error {
+.ui-tooltip.coi-tooltip-error {
 	color: red;
 }
 
@@ -72,7 +72,8 @@ th.ui-widget-header {
 .coi-action-update, 
 .coi-action-delete, 
 .coi-action-confirm, 
-.coi-action-include {
+.coi-action-include,
+.coi-action-remove {
 	
 }
 

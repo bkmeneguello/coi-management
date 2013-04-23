@@ -73,7 +73,7 @@ public class CategoriaEndpoint {
 					categoria.getProdutos().add(buildProduto(produtoRecord));
 				}
 				
-				final Result<Record2<String, BigDecimal>> result = database.select(
+				final Result<Record2<String, BigDecimal>> recordsComissao = database.select(
 							PARTE.DESCRICAO,
 							COMISSAO.PORCENTAGEM
 						)
@@ -82,10 +82,10 @@ public class CategoriaEndpoint {
 						.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
 						.fetch();
 				
-				for (Record2<String, BigDecimal> record : result) {
+				for (Record2<String, BigDecimal> recordComissao : recordsComissao) {
 					final Comissao comissao = new Comissao();
-					comissao.setParte(record.getValue(PARTE.DESCRICAO));
-					comissao.setPorcentagem(record.getValue(COMISSAO.PORCENTAGEM));
+					comissao.setParte(recordComissao.getValue(PARTE.DESCRICAO));
+					comissao.setPorcentagem(recordComissao.getValue(COMISSAO.PORCENTAGEM));
 					categoria.getComissoes().add(comissao);
 				}
 				
@@ -112,27 +112,30 @@ public class CategoriaEndpoint {
 			@Override
 			public Long execute(Executor database) {
 				final CategoriaRecord categoriaRecord = database.insertInto(
-						CATEGORIA, 
-						CATEGORIA.DESCRICAO)
-					.values(categoria.getDescricao())
-					.returning(CATEGORIA.ID)
-					.fetchOne();
+							CATEGORIA, 
+							CATEGORIA.DESCRICAO
+						)
+						.values(categoria.getDescricao())
+						.returning(CATEGORIA.ID)
+						.fetchOne();
 				
-				final Long categoriaId = categoriaRecord.getId();
+				final Long id = categoriaRecord.getId();
 				for (Produto produto : categoria.getProdutos()) {
 					database.insertInto(PRODUTO, 
-							PRODUTO.CATEGORIA_ID, 
-							PRODUTO.CODIGO, 
-							PRODUTO.DESCRICAO, 
-							PRODUTO.CUSTO, 
-							PRODUTO.PRECO)
-						.values(
-								categoriaId, 
-								produto.getCodigo(), 
-								produto.getDescricao(), 
-								produto.getCusto(), 
-								produto.getPreco())
-						.execute();
+								PRODUTO.CATEGORIA_ID, 
+								PRODUTO.CODIGO, 
+								PRODUTO.DESCRICAO, 
+								PRODUTO.CUSTO, 
+								PRODUTO.PRECO
+							)
+							.values(
+									id, 
+									produto.getCodigo(), 
+									produto.getDescricao(), 
+									produto.getCusto(), 
+									produto.getPreco()
+							)
+							.execute();
 				}
 				for (Comissao comissao : categoria.getComissoes()) {
 					final ParteRecord parteRecord = database.selectFrom(PARTE)
@@ -140,17 +143,18 @@ public class CategoriaEndpoint {
 							.fetchOne();
 					
 					database.insertInto(COMISSAO, 
-							COMISSAO.CATEGORIA_ID, 
-							COMISSAO.PARTE_ID, 
-							COMISSAO.PORCENTAGEM)
-						.values(
-								categoriaId, 
-								parteRecord.getId(), 
-								comissao.getPorcentagem())
-						.execute();
+								COMISSAO.CATEGORIA_ID, 
+								COMISSAO.PARTE_ID, 
+								COMISSAO.PORCENTAGEM
+							)
+							.values(
+									id, 
+									parteRecord.getId(), 
+									comissao.getPorcentagem())
+							.execute();
 				}
 				
-				return categoriaId;
+				return id;
 			}
 		}.execute();
 		
@@ -180,7 +184,8 @@ public class CategoriaEndpoint {
 								PRODUTO.CODIGO, 
 								PRODUTO.DESCRICAO, 
 								PRODUTO.CUSTO, 
-								PRODUTO.PRECO)
+								PRODUTO.PRECO
+							)
 							.values(
 									id, 
 									produto.getCodigo(), 
@@ -202,13 +207,15 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE_ID, 
-								COMISSAO.PORCENTAGEM)
+								COMISSAO.PORCENTAGEM
+							)
 							.values(
 									id, 
 									parteRecord.getId(), 
 									comissao.getPorcentagem())
 							.execute();
 				}
+				
 				return null;
 			}
 		}.execute();
@@ -223,16 +230,16 @@ public class CategoriaEndpoint {
 			@Override
 			protected Void execute(Executor database) {
 				database.delete(PRODUTO)
-					.where(PRODUTO.CATEGORIA_ID.eq(id))
-					.execute();
+						.where(PRODUTO.CATEGORIA_ID.eq(id))
+						.execute();
 			
 				database.delete(COMISSAO)
-					.where(COMISSAO.CATEGORIA_ID.eq(id))
-					.execute();
+						.where(COMISSAO.CATEGORIA_ID.eq(id))
+						.execute();
 				
 				database.delete(CATEGORIA)
-					.where(CATEGORIA.ID.eq(id))
-					.execute();
+						.where(CATEGORIA.ID.eq(id))
+						.execute();
 				
 				return null;
 			}
