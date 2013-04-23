@@ -239,7 +239,7 @@
 			element.button();
 		},
 		selector: function(element) {
-			element.button();
+			element.input();
 		}
 	});
 })(jQuery);

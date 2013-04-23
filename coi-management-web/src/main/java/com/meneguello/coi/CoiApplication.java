@@ -52,7 +52,7 @@ public class CoiApplication extends PackagesResourceConfig implements ServletCon
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
 		logger.info("Coi Application start");
-		Integer versao = obtemVersaoInstalada();
+		//Integer versao = obtemVersaoInstalada();
 	}
 
 	private Integer obtemVersaoInstalada() {

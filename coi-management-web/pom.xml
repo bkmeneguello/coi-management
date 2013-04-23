@@ -115,7 +115,7 @@
 					<tomcatUsers>${basedir}/tomcat-users.xml</tomcatUsers>
 					<systemProperties>
 						<database.driver>org.hsqldb.jdbc.JDBCDriver</database.driver>
-						<database.url>jdbc:hsqldb:file:${project.build.directory}/db/schema;shutdown=true</database.url>
+						<database.url>jdbc:hsqldb:file:${project.build.directory}/db/schema</database.url>
 						<database.username>SA</database.username>
 						<database.password></database.password>
 					</systemProperties>

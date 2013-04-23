@@ -21,6 +21,9 @@
 	<script type="text/javascript" src="/js/coi.js"></script>
 	<script type="text/template" id="index_template">
 <button id="categorias">Categorias</button>
+<button id="pessoas">Pessoas</button>
+<button id="entradas">Entradas</button>
+<button id="cheques">Cheques</button>
 	</script>
 	<script type="text/template" id="categorias_template">
 <header>Categorias</header>
@@ -90,14 +93,62 @@
 	<button class="delete">Remover</button>
 </td>
 	</script>
-	<script type="text/template" id="categoria_produtos_empty_template">
-<td colspan="5">empty</td>
-	</script>
 	<script type="text/template" id="categoria_produto_template">
 <input id="codigo-produto" type="text" class="required" name="codigo" data-label="Código:"/>
 <input id="descricao-produto" type="text" class="required" name="descricao" data-label="Descrição:"/>
 <input id="custo-produto" class="money required" type="text" name="custo" data-label="Custo:"/>
 <input id="preco-produto" class="money required" type="text" name="preco" data-label="Preço:"/>
+	</script>
+	<script type="text/template" id="pessoas_template">
+<header>Pessoas</header>
+<table id="pessoas">
+	<thead>
+		<tr>
+			<th>Nome</th>
+			<th>Código</th>
+			<th>Ações</th>
+		</tr>
+	</thead>
+	<tbody/>
+</table>
+<footer>
+	<button class="cancel">Cancelar</button>
+	<button class="create">Adicionar</button>
+</footer>
+	</script>
+	<script type="text/template" id="categoria_row_template">
+<td><%= nome %></td>
+<td><%= codigo %></td>
+<td>
+	<button class="update">Editar</button>
+	<button class="delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="pessoa_template">
+<header>Pessoa</header>
+<input type="text" name="nome" class="required" data-label="Nome:"/>
+<input type="text" name="codigo" class="required" data-label="Código:"/>
+<div class="coi-form-item" id="partes"/>
+<footer>
+	<button class="cancelar">Cancelar</button>
+	<button class="confirmar">Confirmar</button>
+</footer>
+	</script>
+	<script type="text/template" id="pessoa_partes_template">
+<label>Partes:</label>
+<div class="coi-form-item">
+<select>
+	<% _.each(partes_list, function(parte) { %>
+	<option><%= parte %></option>
+	<%}); %>
+</select>
+<button class="add">Adicionar</button>
+</div>
+<dl/>
+	</script>
+	<script type="text/template" id="pessoa_parte_template">
+<span></span>
+<button>Remover</button>
 	</script>
 </head>
 <body>

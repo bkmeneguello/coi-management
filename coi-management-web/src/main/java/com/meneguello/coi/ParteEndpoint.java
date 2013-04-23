@@ -25,7 +25,29 @@ public class ParteEndpoint {
 			@Override
 			protected List<Parte> execute(Executor database) {
 				ArrayList<Parte> partes = new ArrayList<Parte>();
-				Result<ParteRecord> partesRecord = database.fetch(PARTE);
+				Result<ParteRecord> partesRecord = database.selectFrom(PARTE)
+						.fetch();
+				for (ParteRecord parteRecord : partesRecord) {
+					Parte parte = new Parte();
+					parte.setDescricao(parteRecord.getDescricao());
+					partes.add(parte);
+				}
+				return partes;
+			}
+		}.execute();
+	}
+	
+	@GET
+	@Path("/comissionadas")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Parte> listComissionadas() throws Exception {
+		return new Transaction<List<Parte>>() {
+			@Override
+			protected List<Parte> execute(Executor database) {
+				ArrayList<Parte> partes = new ArrayList<Parte>();
+				Result<ParteRecord> partesRecord = database.selectFrom(PARTE)
+						.where(PARTE.COMISSIONADO.eq("S"))
+						.fetch();
 				for (ParteRecord parteRecord : partesRecord) {
 					Parte parte = new Parte();
 					parte.setDescricao(parteRecord.getDescricao());

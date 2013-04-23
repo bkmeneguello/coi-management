@@ -76,10 +76,15 @@
 			}
 		});
 		
+		var PartesComissionadas = Backbone.Collection.extend({
+			url: '/rest/partes/comissionadas',
+			model: Parte
+		});
+		
 		var Partes = Backbone.Collection.extend({
 			url: '/rest/partes',
 			model: Parte
-		});		
+		});
 		
 		var Produto = Backbone.Model.extend({
 			defaults: {
@@ -126,9 +131,28 @@
 			model: Categoria
 		});
 		
+		var Pessoa = Backbone.Model.extend({
+			urlRoot: '/rest/pessoas',
+			defaults: {
+				nome: null,
+				codigo: 0,
+				partes: new Partes()
+			},
+			parse: function(resp, options) {
+				resp.partes = new Partes(resp.partes);
+				return resp;
+			}
+		});
+		
+		var Pessoas = Backbone.Collection.extend({
+			url: '/rest/pessoas',
+			model: Pessoa
+		});
+		
 		var AppView = Marionette.ItemView.extend({
 			events: {
-				'click #categorias': 'categorias'
+				'click #categorias': 'categorias',
+				'click #pessoas': 'pessoas'
 			},
 			template: '#index_template',
 			initialize: function() {
@@ -139,6 +163,9 @@
 			},
 			categorias: function(e) {
 				Backbone.history.navigate('categorias', true);
+			},
+			pessoas: function(e) {
+				Backbone.history.navigate('pessoas', true);
 			}
 		});
 		
@@ -162,9 +189,9 @@
 			doDelete: function(e) {
 				e.preventDefault();
 				
-				var categoria = this.model;
+				var model = this.model;
 		      	_promptDelete(function() {
-					categoria.destroy({
+					model.destroy({
 						wait: true,
 						success: function(model, response, options) {
 							_notifyDelete();
@@ -191,6 +218,7 @@
 			},
 			initialize: function() {
 				_.bindAll(this);
+				this.collection.fetch();
 			},
 			onRender: function() {
 				this.$el.form();
@@ -280,12 +308,8 @@
 			template: '#categoria_produtos_template',
 			itemView: CategoriaProdutosRowView,
 			itemViewContainer: 'tbody',
-			events: {
-				'click .adicionar': 'doCreate'
-			},
 			ui: {
-				'produtos': 'table',
-				'actions': 'footer'
+				'produtos': 'table'
 			},
 			initialize: function() {
 				_.bindAll(this);
@@ -349,12 +373,40 @@
 			},
 			initialize: function() {
 				_.bindAll(this);
+				this.listenTo(this.model, 'change:produtos', this.renderProdutos);
+				this.listenTo(this.model, 'change:comissoes', this.renderComissoes);
+				if (this.model.isNew()) {
+					this.onNew();
+				} else {
+					this.model.fetch();
+				}
 			},
 			onRender: function() {
 				this.modelBinder().bind(this.model, this.el);
 				this.$el.form();
+				this.renderProdutos();
+				this.renderComissoes();
+			},
+			renderProdutos: function() {
 				this.produtos.show(new CategoriaProdutosView({collection: this.model.get('produtos')}));
+			},
+			renderComissoes: function() {
 				this.comissoes.show(new CategoriaComissoesView({collection: this.model.get('comissoes')}));
+			},
+			onNew: function() {
+				var model = this.model;
+				new PartesComissionadas().fetch({
+					success: function(partes) {
+						var comissoes = [];
+						partes.each(function(parte) {
+							comissoes.push(new Comissao({
+								parte: parte.get('descricao'),
+								porcentagem: 0
+							}));
+						});
+						model.get('comissoes').add(comissoes);
+					}
+				});
 			},
 			doCancel: function(e) {
 				e.preventDefault();
@@ -363,8 +415,160 @@
 			doConfirm: function(e) {
 				e.preventDefault();
 				if (_validate(this)) {
-					if (this.model.save()) {
+					if (this.model.save(null, {wait: true})) {
 						Backbone.history.navigate('categorias', true);
+						_notifySuccess();
+					}
+				}
+			}
+		});
+		
+		var PessoaRowView = Marionette.ItemView.extend({
+			tagName: 'tr',
+			template: '#pessoa_row_template',
+			events: {
+				'click .update': 'doUpdate',
+				'click .delete': 'doDelete'
+			},
+			initialize: function() {
+				_.bindAll(this);
+			},
+			onRender: function() {
+				this.$('button').button();
+			},
+			doUpdate: function(e) {
+				e.preventDefault();
+				Backbone.history.navigate('pessoa/' + this.model.get('id'), true);
+			},
+			doDelete: function(e) {
+				e.preventDefault();
+				
+				var model = this.model;
+		      	_promptDelete(function() {
+					model.destroy({
+						wait: true,
+						success: function(model, response, options) {
+							_notifyDelete();
+						},
+						error: function(model, xhr, options) {
+							_notifyDeleteFailure();
+						}
+					});
+		      	});
+			}
+		});
+		
+		var PessoasView = Marionette.CompositeView.extend({
+			tagName: 'form',
+			itemView: PessoaRowView,
+			itemViewContainer: 'tbody',
+			template: '#pessoas_template',
+			events: {
+				'click .cancel': 'doCancel',
+				'click .create': 'doCreate'
+			},
+			ui: {
+				'table': 'table'
+			},
+			initialize: function() {
+				_.bindAll(this);
+				this.collection.fetch();
+			},
+			onRender: function() {
+				this.$el.form();
+				this.ui.table.table().css('width', '100%');
+			},
+			doCancel: function(e) {
+				e.preventDefault();
+				Backbone.history.navigate('', true);
+			},
+			doCreate: function(e) {
+				e.preventDefault();
+				Backbone.history.navigate('pessoa', true);
+			}
+		});
+		
+		var PessoaParteView = Marionette.ItemView.extend({
+			tagName: 'dd',
+			template: '#pessoa_parte_template',
+			modelBinder: function() {
+				return new Backbone.ModelBinder();
+			},
+			initialize: function() {
+				_.bindAll(this);
+			},
+			onRender: function() {
+				this.modelBinder().bind(this.model, this.$el);
+				this.$el.form();
+			}
+		});
+		
+		var PessoaPartesView = Marionette.CompositeView.extend({
+			template: '#pessoa_partes_template',
+			itemView: PessoaParteView,
+			itemViewContainer: 'dl',
+			templateHelpers: {
+				partes_list: []
+			},
+			initialize: function() {
+				_.bindAll(this);
+				var that = this;
+				new Partes().fetch({
+					success: function(partes) {
+						partes.each(function(parte) {
+							that.templateHelpers.partes_list.push(parte.get('descricao'));
+						});
+						that.render();
+					}
+				});
+			},
+			onRender: function() {
+				this.$el.form();
+			}
+		});
+		
+		var PessoaView = Marionette.Layout.extend({
+			tagName: 'form',
+			template: '#pessoa_template',
+			modelBinder: function() {
+				return new Backbone.ModelBinder();
+			},
+			events: {
+				'click .confirmar': 'doConfirm',
+				'click .cancelar': 'doCancel'
+			},
+			regions: {
+				'partes': '#partes'
+			},
+			initialize: function() {
+				_.bindAll(this);
+				this.listenTo(this.model, 'change:partes', this.renderPartes);
+				if (this.model.isNew()) {
+					this.onNew();
+				} else {
+					this.model.fetch();
+				}
+			},
+			onRender: function() {
+				this.modelBinder().bind(this.model, this.el);
+				this.$el.form();
+				this.renderPartes();
+			},
+			renderPartes: function() {
+				this.partes.show(new PessoaPartesView({collection: this.model.get('partes')}));
+			},
+			onNew: function() {
+				
+			},
+			doCancel: function(e) {
+				e.preventDefault();
+				Backbone.history.navigate('pessoas', true);
+			},
+			doConfirm: function(e) {
+				e.preventDefault();
+				if (_validate(this)) {
+					if (this.model.save(null, {wait: true})) {
+						Backbone.history.navigate('pessoas', true);
 						_notifySuccess();
 					}
 				}
@@ -376,42 +580,31 @@
 				'': 'index',
 				'categorias': 'categorias',
 				'categoria': 'createCategoria',
-				'categoria(/:id)': 'updateCategoria'
+				'categoria(/:id)': 'updateCategoria',
+				'pessoas': 'pessoas',
+				'pessoa': 'createPessoa',
+				'pessoa(/:id)': 'updatePessoa'
 			},
 			index: function() {
 				COI.body.show(new AppView());
 			},
 			categorias: function() {
-				var categorias = new Categorias();
-				categorias.fetch({
-					success: function(categorias) {
-						COI.body.show(new CategoriasView({collection: categorias}));
-					}
-				});
+				COI.body.show(new CategoriasView({collection: new Categorias()}));
 			},
 			createCategoria: function() {
-				var categoria = new Categoria();
-				new Partes().fetch({
-					success: function(partes) {
-						var comissoes = [];
-						partes.each(function(parte) {
-							comissoes.push(new Comissao({
-								parte: parte.get('descricao'),
-								porcentagem: 0
-							}));
-						});
-						categoria.get('comissoes').add(comissoes);
-					}
-				});
-				COI.body.show(new CategoriaView({model: categoria}));
+				COI.body.show(new CategoriaView({model: new Categoria()}));
 			},
 			updateCategoria: function(id) {
-				var categoria = new Categoria({id: id});
-				categoria.fetch({
-					success: function(categoria) {
-						COI.body.show(new CategoriaView({model: categoria}));
-					}
-				});
+				COI.body.show(new CategoriaView({model: new Categoria({id: id})}));
+			},
+			pessoas: function() {
+				COI.body.show(new PessoasView({collection: new Pessoas()}));
+			},
+			createPessoa: function() {
+				COI.body.show(new PessoaView({model: new Pessoa()}));
+			},
+			updatePessoa: function(id) {
+				COI.body.show(new PessoaView({model: new Pessoa({id: id})}));
 			}
 		});
 		
