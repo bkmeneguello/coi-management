@@ -66,6 +66,7 @@ function autoNumericConverter(direction, value, attribute, model) {
 };
 
 var COI = new Backbone.Marionette.Application();
+
 COI.addRegions({
 	'body': 'body'
 });

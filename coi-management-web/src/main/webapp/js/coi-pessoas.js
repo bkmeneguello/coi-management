@@ -1,3 +1,5 @@
+"use strict";
+
 COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Pessoa = Backbone.Model.extend({

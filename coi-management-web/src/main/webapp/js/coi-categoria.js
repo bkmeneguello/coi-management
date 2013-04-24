@@ -1,3 +1,5 @@
+"use strict";
+
 COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Parte = Backbone.Model.extend({

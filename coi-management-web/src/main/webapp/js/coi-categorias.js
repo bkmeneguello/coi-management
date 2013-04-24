@@ -1,3 +1,5 @@
+"use strict";
+
 COI.module("Categorias", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Categoria = Backbone.Model.extend({

@@ -1,4 +1,6 @@
-COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
+"use strict";
+
+COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Parte = Backbone.Model.extend({
 		defaults: {

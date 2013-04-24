@@ -24,6 +24,7 @@
 	<script type="text/javascript" src="/js/coi-pessoas.js"></script>
 	<script type="text/javascript" src="/js/coi-pessoa.js"></script>
 	<script type="text/javascript" src="/js/coi-entradas.js"></script>
+	<script type="text/javascript" src="/js/coi-entrada.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	<script type="text/template" id="index_template">
 <button id="categorias">Categorias</button>
@@ -186,6 +187,15 @@
 	<button class="coi-action-update">Editar</button>
 	<button class="coi-action-delete">Remover</button>
 </td>
+	</script>
+	<script type="text/template" id="entrada_template">
+<header>Entrada</header>
+<input type="text" name="data" class="coi-validation-required coi-format-date" data-label="Data:"/>
+<input type="text" name="cliente" class="coi-validation-required" data-label="Cliente:"/>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
 	</script>
 </head>
 <body>
