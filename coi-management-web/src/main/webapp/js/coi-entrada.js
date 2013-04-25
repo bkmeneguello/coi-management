@@ -9,7 +9,11 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var Produto = Backbone.Model.extend();
+	var Produto = Backbone.Model.extend({
+		defaults: {
+			quantidade: 1
+		}
+	});
 	
 	var Produtos = Backbone.Collection.extend({
 		model: Produto
@@ -18,13 +22,14 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 	var Entrada = Backbone.Model.extend({
 		urlRoot: '/rest/entradas',
 		defaults: {
-			data: null,
+			data: new Date(),
 			paciente: new Pessoa(),
 			valor: null,
 			tipo: null,
 			produtos: new Produtos()
 		},
 		parse: function(resp, options) {
+			resp.data = new Date(resp.data);
 			resp.produtos = new Produtos(resp.produtos);
 			return resp;
 		}
@@ -110,7 +115,9 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			}
 		},
 		onRender: function() {
-			this.modelBinder().bind(this.model, this.el);
+			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
+			bindings['data'].converter = dateConverter;
+			this.modelBinder().bind(this.model, this.el, bindings);
 			this.$el.form();
 //			this.renderPartes();
 		},

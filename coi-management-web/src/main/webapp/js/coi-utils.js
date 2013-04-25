@@ -229,9 +229,6 @@ $.widget('coi.form', {
 	},
 	text: function(element) {
 		element.input();
-		if(element.hasClass('coi-format-date')) {
-			element.datepicker();
-		}
 	},
 	buttons: function(element) {
 		element.button();

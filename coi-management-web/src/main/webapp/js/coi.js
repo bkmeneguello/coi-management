@@ -65,6 +65,17 @@ function autoNumericConverter(direction, value, attribute, model) {
 	}
 };
 
+function dateConverter(direction, value, attribute, model) {
+	switch(direction) {
+	case 'ModelToView':
+		return $.datepicker.formatDate('dd/mm/yy', value);
+		break;
+	case 'ViewToModel':
+		return $.datepicker.parseDate('dd/mm/yy', value);
+		break;
+	}
+};
+
 var COI = new Backbone.Marionette.Application();
 
 COI.addRegions({

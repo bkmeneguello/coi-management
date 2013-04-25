@@ -1,10 +1,11 @@
 package com.meneguello.coi;
 
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
+import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.MeioPagamento.MEIO_PAGAMENTO;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
-import static com.meneguello.coi.model.tables.PessoaParte.PESSOA_PARTE;
+import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -22,12 +23,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.jooq.Record1;
-import org.jooq.Record5;
+import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
 
-import com.meneguello.coi.model.tables.records.ParteRecord;
+import com.meneguello.coi.model.tables.records.EntradaRecord;
+import com.meneguello.coi.model.tables.records.MeioPagamentoRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
 @Path("/entradas")
@@ -40,18 +41,12 @@ public class EntradaEndpoint {
 			@Override
 			protected List<EntradaList> execute(Executor database) {
 				final ArrayList<EntradaList> result = new ArrayList<EntradaList>();
-				final Result<Record5<Long, Timestamp, String, BigDecimal, String>> resultRecord = database.select(
-							ENTRADA.ID,
-							ENTRADA.DATA,
-							PESSOA.NOME,
-							ENTRADA.VALOR,
-							MEIO_PAGAMENTO.DESCRICAO
+				final Result<Record> resultRecord = database.selectFrom(ENTRADA
+							.join(PESSOA).onKey()
+							.join(MEIO_PAGAMENTO).onKey()
 						)
-						.from(ENTRADA)
-						.join(PESSOA).onKey()
-						.join(MEIO_PAGAMENTO).onKey()
 						.fetch();
-				for (Record5<Long, Timestamp, String, BigDecimal, String> record : resultRecord) {
+				for (Record record : resultRecord) {
 					result.add(buildEntradaList(record));
 				}
 				return result;
@@ -59,7 +54,7 @@ public class EntradaEndpoint {
 		}.execute();
 	}
 	
-	private EntradaList buildEntradaList(Record5<Long, Timestamp, String, BigDecimal, String> record) {
+	private EntradaList buildEntradaList(Record record) {
 		final EntradaList entrada = new EntradaList();
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
@@ -76,114 +71,174 @@ public class EntradaEndpoint {
 		return new Transaction<Entrada>() {
 			@Override
 			protected Entrada execute(Executor database) {
-				final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
-						.where(PESSOA.ID.eq(id))
+				final Record record = database.selectFrom(ENTRADA
+							.join(PESSOA).onKey()
+							.join(MEIO_PAGAMENTO).onKey()
+						)
+						.where(ENTRADA.ID.eq(id))
 						.fetchOne();
-				final Entrada pessoa = buildEntrada(pessoaRecord);
+				final Entrada entrada = buildEntrada(record);
 				
-				final Result<Record1<String>> recordsParte = database.select(PARTE.DESCRICAO)
-						.from(PARTE)
-						.join(PESSOA_PARTE).onKey()
-						.where(PESSOA_PARTE.PESSOA_ID.eq(pessoaRecord.getId()))
+				final Result<Record> recordsProduto = database.selectFrom(PRODUTO
+							.join(ENTRADA_PRODUTO).onKey()
+						)
+						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(record.getValue(ENTRADA.ID)))
 						.fetch();
-				for (Record1<String> recordParte : recordsParte) {
-					final Parte parte = new Parte();
-					parte.setDescricao(recordParte.getValue(PARTE.DESCRICAO));
-					pessoa.getPartes().add(parte);
+				for (Record recordProduto : recordsProduto) {
+					final Produto produto = new Produto();
+					produto.setDescricao(recordProduto.getValue(PARTE.DESCRICAO));
+					entrada.getProdutos().add(produto);
 				}
 
-				return pessoa;
-			}
-
-			private Entrada buildEntrada(PessoaRecord pessoaRecord) {
-				// TODO Auto-generated method stub
-				return null;
+				return entrada;
 			}
 		}.execute();
 	}
 	
+	private Entrada buildEntrada(Record record) {
+		final Entrada entrada = new Entrada();
+		entrada.setId(record.getValue(ENTRADA.ID));
+		entrada.setData(record.getValue(ENTRADA.DATA));
+		entrada.setPaciente(buildCliente(record));
+		entrada.setValor(record.getValue(ENTRADA.VALOR));
+		entrada.setTipo(record.getValue(MEIO_PAGAMENTO.DESCRICAO));
+		return entrada;
+	}
+	
+	private Pessoa buildCliente(Record record) {
+		final Pessoa pessoa = new Pessoa();
+		pessoa.setId(record.getValue(PESSOA.ID));
+		pessoa.setNome(record.getValue(PESSOA.NOME));
+		pessoa.setCodigo(record.getValue(PESSOA.CODIGO));
+		return pessoa;
+	}
+
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Entrada create(final Entrada pessoa) throws Exception {
-		final Long id = new Transaction<Long>(true) {
+	public Entrada create(final Entrada entrada) throws Exception {
+		new Transaction<Void>(true) {
 			@Override
-			public Long execute(Executor database) {
-				final PessoaRecord pessoaRecord = database.insertInto(
-						PESSOA, 
-						PESSOA.NOME,
-						PESSOA.CODIGO
-					)
-					.values(
-							pessoa.getNome(),
-							pessoa.getCodigo()
-					)
-					.returning(PESSOA.ID)
-					.fetchOne();
-				
-				final Long id = pessoaRecord.getId();
-				for (Parte parte : pessoa.getPartes()) {
-					final ParteRecord parteRecord = database.selectFrom(PARTE)
-							.where(PARTE.DESCRICAO.eq(parte.getDescricao()))
+			public Void execute(Executor database) {
+				final Pessoa paciente = entrada.getPaciente();
+				if (paciente.getId() == null) {
+					final PessoaRecord pessoaRecord = database.insertInto(
+								PESSOA, 
+								PESSOA.NOME,
+								PESSOA.CODIGO
+							)
+							.values(
+									paciente.getNome(),
+									paciente.getCodigo()
+							)
+							.returning(PESSOA.ID)
 							.fetchOne();
 					
-					database.insertInto(PESSOA_PARTE, 
-							PESSOA_PARTE.PESSOA_ID, 
-							PESSOA_PARTE.PARTE_ID
-						)
-						.values(
-								id, 
-								parteRecord.getId()
-						)
-						.execute();
+					paciente.setId(pessoaRecord.getId());
 				}
 				
-				return id;
+				final MeioPagamentoRecord meioPagamentoRecord = database.selectFrom(MEIO_PAGAMENTO)
+						.where(MEIO_PAGAMENTO.DESCRICAO.eq(entrada.getTipo()))
+						.fetchOne();
+				
+				final EntradaRecord record = database.insertInto(
+							ENTRADA, 
+							ENTRADA.DATA,
+							ENTRADA.VALOR,
+							ENTRADA.PACIENTE_ID,
+							ENTRADA.MEIO_PAGAMENTO_ID
+						)
+						.values(
+								new Timestamp(entrada.getData().getTime()),
+								entrada.getValor(),
+								paciente.getId(),
+								meioPagamentoRecord.getId()
+						)
+						.returning(ENTRADA.ID)
+						.fetchOne();
+				
+				entrada.setId(record.getId());
+				for (Produto produto : entrada.getProdutos()) {
+					database.insertInto(ENTRADA_PRODUTO, 
+								ENTRADA_PRODUTO.ENTRADA_ID, 
+								ENTRADA_PRODUTO.PRODUTO_ID,
+								ENTRADA_PRODUTO.QUANTIDADE
+							)
+							.values(
+									entrada.getId(), 
+									produto.getId(),
+									produto.getQuantidade()
+							)
+							.execute();
+				}
+				
+				return null;
 			}
 		}.execute();
 		
-		return read(id);
+		return entrada;
 	}
 	
 	@PUT
 	@Path("/{id}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Entrada update(final @PathParam("id") Long id, final Entrada pessoa) throws Exception {
+	public Entrada update(final @PathParam("id") Long id, final Entrada entrada) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
 			public Void execute(Executor database) {
-				database.update(PESSOA)
-						.set(PESSOA.NOME, pessoa.getNome())
-						.set(PESSOA.CODIGO, pessoa.getCodigo())
-						.where(PESSOA.ID.eq(id))
-						.execute();
-				
-				database.delete(PESSOA_PARTE)
-						.where(PESSOA_PARTE.PESSOA_ID.eq(id))
-						.execute();
-				
-				for (Parte parte : pessoa.getPartes()) {
-					final ParteRecord parteRecord = database.selectFrom(PARTE)
-							.where(PARTE.DESCRICAO.eq(parte.getDescricao()))
+				final Pessoa paciente = entrada.getPaciente();
+				if (paciente.getId() == null) {
+					final PessoaRecord pessoaRecord = database.insertInto(
+								PESSOA, 
+								PESSOA.NOME,
+								PESSOA.CODIGO
+							)
+							.values(
+									paciente.getNome(),
+									paciente.getCodigo()
+							)
+							.returning(PESSOA.ID)
 							.fetchOne();
 					
-					database.insertInto(PESSOA_PARTE, 
-							PESSOA_PARTE.PESSOA_ID, 
-							PESSOA_PARTE.PARTE_ID
-						)
-						.values(
-								id, 
-								parteRecord.getId()
-						)
+					paciente.setId(pessoaRecord.getId());
+				}
+				
+				final MeioPagamentoRecord meioPagamentoRecord = database.selectFrom(MEIO_PAGAMENTO)
+						.where(MEIO_PAGAMENTO.DESCRICAO.eq(entrada.getTipo()))
+						.fetchOne();
+				
+				database.update(ENTRADA)
+						.set(ENTRADA.DATA, new Timestamp(entrada.getData().getTime()))
+						.set(ENTRADA.VALOR, entrada.getValor())
+						.set(ENTRADA.PACIENTE_ID, paciente.getId())
+						.set(ENTRADA.MEIO_PAGAMENTO_ID, meioPagamentoRecord.getId())
+						.where(ENTRADA.ID.eq(id))
 						.execute();
+				
+				database.delete(ENTRADA_PRODUTO)
+						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(id))
+						.execute();
+				
+				for (Produto produto : entrada.getProdutos()) {
+					database.insertInto(ENTRADA_PRODUTO, 
+								ENTRADA_PRODUTO.ENTRADA_ID, 
+								ENTRADA_PRODUTO.PRODUTO_ID,
+								ENTRADA_PRODUTO.QUANTIDADE
+							)
+							.values(
+									id, 
+									produto.getId(),
+									produto.getQuantidade()
+							)
+							.execute();
 				}
 				
 				return null;
 			}
 		}.execute();
 		
-		return read(id);
+		return entrada;
 	}
 	
 	@DELETE
@@ -192,12 +247,12 @@ public class EntradaEndpoint {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(Executor database) {
-				database.delete(PESSOA_PARTE)
-						.where(PESSOA_PARTE.PESSOA_ID.eq(id))
+				database.delete(ENTRADA_PRODUTO)
+						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(id))
 						.execute();
 				
-				database.delete(PESSOA)
-						.where(PESSOA.ID.eq(id))
+				database.delete(ENTRADA)
+						.where(ENTRADA.ID.eq(id))
 						.execute();
 				
 				return null;
@@ -259,11 +314,69 @@ public class EntradaEndpoint {
 		
 		private Long id;
 		
+		private Date data;
+		
+		private Pessoa paciente;
+		
+		private BigDecimal valor;
+		
+		private String tipo;
+		
+		private List<Produto> produtos = new ArrayList<>();
+
+		public Long getId() {
+			return id;
+		}
+
+		public void setId(Long id) {
+			this.id = id;
+		}
+
+		public Date getData() {
+			return data;
+		}
+
+		public void setData(Date data) {
+			this.data = data;
+		}
+
+		public Pessoa getPaciente() {
+			return paciente;
+		}
+
+		public void setPaciente(Pessoa paciente) {
+			this.paciente = paciente;
+		}
+
+		public BigDecimal getValor() {
+			return valor;
+		}
+
+		public void setValor(BigDecimal valor) {
+			this.valor = valor;
+		}
+		
+		public String getTipo() {
+			return tipo;
+		}
+		
+		public void setTipo(String tipo) {
+			this.tipo = tipo;
+		}
+
+		public List<Produto> getProdutos() {
+			return produtos;
+		}
+		
+	}
+	
+	private static class Pessoa {
+		
+		private Long id;
+		
 		private String nome;
 		
 		private String codigo;
-		
-		private List<Parte> partes = new ArrayList<>();
 		
 		public Long getId() {
 			return id;
@@ -289,14 +402,37 @@ public class EntradaEndpoint {
 			this.codigo = codigo;
 		}
 		
-		public List<Parte> getPartes() {
-			return partes;
-		}
 	}
 	
-	private static class Parte {
+	class Produto {
+		
+		private Long id;
+		
+		private String codigo;
 		
 		private String descricao;
+		
+		private BigDecimal custo = BigDecimal.ZERO;
+		
+		private BigDecimal preco = BigDecimal.ZERO;
+		
+		private Integer quantidade;
+		
+		public Long getId() {
+			return id;
+		}
+		
+		public void setId(Long id) {
+			this.id = id;
+		}
+		
+		public String getCodigo() {
+			return codigo;
+		}
+		
+		public void setCodigo(String codigo) {
+			this.codigo = codigo;
+		}
 		
 		public String getDescricao() {
 			return descricao;
@@ -304,6 +440,30 @@ public class EntradaEndpoint {
 		
 		public void setDescricao(String descricao) {
 			this.descricao = descricao;
+		}
+		
+		public BigDecimal getCusto() {
+			return custo;
+		}
+		
+		public void setCusto(BigDecimal custo) {
+			this.custo = custo;
+		}
+		
+		public BigDecimal getPreco() {
+			return preco;
+		}
+		
+		public void setPreco(BigDecimal preco) {
+			this.preco = preco;
+		}
+		
+		public Integer getQuantidade() {
+			return quantidade;
+		}
+		
+		public void setQuantidade(Integer quantidade) {
+			this.quantidade = quantidade;
 		}
 		
 	}

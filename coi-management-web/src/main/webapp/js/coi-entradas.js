@@ -8,6 +8,10 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 			paciente: null,
 			valor: null,
 			tipo: null
+		},
+		parse: function(resp, options) {
+			resp.data = new Date(resp.data);
+			return resp;
 		}
 	});
 
