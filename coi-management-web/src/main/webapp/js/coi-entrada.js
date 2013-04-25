@@ -105,6 +105,9 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 //		regions: {
 //			'partes': '#partes'
 //		},
+		ui: {
+			'cliente': '#cliente'
+		},
 		initialize: function() {
 			_.bindAll(this);
 //			this.listenTo(this.model, 'change:partes', this.renderPartes);
@@ -120,6 +123,19 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			this.modelBinder().bind(this.model, this.el, bindings);
 			this.$el.form();
 //			this.renderPartes();
+			this.ui.cliente.autocomplete({
+				source: '/rest/entradas/clientes',
+				minLength: 3,
+				appendTo: this.ui.cliente.closest('.coi-form-item'),
+				response: function(event, ui) {
+					$.each(ui.content, function(index, element) {
+						element.label = element.nome;
+					});
+				},
+				select: function(event, ui) {
+					console.log(ui);
+				}
+			});
 		},
 //		renderPartes: function() {
 //			this.partes.show(new PessoaPartesView({collection: this.model.get('partes')}));

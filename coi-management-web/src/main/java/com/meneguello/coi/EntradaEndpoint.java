@@ -21,6 +21,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.jooq.Record;
@@ -63,6 +64,26 @@ public class EntradaEndpoint {
 		entrada.setTipo(record.getValue(MEIO_PAGAMENTO.DESCRICAO));
 		return entrada;
 	}
+	
+	@GET
+	@Path("/clientes")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Pessoa> listClientes(final @QueryParam("term") String term) throws Exception {
+		return new Transaction<List<Pessoa>>() {
+			@Override
+			protected List<Pessoa> execute(Executor database) {
+				final ArrayList<Pessoa> result = new ArrayList<Pessoa>();
+				final Result<PessoaRecord> resultRecord = database.selectFrom(PESSOA)
+						.where(PESSOA.NOME.likeIgnoreCase("%" + term + "%"))
+						.or(PESSOA.CODIGO.likeIgnoreCase(term + "%"))
+						.fetch();
+				for (PessoaRecord record : resultRecord) {
+					result.add(buildPessoa(record));
+				}
+				return result;
+			}
+		}.execute();
+	}
  
 	@GET
 	@Path("/{id}")
@@ -99,13 +120,13 @@ public class EntradaEndpoint {
 		final Entrada entrada = new Entrada();
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
-		entrada.setPaciente(buildCliente(record));
+		entrada.setPaciente(buildPessoa(record));
 		entrada.setValor(record.getValue(ENTRADA.VALOR));
 		entrada.setTipo(record.getValue(MEIO_PAGAMENTO.DESCRICAO));
 		return entrada;
 	}
 	
-	private Pessoa buildCliente(Record record) {
+	private Pessoa buildPessoa(Record record) {
 		final Pessoa pessoa = new Pessoa();
 		pessoa.setId(record.getValue(PESSOA.ID));
 		pessoa.setNome(record.getValue(PESSOA.NOME));

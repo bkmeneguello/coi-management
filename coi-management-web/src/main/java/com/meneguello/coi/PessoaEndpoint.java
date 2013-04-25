@@ -9,20 +9,16 @@ import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jooq.Record1;
 import org.jooq.Result;
-import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.ParteRecord;
@@ -33,23 +29,12 @@ public class PessoaEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Pessoa> list(final @QueryParam("filtro") String filtro, 
-			final @QueryParam("limit") Integer limit, 
-			final @QueryParam("offset") @DefaultValue("0") Integer offset) throws Exception {
-		
+	public List<Pessoa> list() throws Exception {
 		return new Transaction<List<Pessoa>>() {
 			@Override
 			protected List<Pessoa> execute(Executor database) {
 				final ArrayList<Pessoa> pessoas = new ArrayList<Pessoa>();
-				SelectWhereStep<PessoaRecord> select = database.selectFrom(PESSOA);
-				if (StringUtils.isNotBlank(filtro)) {
-					select.where(PESSOA.NOME.likeIgnoreCase("%" + filtro + "%"))
-							.or(PESSOA.CODIGO.like(filtro + "%"));
-				}
-				if (limit != null && limit > 0) {
-					select.limit(limit).offset(offset);
-				}
-				final Result<PessoaRecord> resultPessoaRecord = select.fetch();
+				final Result<PessoaRecord> resultPessoaRecord = database.fetch(PESSOA);
 				for (PessoaRecord pessoaRecord : resultPessoaRecord) {
 					pessoas.add(buildPessoa(pessoaRecord));
 				}

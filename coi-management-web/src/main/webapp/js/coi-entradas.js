@@ -1,6 +1,6 @@
 "use strict";
 
-COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
+COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Entrada = Backbone.Model.extend({
 		defaults: {

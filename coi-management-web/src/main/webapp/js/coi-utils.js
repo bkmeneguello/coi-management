@@ -20,33 +20,43 @@ $.fn.enable = function() {
 	});
 };
 
-$.widget('coi.money', {
+$.widget('coi.number', {
 	_create: function() {
-		var element = this.element;
-		element.autoNumeric('init', {aSign:'R$ ', aSep: '.', aDec: ',', wEmpty: 'zero'});
-		element.on('change blur', function() {
-			element.autoNumeric('update');
-		});
+		this.element.autoNumeric('init', this.options);
+		this.element.on('change blur', this._update);
+	},
+	_init: function() {
+		this._update();
+	},
+	_update: function() {
+		this.element.autoNumeric('update');
 	}
 });
 
-$.widget('coi.decimal', {
-	_create: function() {
-		var element = this.element;
-		element.autoNumeric('init', {aSep: '.', aDec: ',', wEmpty: 'zero'});
-		element.on('change blur', function() {
-			element.autoNumeric('update');
-		});
+$.widget('coi.money', $.coi.number, {
+	options: {
+		aSign:'R$ ', 
+		aSep: '.', 
+		aDec: ',', 
+		wEmpty: 'zero'
 	}
 });
 
-$.widget('coi.percentage', {
-	_create: function() {
-		var element = this.element;
-		element.autoNumeric('init', {aSign:' %', pSign: 's', aSep: '.', aDec: ',', wEmpty: 'zero'});
-		element.on('change blur', function() {
-			element.autoNumeric('update');
-		});
+$.widget('coi.decimal', $.coi.number, {
+	options: {
+		aSep: '.', 
+		aDec: ',', 
+		wEmpty: 'zero'
+	}
+});
+
+$.widget('coi.percentage', $.coi.number, {
+	options: {
+		aSign:' %', 
+		pSign: 's', 
+		aSep: '.', 
+		aDec: ',', 
+		wEmpty: 'zero'
 	}
 });
 
@@ -102,17 +112,29 @@ $.widget('coi.required', {
 	}
 });
 
-$.widget("coi.input", {
-	_init: function() {
-		var that = this;
+$.widget('coi.input', {
+	defaultElement: '<input>',
+	_create: function() {
+		this._draw();
+	},
+	_draw: function() {
+		var coiInput = this.coiInput = this.element
+			.addClass('coi-input-input')
+			.attr('autocomplete', 'off')
+			.wrap(this._coiInputHtml());
+	},
+	_coiInputHtml: function() {
+		return '<span class="coi-input ui-widget ui-widget-content ui-corner-all"></span>';
+	},
+	_destroy: function() {
 		this.element
-			.addClass('ui-widget ui-state-default ui-corner-all ui-button')
-			.bind('focus' + this.eventNamespace, function() {
-				that.element.addClass('ui-state-focus');
-			})
-			.bind('blur' + this.eventNamespace, function() {
-				that.element.removeClass('ui-state-focus');
-			});
+			.removeClass('coi-input-input')
+			.prop('disabled', false)
+			.removeAttr('autocomplete');
+		this.coiInput.replaceWith(this.element);
+	},
+	widget: function() {
+		return this.coiInput;
 	}
 });
 
