@@ -12,6 +12,7 @@ input[type=text].ui-button {
 	width: 750px;
 	margin: 0 auto;
 	position: relative;
+	overflow: visible;
 }
 
 .coi-form > .ui-dialog-titlebar {

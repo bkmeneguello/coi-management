@@ -10,7 +10,7 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			tipo: null
 		},
 		parse: function(resp, options) {
-			resp.data = new Date(resp.data);
+			resp.data = $.datepicker.formatDate('dd/mm/yy', new Date(resp.data));
 			return resp;
 		}
 	});
@@ -31,7 +31,7 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			_.bindAll(this);
 		},
 		onRender: function() {
-			this.$('button').button();
+			this.$el.form();
 		},
 		doUpdate: function(e) {
 			e.preventDefault();

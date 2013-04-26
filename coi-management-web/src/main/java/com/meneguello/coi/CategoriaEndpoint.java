@@ -17,10 +17,13 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.Record2;
 import org.jooq.Result;
+import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.CategoriaRecord;
@@ -44,6 +47,29 @@ public class CategoriaEndpoint {
 				return categorias;
 			}
 
+		}.execute();
+	}
+	
+	@GET
+	@Path("/produtos")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Produto> listProdutos(final @QueryParam("term") String term) throws Exception {
+		return new Transaction<List<Produto>>() {
+			@Override
+			protected List<Produto> execute(Executor database) {
+				final ArrayList<Produto> produtos = new ArrayList<Produto>();
+				final SelectWhereStep<ProdutoRecord> select = database.selectFrom(PRODUTO);
+				if (StringUtils.isNotBlank(term)) {
+					select.where(PRODUTO.DESCRICAO.likeIgnoreCase("%" + term + "%"))
+						.or(PRODUTO.CODIGO.likeIgnoreCase(term + "%"));
+				}
+				final Result<ProdutoRecord> resultRecord = select.fetch();
+				for (ProdutoRecord record : resultRecord) {
+					produtos.add(buildProduto(record));
+				}
+				return produtos;
+			}
+			
 		}.execute();
 	}
 	
@@ -97,6 +123,7 @@ public class CategoriaEndpoint {
 	
 	private Produto buildProduto(ProdutoRecord produtoRecord) {
 		final Produto produto = new Produto();
+		produto.setId(produtoRecord.getId());
 		produto.setCodigo(produtoRecord.getCodigo());
 		produto.setDescricao(produtoRecord.getDescricao());
 		produto.setCusto(produtoRecord.getCusto());
@@ -286,6 +313,8 @@ class Categoria {
 
 class Produto {
 	
+	private Long id;
+	
 	private String codigo;
 	
 	private String descricao;
@@ -293,6 +322,14 @@ class Produto {
 	private BigDecimal custo = BigDecimal.ZERO;
 	
 	private BigDecimal preco = BigDecimal.ZERO;
+	
+	public Long getId() {
+		return id;
+	}
+	
+	public void setId(Long id) {
+		this.id = id;
+	}
 	
 	public String getCodigo() {
 		return codigo;

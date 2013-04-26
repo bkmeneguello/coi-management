@@ -3,7 +3,6 @@ package com.meneguello.coi;
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
 import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.MeioPagamento.MEIO_PAGAMENTO;
-import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 
@@ -21,7 +20,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.jooq.Record;
@@ -66,26 +64,6 @@ public class EntradaEndpoint {
 	}
 	
 	@GET
-	@Path("/clientes")
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<Pessoa> listClientes(final @QueryParam("term") String term) throws Exception {
-		return new Transaction<List<Pessoa>>() {
-			@Override
-			protected List<Pessoa> execute(Executor database) {
-				final ArrayList<Pessoa> result = new ArrayList<Pessoa>();
-				final Result<PessoaRecord> resultRecord = database.selectFrom(PESSOA)
-						.where(PESSOA.NOME.likeIgnoreCase("%" + term + "%"))
-						.or(PESSOA.CODIGO.likeIgnoreCase(term + "%"))
-						.fetch();
-				for (PessoaRecord record : resultRecord) {
-					result.add(buildPessoa(record));
-				}
-				return result;
-			}
-		}.execute();
-	}
- 
-	@GET
 	@Path("/{id}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Entrada read(final @PathParam("id") Long id) throws Exception {
@@ -107,7 +85,12 @@ public class EntradaEndpoint {
 						.fetch();
 				for (Record recordProduto : recordsProduto) {
 					final Produto produto = new Produto();
-					produto.setDescricao(recordProduto.getValue(PARTE.DESCRICAO));
+					produto.setId(recordProduto.getValue(PRODUTO.ID));
+					produto.setCodigo(recordProduto.getValue(PRODUTO.CODIGO));
+					produto.setDescricao(recordProduto.getValue(PRODUTO.DESCRICAO));
+					produto.setCusto(recordProduto.getValue(PRODUTO.CUSTO));
+					produto.setPreco(recordProduto.getValue(PRODUTO.PRECO));
+					produto.setQuantidade(recordProduto.getValue(ENTRADA_PRODUTO.QUANTIDADE));
 					entrada.getProdutos().add(produto);
 				}
 
@@ -293,6 +276,10 @@ public class EntradaEndpoint {
 		
 		private String tipo;
 		
+		public Long getId() {
+			return id;
+		}
+		
 		public void setId(Long id) {
 			this.id = id;
 		}
@@ -399,6 +386,8 @@ public class EntradaEndpoint {
 		
 		private String codigo;
 		
+		private List<Parte> partes = new ArrayList<>();
+		
 		public Long getId() {
 			return id;
 		}
@@ -423,9 +412,27 @@ public class EntradaEndpoint {
 			this.codigo = codigo;
 		}
 		
+		public List<Parte> getPartes() {
+			return partes;
+		}
+		
 	}
 	
-	class Produto {
+	private static class Parte {
+		
+		private String descricao;
+		
+		public String getDescricao() {
+			return descricao;
+		}
+
+		public void setDescricao(String descricao) {
+			this.descricao = descricao;
+		}
+		
+	}
+	
+	private static class Produto {
 		
 		private Long id;
 		

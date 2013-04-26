@@ -57,11 +57,13 @@ function _promptDelete(confirm) {
 function autoNumericConverter(direction, value, attribute, model) {
 	switch(direction) {
 	case 'ModelToView':
-		return (model.get(attribute) + '').replace('.', ','); //FIXME
-		break;
+		var val = (model.get(attribute) + '').replace('.', ','); //FIXME
+		console.log(direction + ': from ' + value + ' to ' + val);
+		return val;
 	case 'ViewToModel':
-		return $(this.boundEls).autoNumeric('get');
-		break;
+		var val = $(this.boundEls).autoNumeric('get');
+		console.log(direction + ': from ' + value + ' to ' + val);
+		return val;
 	}
 };
 

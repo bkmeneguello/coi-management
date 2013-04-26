@@ -15,10 +15,13 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.Record1;
 import org.jooq.Result;
+import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.ParteRecord;
@@ -29,12 +32,17 @@ public class PessoaEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Pessoa> list() throws Exception {
+	public List<Pessoa> list(final @QueryParam("term") String term) throws Exception {
 		return new Transaction<List<Pessoa>>() {
 			@Override
 			protected List<Pessoa> execute(Executor database) {
 				final ArrayList<Pessoa> pessoas = new ArrayList<Pessoa>();
-				final Result<PessoaRecord> resultPessoaRecord = database.fetch(PESSOA);
+				final SelectWhereStep<PessoaRecord> select = database.selectFrom(PESSOA);
+				if (StringUtils.isNotBlank(term)) {
+					select.where(PESSOA.NOME.likeIgnoreCase("%" + term + "%"))
+							.or(PESSOA.CODIGO.likeIgnoreCase(term + "%"));
+				}
+				final Result<PessoaRecord> resultPessoaRecord = select.fetch();
 				for (PessoaRecord pessoaRecord : resultPessoaRecord) {
 					pessoas.add(buildPessoa(pessoaRecord));
 				}

@@ -22,6 +22,7 @@ $.fn.enable = function() {
 
 $.widget('coi.number', {
 	_create: function() {
+		_.bindAll(this);
 		this.element.autoNumeric('init', this.options);
 		this.element.on('change blur', this._update);
 	},
@@ -118,7 +119,7 @@ $.widget('coi.input', {
 		this._draw();
 	},
 	_draw: function() {
-		var coiInput = this.coiInput = this.element
+		this.coiInput = this.element
 			.addClass('coi-input-input')
 			.attr('autocomplete', 'off')
 			.wrap(this._coiInputHtml());
@@ -210,12 +211,18 @@ $.widget('coi.table', {
 
 $.widget('coi.form', {
 	_create: function() {
+		console.log('form._create');
 		var form = this.element.closest('form');
 		form.addClass('coi-form ui-dialog ui-widget ui-widget-content ui-corner-all');
 		form.children('header').addClass('ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix');
 		form.children('footer').addClass('ui-dialog-buttonpane ui-widget-content ui-helper-clearfix ui-corner-botton').wrapInner('<div class="ui-dialog-buttonset"/>');
+		this._render();
 	},
 	_init: function() {
+		console.log('form._init');
+		this._render();
+	},
+	_render: function() {
 		var that = this;
 		var inputs = this.element.find('input,select,textarea,button');
 		$.each(inputs, function() {
@@ -239,6 +246,7 @@ $.widget('coi.form', {
 		this.element.find('.coi-format-money').money();
 		this.element.find('.coi-format-decimal').decimal();
 		this.element.find('.coi-format-percentage').percentage();
+		
 		this.element.find('.coi-validation-required').required();
 	},
 	label: function(element) {

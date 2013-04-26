@@ -44,7 +44,7 @@
 	<tbody/>
 </table>
 <footer>
-	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-cancel">Voltar</button>
 	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
@@ -119,7 +119,7 @@
 	<tbody/>
 </table>
 <footer>
-	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-cancel">Voltar</button>
 	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
@@ -133,8 +133,8 @@
 	</script>
 	<script type="text/template" id="pessoa_template">
 <header>Pessoa</header>
-<input type="text" name="nome" class="coi-validation-required" data-label="Nome:"/>
 <input type="text" name="codigo" class="coi-validation-required" data-label="Código:"/>
+<input type="text" name="nome" class="coi-validation-required" data-label="Nome:"/>
 <div class="coi-form-item" id="partes"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
@@ -174,14 +174,14 @@
 	<tbody/>
 </table>
 <footer>
-	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-cancel">Voltar</button>
 	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
 	<script type="text/template" id="entrada_row_template">
-<td><%= data %></td>
+<td class="coi-format-date"><%= data %></td>
 <td><%= cliente %></td>
-<td><%= valor %></td>
+<td class="coi-format-decimal"><%= valor %></td>
 <td><%= tipo %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
@@ -191,11 +191,45 @@
 	<script type="text/template" id="entrada_template">
 <header>Entrada</header>
 <input type="text" name="data" class="coi-validation-required coi-format-date" data-label="Data:"/>
-<input type="text" id="cliente" class="coi-validation-required" data-label="Cliente:"/>
+<input type="text" id="paciente" class="coi-validation-required" data-label="Paciente:"/>
+<input type="text" name="valor" class="coi-validation-required coi-format-money" data-label="Valor:"/>
+<select name="tipo" data-label="Meio de Pagamento:">
+	<option/>
+	<% _.each(tipos_list, function(tipo) { %>
+	<option><%= tipo %></option>
+	<%}); %>
+</select>
+<div class="coi-form-item" id="produtos"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
+	</script>
+	<script type="text/template" id="entrada_produtos_template">
+<label>Produtos:</label>
+<div class="coi-form-item">
+	<input type="text" id="produto" class=""/>
+	<button class="coi-action-include">Adicionar</button>
+</div>
+<table>
+	<thead>
+		<tr>
+			<th>Código</th>
+			<th>Descrição</th>
+			<th>Quantidade</th>
+			<th>Ações</th>
+		</tr>
+	</thead>
+	<tbody/>
+</table>
+	</script>
+	<script type="text/template" id="entrada_produto_template">
+<td class="coi-row-item"><%= codigo %></td>
+<td class="coi-row-item"><%= descricao %></td>
+<td class="coi-row-item"><input type="text" name="quantidade"/></td>
+<td class="coi-row-item">
+	<button class="coi-action-remove">Remover</button>
+</td>
 	</script>
 </head>
 <body>

@@ -15,10 +15,12 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 
 	var Pessoa = Backbone.Model.extend({
 		urlRoot: '/rest/pessoas',
-		defaults: {
-			nome: null,
-			codigo: null,
-			partes: new Partes()
+		defaults: function() {
+			return {
+				nome: null,
+				codigo: null,
+				partes: new Partes()
+			};
 		},
 		parse: function(resp, options) {
 			resp.partes = new Partes(resp.partes);
@@ -64,9 +66,9 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 		initialize: function() {
 			_.bindAll(this);
 			var that = this;
+			that.templateHelpers.partes_list.length = 0;
 			new Partes().fetch({
 				success: function(partes) {
-					that.templateHelpers.partes_list.length = 0;
 					partes.each(function(parte) {
 						that.templateHelpers.partes_list.push(parte.get('descricao'));
 					});
