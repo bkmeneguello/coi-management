@@ -210,19 +210,12 @@ $.widget('coi.table', {
 });
 
 $.widget('coi.form', {
-	_create: function() {
-		console.log('form._create');
+	_init: function() {
 		var form = this.element.closest('form');
 		form.addClass('coi-form ui-dialog ui-widget ui-widget-content ui-corner-all');
 		form.children('header').addClass('ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix');
 		form.children('footer').addClass('ui-dialog-buttonpane ui-widget-content ui-helper-clearfix ui-corner-botton').wrapInner('<div class="ui-dialog-buttonset"/>');
-		this._render();
-	},
-	_init: function() {
-		console.log('form._init');
-		this._render();
-	},
-	_render: function() {
+		
 		var that = this;
 		var inputs = this.element.find('input,select,textarea,button');
 		$.each(inputs, function() {

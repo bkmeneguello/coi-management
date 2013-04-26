@@ -231,6 +231,42 @@
 	<button class="coi-action-remove">Remover</button>
 </td>
 	</script>
+	<script type="text/template" id="cheques_template">
+<header>Cheques</header>
+<table>
+	<thead>
+		<tr>
+			<th>Data</th>
+			<th>Cliente</th>
+			<th>Valor</th>
+			<th>Tipo</th>
+			<th>Ações</th>
+		</tr>
+	</thead>
+	<tbody/>
+</table>
+<footer>
+	<button class="coi-action-cancel">Voltar</button>
+	<button class="coi-action-create">Adicionar</button>
+</footer>
+	</script>
+	<script type="text/template" id="cheque_template">
+<header>Cheque</header>
+<input type="text" name="data" class="coi-validation-required coi-format-date" data-label="Data:"/>
+<input type="text" id="paciente" class="coi-validation-required" data-label="Paciente:"/>
+<input type="text" name="valor" class="coi-validation-required coi-format-money" data-label="Valor:"/>
+<select name="tipo" data-label="Meio de Pagamento:">
+	<option/>
+	<% _.each(tipos_list, function(tipo) { %>
+	<option><%= tipo %></option>
+	<%}); %>
+</select>
+<div class="coi-form-item" id="produtos"/>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
+	</script>
 </head>
 <body>
 </body>

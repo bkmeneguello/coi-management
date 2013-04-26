@@ -136,7 +136,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			'paciente': '#paciente'
 		},
 		templateHelpers: {
-			tipos_list: ['Dinheiro', 'Cheque']
+			tipos_list: []
 		},
 		initialize: function() {
 			_.bindAll(this);
@@ -148,16 +148,15 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 					success: this.onFetch
 				});
 			}
-//			var that = this;
-//			that.templateHelpers.tipos_list.length = 0;
-//			new Partes().fetch({
-//				success: function(partes) {
-//					partes.each(function(parte) {
-//						that.templateHelpers.partes_list.push(parte.get('descricao'));
-//					});
-//					that.render();
-//				}
-//			});
+			var that = this;
+			that.templateHelpers.tipos_list.length = 0;
+			$.get('/rest/entradas/meios', function(meios) {
+				$.each(meios, function(index, value) {
+					that.templateHelpers.tipos_list.push(value);
+				});
+				that.render();
+				that.$el.form();
+			});
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');

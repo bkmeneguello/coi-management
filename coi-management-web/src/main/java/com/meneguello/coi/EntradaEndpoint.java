@@ -53,6 +53,24 @@ public class EntradaEndpoint {
 		}.execute();
 	}
 	
+	@GET
+	@Path("/meios")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<String> listMeiosPagamento() throws Exception {
+		return new Transaction<List<String>>() {
+			@Override
+			protected List<String> execute(Executor database) {
+				final ArrayList<String> result = new ArrayList<>();
+				final Result<MeioPagamentoRecord> resultRecord = database.selectFrom(MEIO_PAGAMENTO)
+						.fetch();
+				for (MeioPagamentoRecord record : resultRecord) {
+					result.add(record.getDescricao());
+				}
+				return result;
+			}
+		}.execute();
+	}
+	
 	private EntradaList buildEntradaList(Record record) {
 		final EntradaList entrada = new EntradaList();
 		entrada.setId(record.getValue(ENTRADA.ID));
