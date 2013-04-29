@@ -18,30 +18,42 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
 
+import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
-@Path("/pessoas")
+@Path("/cheques")
 public class ChequeEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Cheque> list() throws Exception {
-		return new Transaction<List<Cheque>>() {
+	public List<ChequeList> list() throws Exception {
+		return new Transaction<List<ChequeList>>() {
 			@Override
-			protected List<Cheque> execute(Executor database) {
-				final ArrayList<Cheque> result = new ArrayList<>();
-				final Result<ChequeRecord> resultRecord = database.selectFrom(CHEQUE)
+			protected List<ChequeList> execute(Executor database) {
+				final ArrayList<ChequeList> result = new ArrayList<>();
+				final Result<Record> resultRecord = database.selectFrom(CHEQUE
+						.join(PESSOA).onKey(Keys.CHEQUE_FK_PACIENTE))
 						.fetch();
-				for (ChequeRecord record : resultRecord) {
-					result.add(buildCheque(record));
+				for (Record record : resultRecord) {
+					result.add(buildChequeList(record));
 				}
 				return result;
 			}
 		}.execute();
+	}
+	
+	private ChequeList buildChequeList(Record record) {
+		final ChequeList cheque = new ChequeList();
+		cheque.setId(record.getValue(CHEQUE.ID));
+		cheque.setValor(record.getValue(CHEQUE.VALOR));
+		cheque.setData(new java.sql.Date(record.getValue(CHEQUE.DATA_DEPOSITO).getTime()));
+		cheque.setPaciente(record.getValue(PESSOA.NOME));
+		return cheque;
 	}
 	
 	private Cheque buildCheque(ChequeRecord record) {
@@ -174,6 +186,49 @@ public class ChequeEndpoint {
 		}.execute();
 	}
 
+	private static class ChequeList {
+		
+		private Long id;
+		
+		private BigDecimal valor;
+		
+		private Date data;
+		
+		private String paciente;
+
+		public Long getId() {
+			return id;
+		}
+
+		public void setId(Long id) {
+			this.id = id;
+		}
+
+		public BigDecimal getValor() {
+			return valor;
+		}
+
+		public void setValor(BigDecimal valor) {
+			this.valor = valor;
+		}
+
+		public Date getData() {
+			return data;
+		}
+
+		public void setData(Date data) {
+			this.data = data;
+		}
+
+		public String getPaciente() {
+			return paciente;
+		}
+
+		public void setPaciente(String paciente) {
+			this.paciente = paciente;
+		}
+		
+	}
 	private static class Cheque {
 		
 		private Long id;

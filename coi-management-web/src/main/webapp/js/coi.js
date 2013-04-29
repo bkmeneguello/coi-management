@@ -57,24 +57,26 @@ function _promptDelete(confirm) {
 function autoNumericConverter(direction, value, attribute, model) {
 	switch(direction) {
 	case 'ModelToView':
-		var val = (model.get(attribute) + '').replace('.', ','); //FIXME
-		console.log(direction + ': from ' + value + ' to ' + val);
-		return val;
+		try {
+			return (model.get(attribute) + '').replace('.', ','); //FIXME
+		} catch (e) {}
 	case 'ViewToModel':
-		var val = $(this.boundEls).autoNumeric('get');
-		console.log(direction + ': from ' + value + ' to ' + val);
-		return val;
+		try {
+			return $(this.boundEls).autoNumeric('get');
+		} catch (e) {}
 	}
 };
 
 function dateConverter(direction, value, attribute, model) {
 	switch(direction) {
 	case 'ModelToView':
-		return $.datepicker.formatDate('dd/mm/yy', value);
-		break;
+		try {
+			return $.datepicker.formatDate('dd/mm/yy', value);
+		} catch (e) {}
 	case 'ViewToModel':
-		return $.datepicker.parseDate('dd/mm/yy', value);
-		break;
+		try {
+			return $.datepicker.parseDate('dd/mm/yy', value);
+		} catch (e) {}
 	}
 };
 

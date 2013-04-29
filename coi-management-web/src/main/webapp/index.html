@@ -25,6 +25,8 @@
 	<script type="text/javascript" src="/js/coi-pessoa.js"></script>
 	<script type="text/javascript" src="/js/coi-entradas.js"></script>
 	<script type="text/javascript" src="/js/coi-entrada.js"></script>
+	<script type="text/javascript" src="/js/coi-cheques.js"></script>
+	<script type="text/javascript" src="/js/coi-cheque.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	<script type="text/template" id="index_template">
 <button id="categorias">Categorias</button>
@@ -236,10 +238,9 @@
 <table>
 	<thead>
 		<tr>
+			<th>Paciente</th>
 			<th>Data</th>
-			<th>Cliente</th>
 			<th>Valor</th>
-			<th>Tipo</th>
 			<th>Ações</th>
 		</tr>
 	</thead>
@@ -250,18 +251,27 @@
 	<button class="coi-action-create">Adicionar</button>
 </footer>
 	</script>
+	<script type="text/template" id="cheque_row_template">
+<td><%= paciente %></td>
+<td class="coi-format-date"><%= data %></td>
+<td class="coi-format-decimal"><%= valor %></td>
+<td>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
+	</script>
 	<script type="text/template" id="cheque_template">
 <header>Cheque</header>
-<input type="text" name="data" class="coi-validation-required coi-format-date" data-label="Data:"/>
-<input type="text" id="paciente" class="coi-validation-required" data-label="Paciente:"/>
+<input type="text" name="numero" class="coi-validation-required" data-label="Numero:"/>
+<input type="text" name="conta" class="coi-validation-required" data-label="Conta:"/>
+<input type="text" name="agencia" class="coi-validation-required" data-label="Agência:"/>
+<input type="text" name="banco" class="coi-validation-required" data-label="Banco:"/>
+<input type="text" name="documento" class="coi-validation-required" data-label="CPF/CNPJ:"/>
 <input type="text" name="valor" class="coi-validation-required coi-format-money" data-label="Valor:"/>
-<select name="tipo" data-label="Meio de Pagamento:">
-	<option/>
-	<% _.each(tipos_list, function(tipo) { %>
-	<option><%= tipo %></option>
-	<%}); %>
-</select>
-<div class="coi-form-item" id="produtos"/>
+<input type="text" name="dataDeposito" class="coi-validation-required coi-format-date" data-label="Data:"/>
+<textarea name="observacao" class="" data-label="Observação:"/>
+<input type="text" id="cliente" class="coi-validation-required" data-label="Cliente:"/>
+<input type="text" id="paciente" class="coi-validation-required" data-label="Paciente:"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>

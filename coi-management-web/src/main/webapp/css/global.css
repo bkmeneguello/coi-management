@@ -40,7 +40,8 @@ input[type=text].ui-button {
 	margin: 0;
 }
 
-.coi-form-item input[type=text] {
+.coi-form-item input[type=text],
+.coi-form-item textarea {
 	width: 400px;
 }
 

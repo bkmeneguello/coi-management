@@ -7,7 +7,6 @@ import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -171,7 +170,7 @@ public class EntradaEndpoint {
 							ENTRADA.MEIO_PAGAMENTO_ID
 						)
 						.values(
-								new Timestamp(entrada.getData().getTime()),
+								new java.sql.Date(entrada.getData().getTime()),
 								entrada.getValor(),
 								paciente.getId(),
 								meioPagamentoRecord.getId()
@@ -231,7 +230,7 @@ public class EntradaEndpoint {
 						.fetchOne();
 				
 				database.update(ENTRADA)
-						.set(ENTRADA.DATA, new Timestamp(entrada.getData().getTime()))
+						.set(ENTRADA.DATA, new java.sql.Date(entrada.getData().getTime()))
 						.set(ENTRADA.VALOR, entrada.getValor())
 						.set(ENTRADA.PACIENTE_ID, paciente.getId())
 						.set(ENTRADA.MEIO_PAGAMENTO_ID, meioPagamentoRecord.getId())
