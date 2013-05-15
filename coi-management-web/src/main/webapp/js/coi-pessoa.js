@@ -112,6 +112,9 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			this.$el.form();
 			this.renderPartes();
 		},
+		onShow: function() {
+			this.$el.find('input').first().focus();
+		},
 		renderPartes: function() {
 			this.partes.show(new PessoaPartesView({collection: this.model.get('partes')}));
 		},

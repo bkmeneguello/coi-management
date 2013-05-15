@@ -10,7 +10,7 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			tipo: null
 		},
 		parse: function(resp, options) {
-			resp.data = $.datepicker.formatDate('dd/mm/yy', new Date(resp.data));
+			resp.data = $.datepicker.formatDate('dd/mm/yy', $.datepicker.parseDate('yy-mm-dd', resp.data));
 			return resp;
 		}
 	});

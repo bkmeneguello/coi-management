@@ -2,10 +2,11 @@ package com.meneguello.coi;
 
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -125,14 +126,14 @@ public class ChequeEndpoint {
 						CHEQUE.PACIENTE_ID
 					)
 					.values(
-							cheque.getNumero(),
-							cheque.getConta(),
-							cheque.getAgencia(),
-							cheque.getBanco(),
-							cheque.getDocumento(),
+							trimToNull(cheque.getNumero()),
+							trimToNull(cheque.getConta()),
+							trimToNull(cheque.getAgencia()),
+							trimToNull(cheque.getBanco()),
+							trimToNull(cheque.getDocumento()),
 							cheque.getValor(),
 							new java.sql.Date(cheque.getDataDeposito().getTime()),
-							cheque.getObservacao(),
+							trimToNull(cheque.getObservacao()),
 							cheque.getCliente().getId(),
 							cheque.getPaciente().getId()
 					)
@@ -154,14 +155,14 @@ public class ChequeEndpoint {
 			@Override
 			public Cheque execute(Executor database) {
 				database.update(CHEQUE)
-						.set(CHEQUE.NUMERO, cheque.getNumero())
-						.set(CHEQUE.CONTA, cheque.getConta())
-						.set(CHEQUE.AGENCIA, cheque.getAgencia())
-						.set(CHEQUE.BANCO, cheque.getBanco())
-						.set(CHEQUE.DOCUMENTO, cheque.getDocumento())
+						.set(CHEQUE.NUMERO, trimToNull(cheque.getNumero()))
+						.set(CHEQUE.CONTA, trimToNull(cheque.getConta()))
+						.set(CHEQUE.AGENCIA, trimToNull(cheque.getAgencia()))
+						.set(CHEQUE.BANCO, trimToNull(cheque.getBanco()))
+						.set(CHEQUE.DOCUMENTO, trimToNull(cheque.getDocumento()))
 						.set(CHEQUE.VALOR, cheque.getValor())
 						.set(CHEQUE.DATA_DEPOSITO, new java.sql.Date(cheque.getDataDeposito().getTime()))
-						.set(CHEQUE.OBSERVACAO, cheque.getObservacao())
+						.set(CHEQUE.OBSERVACAO, trimToNull(cheque.getObservacao()))
 						.set(CHEQUE.CLIENTE_ID, cheque.getCliente().getId())
 						.set(CHEQUE.PACIENTE_ID, cheque.getPaciente().getId())
 						.where(CHEQUE.ID.eq(id))

@@ -31,7 +31,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.data = new Date(resp.data);
+			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.paciente = new Pessoa(resp.paciente);
 			resp.produtos = new Produtos(resp.produtos);
 			return resp;

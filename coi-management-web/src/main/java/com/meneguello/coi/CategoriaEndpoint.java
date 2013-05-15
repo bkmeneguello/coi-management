@@ -4,6 +4,7 @@ import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -142,7 +143,7 @@ public class CategoriaEndpoint {
 							CATEGORIA, 
 							CATEGORIA.DESCRICAO
 						)
-						.values(categoria.getDescricao())
+						.values(trimToNull(categoria.getDescricao()))
 						.returning(CATEGORIA.ID)
 						.fetchOne();
 				
@@ -157,8 +158,8 @@ public class CategoriaEndpoint {
 							)
 							.values(
 									id, 
-									produto.getCodigo(), 
-									produto.getDescricao(), 
+									trimToNull(produto.getCodigo()), 
+									trimToNull(produto.getDescricao()), 
 									produto.getCusto(), 
 									produto.getPreco()
 							)
@@ -197,30 +198,46 @@ public class CategoriaEndpoint {
 			@Override
 			public Void execute(Executor database) {
 				database.update(CATEGORIA)
-						.set(CATEGORIA.DESCRICAO, categoria.getDescricao())
+						.set(CATEGORIA.DESCRICAO, trimToNull(categoria.getDescricao()))
 						.where(CATEGORIA.ID.eq(id))
 						.execute();
-
-				database.delete(PRODUTO)
-						.where(PRODUTO.CATEGORIA_ID.eq(id))
-						.execute();
 				
+				final List<Long> produtoIds = new ArrayList<>(categoria.getProdutos().size());
 				for (Produto produto : categoria.getProdutos()) {
-					database.insertInto(PRODUTO, 
-								PRODUTO.CATEGORIA_ID, 
-								PRODUTO.CODIGO, 
-								PRODUTO.DESCRICAO, 
-								PRODUTO.CUSTO, 
-								PRODUTO.PRECO
-							)
-							.values(
-									id, 
-									produto.getCodigo(), 
-									produto.getDescricao(), 
-									produto.getCusto(), 
-									produto.getPreco())
+					if (produto.getId() == null) {
+						final ProdutoRecord produtoRecord = database.insertInto(PRODUTO, 
+									PRODUTO.CATEGORIA_ID, 
+									PRODUTO.CODIGO, 
+									PRODUTO.DESCRICAO, 
+									PRODUTO.CUSTO, 
+									PRODUTO.PRECO
+								)
+								.values(
+										id, 
+										trimToNull(produto.getCodigo()), 
+										trimToNull(produto.getDescricao()), 
+										produto.getCusto(), 
+										produto.getPreco())
+								.returning(PRODUTO.ID)
+								.fetchOne();
+						produto.setId(produtoRecord.getId());
+					} else {
+						database.update(PRODUTO)
+							.set(PRODUTO.CATEGORIA_ID, id)
+							.set(PRODUTO.CODIGO, trimToNull(produto.getCodigo()))
+							.set(PRODUTO.DESCRICAO, trimToNull(produto.getDescricao()))
+							.set(PRODUTO.CUSTO, produto.getCusto())
+							.set(PRODUTO.PRECO, produto.getPreco())
+							.where(PRODUTO.ID.eq(produto.getId()))
 							.execute();
+					}
+					produtoIds.add(produto.getId());
 				}
+				
+				database.delete(PRODUTO)
+					.where(PRODUTO.CATEGORIA_ID.eq(id))
+					.and(PRODUTO.ID.notIn(produtoIds))
+					.execute();
 				
 				database.delete(COMISSAO)
 						.where(COMISSAO.CATEGORIA_ID.eq(id))

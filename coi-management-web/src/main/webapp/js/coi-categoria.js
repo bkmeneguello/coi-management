@@ -50,6 +50,15 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			resp.produtos = new Produtos(resp.produtos);
 			resp.comissoes = new Comissoes(resp.comissoes);
 			return resp;
+		},
+		validate: function(attrs, options) {
+			var total = 0;
+			attrs.comissoes.each(function(element, index, list) {
+				total += element.get('porcentagem');
+			});
+			if (total != 100) {
+				return 'Os percentuais de comissão devem somar 100%';
+			}
 		}
 	});
 	
@@ -227,6 +236,9 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 				}
 			});
 		},
+		onShow: function() {
+			this.$el.find('input').first().focus();
+		},
 		doCancel: function(e) {
 			e.preventDefault();
 			Backbone.history.navigate('categorias', true);
@@ -235,12 +247,17 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			e.preventDefault();
 			var that = this;
 			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: that.onComplete});
+				if (!this.model.save(null, {wait: true, success: that.onComplete, error: that.onError})) {
+					_notifyWarning(this.model.validationError);
+				}
 			}
 		},
 		onComplete: function() {
 			Backbone.history.navigate('categorias', true);
 			_notifySuccess();
+		},
+		onError: function() {
+			_notifyUpdateFailure();
 		}
 	});
 	

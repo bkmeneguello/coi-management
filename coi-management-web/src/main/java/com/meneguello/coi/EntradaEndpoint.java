@@ -5,10 +5,11 @@ import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.MeioPagamento.MEIO_PAGAMENTO;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -149,8 +150,8 @@ public class EntradaEndpoint {
 								PESSOA.CODIGO
 							)
 							.values(
-									paciente.getNome(),
-									paciente.getCodigo()
+									trimToNull(paciente.getNome()),
+									trimToNull(paciente.getCodigo())
 							)
 							.returning(PESSOA.ID)
 							.fetchOne();
@@ -216,8 +217,8 @@ public class EntradaEndpoint {
 								PESSOA.CODIGO
 							)
 							.values(
-									paciente.getNome(),
-									paciente.getCodigo()
+									trimToNull(paciente.getNome()),
+									trimToNull(paciente.getCodigo())
 							)
 							.returning(PESSOA.ID)
 							.fetchOne();

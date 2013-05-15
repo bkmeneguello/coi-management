@@ -218,6 +218,7 @@
 		<tr>
 			<th>Código</th>
 			<th>Descrição</th>
+			<th>Preço</th>
 			<th>Quantidade</th>
 			<th>Ações</th>
 		</tr>
@@ -228,6 +229,7 @@
 	<script type="text/template" id="entrada_produto_template">
 <td class="coi-row-item"><%= codigo %></td>
 <td class="coi-row-item"><%= descricao %></td>
+<td class="coi-row-item coi-format-decimal"><%= preco %></td>
 <td class="coi-row-item"><input type="text" name="quantidade"/></td>
 <td class="coi-row-item">
 	<button class="coi-action-remove">Remover</button>

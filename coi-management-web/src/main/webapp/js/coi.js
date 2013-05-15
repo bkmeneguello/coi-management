@@ -9,8 +9,12 @@ function _validate(element) {
 	return true;
 }
 
+function _notifyWarning(text) {
+	noty({text: text, type: 'warning', timeout: 5000});
+}
+
 function _notifyValidation() {
-	noty({text: 'Verifique todos os campos', type: 'warning', timeout: 5000});
+	_notifyWarning('Verifique todos os campos');
 }
 
 function _notifySuccess() {
@@ -23,6 +27,10 @@ function _notifyDelete() {
 
 function _notifyDeleteFailure() {
 	noty({text: 'Falha na exclusão do registro', type: 'error'});
+}
+
+function _notifyUpdateFailure() {
+	noty({text: 'Falha no cadastro do registro', type: 'error'});
 }
 
 function _promptDelete(confirm) {
@@ -62,7 +70,7 @@ function autoNumericConverter(direction, value, attribute, model) {
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
-			return $(this.boundEls).autoNumeric('get');
+			return parseFloat($(this.boundEls).autoNumeric('get'));
 		} catch (e) {}
 	}
 };

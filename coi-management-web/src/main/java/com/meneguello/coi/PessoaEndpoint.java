@@ -3,6 +3,7 @@ package com.meneguello.coi;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.PessoaParte.PESSOA_PARTE;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,8 +101,8 @@ public class PessoaEndpoint {
 						PESSOA.CODIGO
 					)
 					.values(
-							pessoa.getNome(),
-							pessoa.getCodigo()
+							trimToNull(pessoa.getNome()),
+							trimToNull(pessoa.getCodigo())
 					)
 					.returning(PESSOA.ID)
 					.fetchOne();
@@ -139,8 +140,8 @@ public class PessoaEndpoint {
 			@Override
 			public Void execute(Executor database) {
 				database.update(PESSOA)
-						.set(PESSOA.NOME, pessoa.getNome())
-						.set(PESSOA.CODIGO, pessoa.getCodigo())
+						.set(PESSOA.NOME, trimToNull(pessoa.getNome()))
+						.set(PESSOA.CODIGO, trimToNull(pessoa.getCodigo()))
 						.where(PESSOA.ID.eq(id))
 						.execute();
 				
