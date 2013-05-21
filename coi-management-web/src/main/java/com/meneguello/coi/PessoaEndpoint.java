@@ -5,6 +5,8 @@ import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.PessoaParte.PESSOA_PARTE;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +26,8 @@ import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
+
+import au.com.bytecode.opencsv.CSVReader;
 
 import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
@@ -129,6 +133,35 @@ public class PessoaEndpoint {
 		}.execute();
 		
 		return read(id);
+	}
+	
+	@POST
+	@Path("/import")
+	public void fileImport(final String dados) throws Exception {
+		new Transaction<Void>(true) {
+			@Override
+			public Void execute(Executor database) {
+				try (final CSVReader csvReader = new CSVReader(new StringReader(dados))) {
+					String[] columns = null;
+					while((columns = csvReader.readNext()) != null) {
+						database.insertInto(
+								PESSOA, 
+								PESSOA.NOME,
+								PESSOA.CODIGO
+							)
+							.values(
+									trimToNull(columns[10]),
+									trimToNull(columns[9])
+							)
+							.returning(PESSOA.ID)
+							.execute();
+					}
+				} catch (IOException e) {
+					return null;
+				}
+				return null;
+			}
+		}.execute();
 	}
 	
 	@PUT

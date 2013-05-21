@@ -17,6 +17,7 @@
 	<script type="text/javascript" src="/js/backbone.marionette.js"></script>
 	<script type="text/javascript" src="/js/Backbone.ModelBinder.js"></script>
 	<script type="text/javascript" src="/js/autoNumeric.js"></script>
+	<script type="text/javascript" src="/js/jquery.fileupload.js"></script>
 	<script type="text/javascript" src="/js/coi-utils.js"></script>
 	<script type="text/javascript" src="/js/coi.js"></script>
 	<script type="text/javascript" src="/js/coi-categorias.js"></script>
@@ -123,7 +124,21 @@
 <footer>
 	<button class="coi-action-cancel">Voltar</button>
 	<button class="coi-action-create">Adicionar</button>
+	<button class="coi-action-import">Importar</button>
 </footer>
+	</script>
+	<script type="text/template" id="pessoas_import_template">
+<style>
+.bar {
+    height: 18px;
+    background: green;
+}
+</style>
+<input id="file" type="file" name="files[]">
+<div id="files"/>
+<div id="progress">
+    <div class="bar" style="width: 0%;"></div>
+</div>
 	</script>
 	<script type="text/template" id="pessoa_row_template">
 <td><%= nome %></td>
