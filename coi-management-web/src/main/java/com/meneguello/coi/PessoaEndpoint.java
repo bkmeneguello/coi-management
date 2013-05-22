@@ -3,10 +3,12 @@ package com.meneguello.coi;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.PessoaParte.PESSOA_PARTE;
+import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,13 +33,14 @@ import au.com.bytecode.opencsv.CSVReader;
 
 import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
+import com.sun.jersey.multipart.FormDataParam;
  
 @Path("/pessoas")
 public class PessoaEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Pessoa> list(final @QueryParam("term") String term) throws Exception {
+	public List<Pessoa> list(final @QueryParam("term") String term, final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<Pessoa>>() {
 			@Override
 			protected List<Pessoa> execute(Executor database) {
@@ -46,6 +49,9 @@ public class PessoaEndpoint {
 				if (StringUtils.isNotBlank(term)) {
 					select.where(PESSOA.NOME.likeIgnoreCase("%" + term + "%"))
 							.or(PESSOA.CODIGO.likeIgnoreCase(term + "%"));
+				}
+				if (page != null) {
+					select.limit(10).offset(10 * page);
 				}
 				final Result<PessoaRecord> resultPessoaRecord = select.fetch();
 				for (PessoaRecord pessoaRecord : resultPessoaRecord) {
@@ -137,11 +143,12 @@ public class PessoaEndpoint {
 	
 	@POST
 	@Path("/import")
-	public void fileImport(final String dados) throws Exception {
+	@Consumes(MULTIPART_FORM_DATA)
+	public void fileImport(final @FormDataParam("file") InputStream dados) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
 			public Void execute(Executor database) {
-				try (final CSVReader csvReader = new CSVReader(new StringReader(dados))) {
+			try (final CSVReader csvReader = new CSVReader(new InputStreamReader(dados, "ISO-8859-1"))) {
 					String[] columns = null;
 					while((columns = csvReader.readNext()) != null) {
 						database.insertInto(

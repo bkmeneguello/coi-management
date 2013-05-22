@@ -9,9 +9,23 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 
-	var Pessoas = Backbone.Collection.extend({
+	var Pessoas = Backbone.Paginator.requestPager.extend({
 		url: '/rest/pessoas',
-		model: Pessoa
+		model: Pessoa,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: '/rest/pessoas'
+		},
+		paginator_ui: {
+			firstPage : 0,
+			currentPage : 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var PessoaRowView = Marionette.ItemView.extend({
@@ -65,9 +79,10 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 				autoUpload: false,
 				replaceFileInput: false,
 				acceptFileTypes: /(\.|\/)(csv)$/i,
-				multipart: false,
+//				multipart: false,
 		        dataType: 'json',
 		        done: function (e, data) {
+		        	that.collection.fetch();
 		        	that.$el.dialog('close');
 					that.close();
 		        },
@@ -107,7 +122,9 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		events: {
 			'click .coi-action-cancel': 'doCancel',
 			'click .coi-action-create': 'doCreate',
-			'click .coi-action-import': 'doImport'
+			'click .coi-action-import': 'doImport',
+			'click .coi-action-prev': 'doPrev',
+			'click .coi-action-prox': 'doProx'
 		},
 		ui: {
 			'table': 'table',
@@ -120,18 +137,6 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			this.$el.form();
 			this.ui.table.table().css('width', '100%');
-			var div = $('<span class="btn btn-success">');
-			this.ui.fileupload.parent().append(div);
-			this.ui.fileupload.wrap(div);
-			div.button({label: 'Importar'});
-			this.ui.fileupload.fileupload({
-				dataType: 'json',
-				done: function (e, data) {
-					$.each(data.result.files, function (index, file) {
-						$('<p/>').text(file.name).appendTo(document.body);
-					});
-				}
-			});
 		},
 		doCancel: function(e) {
 			e.preventDefault();
@@ -143,7 +148,15 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		doImport: function(e) {
 			e.preventDefault();
-			new PessoasImportView().render(); //FIXME
+			new PessoasImportView({collection: this.collection}).render(); //FIXME
+		},
+		doPrev: function(e) {
+			e.preventDefault();
+			this.collection.requestPreviousPage();
+		},
+		doProx: function(e) {
+			e.preventDefault();
+			this.collection.requestNextPage();
 		}
 	});
 	

@@ -82,6 +82,11 @@ th.ui-widget-header {
     vertical-align: middle;
 }
 
+.coi-paginator {
+	padding: 5px;
+	text-align: right;
+}
+
 .coi-action-cancel, 
 .coi-action-create, 
 .coi-action-update, 

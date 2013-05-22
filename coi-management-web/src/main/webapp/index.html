@@ -16,6 +16,7 @@
 	<script type="text/javascript" src="/js/backbone.js"></script>
 	<script type="text/javascript" src="/js/backbone.marionette.js"></script>
 	<script type="text/javascript" src="/js/Backbone.ModelBinder.js"></script>
+	<script type="text/javascript" src="/js/backbone.paginator.js"></script>
 	<script type="text/javascript" src="/js/autoNumeric.js"></script>
 	<script type="text/javascript" src="/js/jquery.fileupload.js"></script>
 	<script type="text/javascript" src="/js/coi-utils.js"></script>
@@ -111,6 +112,10 @@
 	</script>
 	<script type="text/template" id="pessoas_template">
 <header>Pessoas</header>
+<div class="coi-paginator">
+	<button class="coi-action-prev">Anterior</button>
+	<button class="coi-action-prox">Próxima</button>
+</div>
 <table id="pessoas">
 	<thead>
 		<tr>
@@ -134,7 +139,7 @@
     background: green;
 }
 </style>
-<input id="file" type="file" name="files[]">
+<input id="file" type="file" name="file">
 <div id="files"/>
 <div id="progress">
     <div class="bar" style="width: 0%;"></div>

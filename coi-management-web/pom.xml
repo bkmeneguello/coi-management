@@ -151,6 +151,11 @@
 			<version>${jersey.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>com.sun.jersey.contribs</groupId>
+			<artifactId>jersey-multipart</artifactId>
+			<version>${jersey.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>ro.isdc.wro4j</groupId>
 			<artifactId>wro4j-core</artifactId>
 			<version>${wro4j.version}</version>
