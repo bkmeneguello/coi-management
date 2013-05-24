@@ -9,6 +9,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.Executor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.com.bytecode.opencsv.CSVReader;
 
@@ -37,6 +41,8 @@ import com.sun.jersey.multipart.FormDataParam;
  
 @Path("/pessoas")
 public class PessoaEndpoint {
+	
+	private final Logger logger = LoggerFactory.getLogger(PessoaEndpoint.class);
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -53,7 +59,9 @@ public class PessoaEndpoint {
 				if (page != null) {
 					select.limit(10).offset(10 * page);
 				}
-				final Result<PessoaRecord> resultPessoaRecord = select.fetch();
+				final Result<PessoaRecord> resultPessoaRecord = select
+						.orderBy(PESSOA.ID.desc())
+						.fetch();
 				for (PessoaRecord pessoaRecord : resultPessoaRecord) {
 					pessoas.add(buildPessoa(pessoaRecord));
 				}
@@ -150,11 +158,14 @@ public class PessoaEndpoint {
 			public Void execute(Executor database) {
 			try (final CSVReader csvReader = new CSVReader(new InputStreamReader(dados, "ISO-8859-1"))) {
 					String[] columns = null;
-					while((columns = csvReader.readNext()) != null) {
-						database.insertInto(
-								PESSOA, 
-								PESSOA.NOME,
-								PESSOA.CODIGO
+					do {
+						try {
+							columns = csvReader.readNext();
+							if (columns == null) break;
+							database.insertInto(
+									PESSOA, 
+									PESSOA.NOME,
+									PESSOA.CODIGO
 							)
 							.values(
 									trimToNull(columns[10]),
@@ -162,9 +173,21 @@ public class PessoaEndpoint {
 							)
 							.returning(PESSOA.ID)
 							.execute();
-					}
+						} catch (IOException e) {
+							logger.error("Falha na importação do registro", e);
+						} catch (DataAccessException e) {
+							if (e.getCause() instanceof SQLIntegrityConstraintViolationException) {
+								database.update(PESSOA)
+									.set(PESSOA.NOME, trimToNull(columns[10]))
+									.where(PESSOA.CODIGO.eq(columns[9]))
+									.execute();
+							} else {
+								logger.error("Falha na importação dos registros", e);
+							}
+						}
+					} while(columns != null);
 				} catch (IOException e) {
-					return null;
+					logger.error("Falha na importação dos registros", e);
 				}
 				return null;
 			}

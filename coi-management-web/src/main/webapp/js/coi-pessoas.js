@@ -18,8 +18,8 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 			url: '/rest/pessoas'
 		},
 		paginator_ui: {
-			firstPage : 0,
-			currentPage : 0
+			firstPage: 0,
+			currentPage: 0
 		},
 		server_api: {
 			'page' : function() {
@@ -79,7 +79,6 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 				autoUpload: false,
 				replaceFileInput: false,
 				acceptFileTypes: /(\.|\/)(csv)$/i,
-//				multipart: false,
 		        dataType: 'json',
 		        done: function (e, data) {
 		        	that.collection.fetch();
@@ -123,12 +122,15 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 			'click .coi-action-cancel': 'doCancel',
 			'click .coi-action-create': 'doCreate',
 			'click .coi-action-import': 'doImport',
+			'click .coi-action-search': 'doSearch',
+			'click .coi-action-clear': 'doClear',
 			'click .coi-action-prev': 'doPrev',
-			'click .coi-action-prox': 'doProx'
+			'click .coi-action-prox': 'doNext'
 		},
 		ui: {
 			'table': 'table',
-			'fileupload': '#fileupload'
+			'fileupload': '#fileupload',
+			'search': '.coi-input-search'
 		},
 		initialize: function() {
 			_.bindAll(this);
@@ -150,13 +152,22 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 			e.preventDefault();
 			new PessoasImportView({collection: this.collection}).render(); //FIXME
 		},
+		doSearch: function(e) {
+			e.preventDefault();
+			this.collection.fetch({data: {term: this.ui.search.val()}});
+		},
+		doClear: function(e) {
+			e.preventDefault();
+			this.ui.search.val(null);
+			this.collection.fetch();
+		},
 		doPrev: function(e) {
 			e.preventDefault();
-			this.collection.requestPreviousPage();
+			this.collection.prevPage({data: {term: this.ui.search.val()}});
 		},
-		doProx: function(e) {
+		doNext: function(e) {
 			e.preventDefault();
-			this.collection.requestNextPage();
+			this.collection.nextPage({data: {term: this.ui.search.val()}});
 		}
 	});
 	
