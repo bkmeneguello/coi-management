@@ -44,49 +44,51 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
 		},
-		events: {
-			'click .coi-action-remove': 'doRemove'
+		triggers: {
+			'click .coi-action-remove': 'remove'
 		},
 		ui: {
-			'quantidade': 'input'
+			'quantidade': 'input',
+			'buttonRemove': 'button.coi-action-remove'
 		},
 		initialize: function() {
 			_.bindAll(this);
 		},
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.$el);
-			this.$el.form();
+			this.ui.quantidade.input();
+			this.ui.buttonRemove.button();
 			//this.ui.quantidade.spinner({min: 1}); //TODO
 		},
-		doRemove: function(e) {
-			e.preventDefault();
+		onRemove: function(e) {
 			this.model.collection.remove(this.model);
 		}
 	});
 	
-	var EntradaProdutosView = Marionette.CompositeView.extend({
+	var EntradaProdutosView = COI.FormCompositeView.extend({
 		template: '#entrada_produtos_template',
 		itemViewContainer: 'tbody',
 		itemView: EntradaProdutoView,
 		ui: {
-			'produto': '#produto',
+			'input': 'input[type=text].coi-view-produto',
+			'buttonInclude': 'button.coi-action-include',
 			'table': 'table'
 		},
-		events: {
-			'click .coi-action-include': 'doInclude'
+		triggers: {
+			'click .coi-action-include': 'include'
 		},
 		initialize: function() {
-			_.bindAll(this);
 			this.model = new Produto();
 		},
 		onRender: function() {
-			this.$el.form();
+			this.ui.input.input();
+			this.ui.buttonInclude.button();
 			this.ui.table.table().css('width', '100%');
 			var that = this;
-			this.ui.produto.autocomplete({
+			this.ui.input.autocomplete({
 				source: '/rest/categorias/produtos',
 				minLength: 3,
-				appendTo: this.ui.produto.closest('.coi-form-item'),
+				appendTo: this.ui.input.closest('.coi-form-item'),
 				response: function(event, ui) {
 					$.each(ui.content, function(index, element) {
 						element.label = '[' + element.codigo + '] ' + element.descricao;
@@ -112,112 +114,82 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			.autocomplete('widget')
 			.css('z-index', 100);
 		},
-		doInclude: function(e) {
-			e.preventDefault();
+		onInclude: function(e) {
 			this.collection.add(this.model);
 			this.model = new Produto();
 		}
 	});
 	
-	var EntradaView = Marionette.Layout.extend({
-		template: '#entrada_template',
-		tagName: 'form',
-		modelBinder: function() {
-			return new Backbone.ModelBinder();
-		},
-		events: {
-			'click .coi-action-confirm': 'doConfirm',
-			'click .coi-action-cancel': 'doCancel'
-		},
-		regions: {
-			'produtos': '#produtos'
-		},
-		ui: {
-			'paciente': '#paciente'
-		},
+	var MeioPagamentoView = COI.FormItemView.extend({
+		template: '#entrada_meio_pagamento_template',
 		templateHelpers: {
 			tipos_list: []
 		},
+		ui: {
+			'select': 'select'
+		},
 		initialize: function() {
-			_.bindAll(this);
-			this.listenTo(this.model, 'change:produtos', this.renderProdutos);
-			if (this.model.isNew()) {
-				this.onNew();
-			} else {
-				this.model.fetch({
-					success: this.onFetch
-				});
-			}
 			var that = this;
-			that.templateHelpers.tipos_list.length = 0;
+			this.templateHelpers.tipos_list.length = 0;
 			$.get('/rest/entradas/meios', function(meios) {
 				$.each(meios, function(index, value) {
 					that.templateHelpers.tipos_list.push(value);
 				});
 				that.render();
-				that.$el.form();
 			});
+		},
+		onRender: function() {
+			this.modelBinder().bind(this.model, this.el);
+			this.ui.select.input();
+		}
+	});
+	
+	var EntradaView = COI.FormView.extend({
+		template: '#entrada_template',
+		regions: {
+			'paciente': '#paciente',
+			'meioPagamento': '#meio-pagamento',
+			'produtos': '#produtos'
+		},
+		modelEvents: {
+			'change:paciente': 'renderPaciente',
+			'change:produtos': 'renderProdutos'
+		},
+		initialize: function() {
+			if (!this.model.isNew()) {
+				this.model.fetch({
+					success: this.onFetch
+				});
+			}
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['data'].converter = dateConverter;
-			bindings['valor'].converter = autoNumericConverter;
+			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
-			this.$el.form();
+			
+			this.renderPaciente();
+			this.renderMeioPagamento();
 			this.renderProdutos();
-			var model = this.model;
-			this.ui.paciente.autocomplete({
-				source: '/rest/pessoas',
-				minLength: 3,
-				appendTo: this.ui.paciente.closest('.coi-form-item'),
-				response: function(event, ui) {
-					$.each(ui.content, function(index, element) {
-						element.label = '[' + element.codigo + '] ' + element.nome;
-						element.value = element.nome;
-					});
-				},
-				select: function(event, ui) {
-					var element = ui.item;
-					model.set('paciente', new Pessoa(_.omit(element, 'label', 'value')));
-				}
-			})
-			.change(function() {
-				if ($(this).val() != model.get('paciente').get('nome')) {
-					$(this).val(null);
-				}
-			})
-			.blur(function() {
-				if ($.isBlank($(this).val())) {
-					model.get('paciente').clear();
-				} else if (model.get('paciente').isNew()) {
-					$(this).val(null).blur();
-				}
-			})
-			.autocomplete('widget')
-			.css('z-index', 100);
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
 		},
+		renderPaciente: function() {
+			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
+		},
+		renderMeioPagamento: function() {
+			this.meioPagamento.show(new MeioPagamentoView({model: this.model, label: 'Meio Pagamento:', attribute: 'tipo'}));
+		},
 		renderProdutos: function() {
-			this.produtos.show(new EntradaProdutosView({collection: this.model.get('produtos')}));
+			this.produtos.show(new EntradaProdutosView({collection: this.model.get('produtos'), label: 'Produtos:', attribute: 'produtos'}));
 		},
-		onNew: function() {
-			
-		},
-		onFetch: function() {
-			this.ui.paciente.val(this.model.get('paciente').get('nome'));
-			this.$el.form();
-		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('entradas', true);
 		},
-		doConfirm: function(e) {
-			e.preventDefault();
-			var that = this;
+		onConfirm: function(e) {
 			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: that.onComplete});
+				this.model.save(null, {wait: true, success: this.onComplete});
 			}
 		},
 		onComplete: function() {

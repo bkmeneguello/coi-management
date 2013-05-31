@@ -58,18 +58,18 @@ public class ParteEndpoint {
 		}.execute();
 	}
 
-}
-
-class Parte {
+	class Parte {
+		
+		private String descricao;
+		
+		public String getDescricao() {
+			return descricao;
+		}
 	
-	private String descricao;
-	
-	public String getDescricao() {
-		return descricao;
+		public void setDescricao(String descricao) {
+			this.descricao = descricao;
+		}
+		
 	}
 
-	public void setDescricao(String descricao) {
-		this.descricao = descricao;
-	}
-	
 }

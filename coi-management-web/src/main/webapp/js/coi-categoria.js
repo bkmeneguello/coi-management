@@ -62,11 +62,11 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var CategoriaProdutoView = Marionette.ItemView.extend({
+	var CategoriaProdutoView = COI.PopupFormView.extend({
 		template: '#categoria_produto_template',
-		modelBinder: function() {
-			return new Backbone.ModelBinder();
-		},
+		header: 'Produto',
+		width: 450,
+		height: 500,
 		initialize: function() {
 			_.bindAll(this);
 			this.original = this.model;
@@ -74,33 +74,17 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
-			bindings['custo'].converter = autoNumericConverter;
-			bindings['preco'].converter = autoNumericConverter;
+			bindings['custo'].converter = moneyConverter;
+			bindings['preco'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
-			
-			var that = this;
-			this.$el.form();
-			this.$el.dialog({
-				title: 'Produto',
-				dialogClass: 'no-close',
-				height: 450,
-				width: 510,
-				modal: true,
-				buttons: {
-					'Cancelar': that.onCancel,
-					'Confirmar': that.onConfirm
-				}
-			});
 		},
 		onCancel: function(e) {
-			e.preventDefault();
 			this.$el.dialog('close');
 			this.close();
 		},
 		onConfirm: function(e) {
-			e.preventDefault();
-			if (_validate(this)) {
-				this.original.set(this.model.attributes);
+			if (_validate(e.view)) {
+				this.original.set(e.model.attributes);
 				this.collection.add(this.original);
 				this.$el.dialog('close');
 				this.close();
@@ -111,28 +95,35 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	var CategoriaProdutosRowView = Marionette.ItemView.extend({
 		template: '#categoria_produtos_row_template',
 		tagName: 'tr',
-		events: {
-			'click .coi-action-update': 'onUpdate',
-			'click .coi-action-delete': 'onDelete'
+		ui: {
+			'custo': 'td:nth-child(3)',
+			'preco': 'td:nth-child(4)',
+			'updateButton': 'button.coi-action-update',
+			'deleteButton': 'button.coi-action-delete'
+		},
+		triggers: {
+			'click .coi-action-update': 'update',
+			'click .coi-action-delete': 'delete'
+		},
+		modelEvents: {
+			'change': 'render'
 		},
 		initialize: function() {
 			_.bindAll(this);
-			this.listenTo(this.model, 'change', this.render);
 		},
 		onRender: function() {
-			this.$el.form();
+			this.ui.updateButton.button();
+			this.ui.deleteButton.button();
 		},
 		onUpdate: function(e) {
-			e.preventDefault();
-			new CategoriaProdutoView({model: this.model, collection: this.model.collection}).render(); //FIXME
+			new CategoriaProdutoView({model: e.model, collection: e.model.collection}).render(); //FIXME
 		},
 		onDelete: function(e) {
-			e.preventDefault();
-			this.model.collection.remove(this.model);
+			e.model.collection.remove(e.model);
 		}
 	});
 	
-	var CategoriaProdutosView = Marionette.CompositeView.extend({
+	var CategoriaProdutosView = COI.FormCompositeView.extend({
 		template: '#categoria_produtos_template',
 		itemViewContainer: 'tbody',
 		itemView: CategoriaProdutosRowView,
@@ -143,7 +134,6 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			'produtos': 'table'
 		},
 		onRender: function() {
-			this.$el.form();
 			this.ui.produtos.table({
 				buttons: {
 					'Adicionar': this.doCreate
@@ -159,6 +149,9 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	var CategoriaComissaoView = Marionette.ItemView.extend({
 		template: '#categoria_comissao_template',
 		tagName: 'tr',
+		ui: {
+			'input': 'input[type=text]'
+		},
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
 		},
@@ -167,51 +160,53 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.$el, 'name');
-			bindings['porcentagem'].converter = autoNumericConverter;
+			bindings['porcentagem'].converter = percentageConverter;
 			this.modelBinder().bind(this.model, this.$el, bindings);
-			this.$el.form();
 		}
 	});
 	
-	var CategoriaComissoesView = Marionette.CompositeView.extend({
+	var CategoriaComissoesView = COI.FormCompositeView.extend({
 		template: '#categoria_comissoes_template',
 		itemView: CategoriaComissaoView,
 		itemViewContainer: 'table',
 		initialize: function() {
 			_.bindAll(this);
-		},
-		onRender: function() {
-			this.$el.form();
 		}
 	});
 	
-	var CategoriaView = Marionette.Layout.extend({
+	var CategoriaView = COI.FormView.extend({
 		template: '#categoria_template',
-		tagName: 'form',
-		modelBinder: function() {
-			return new Backbone.ModelBinder();
-		},
-		events: {
-			'click .coi-action-confirm': 'doConfirm',
-			'click .coi-action-cancel': 'doCancel'
-		},
 		regions: {
 			'produtos': '#produtos',
 			'comissoes': '#comissoes'
 		},
+		modelEvents: {
+			'change:produtos': 'renderProdutos',
+			'change:comissoes': 'renderComissoes'
+		},
 		initialize: function() {
 			_.bindAll(this);
-			this.listenTo(this.model, 'change:produtos', this.renderProdutos);
-			this.listenTo(this.model, 'change:comissoes', this.renderComissoes);
 			if (this.model.isNew()) {
-				this.onNew();
+				var model = this.model;
+				new PartesComissionadas().fetch({
+					success: function(partes) {
+						var comissoes = [];
+						partes.each(function(parte) {
+							comissoes.push(new Comissao({
+								parte: parte.get('descricao'),
+								porcentagem: 0
+							}));
+						});
+						model.get('comissoes').add(comissoes);
+					}
+				});
 			} else {
 				this.model.fetch();
 			}
 		},
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.el);
-			this.$el.form();
+			
 			this.renderProdutos();
 			this.renderComissoes();
 		},
@@ -221,34 +216,16 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		renderComissoes: function() {
 			this.comissoes.show(new CategoriaComissoesView({collection: this.model.get('comissoes')}));
 		},
-		onNew: function() {
-			var model = this.model;
-			new PartesComissionadas().fetch({
-				success: function(partes) {
-					var comissoes = [];
-					partes.each(function(parte) {
-						comissoes.push(new Comissao({
-							parte: parte.get('descricao'),
-							porcentagem: 0
-						}));
-					});
-					model.get('comissoes').add(comissoes);
-				}
-			});
-		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
 		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('categorias', true);
 		},
-		doConfirm: function(e) {
-			e.preventDefault();
-			var that = this;
-			if (_validate(this)) {
-				if (!this.model.save(null, {wait: true, success: that.onComplete, error: that.onError})) {
-					_notifyWarning(this.model.validationError);
+		onConfirm: function(e) {
+			if (_validate(e.view)) {
+				if (!e.model.save(null, {wait: true, success: e.view.onComplete, error: e.view.onError})) {
+					_notifyWarning(e.model.validationError);
 				}
 			}
 		},

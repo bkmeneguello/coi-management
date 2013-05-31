@@ -351,6 +351,8 @@ public class ChequeEndpoint {
 		private String nome;
 		
 		private String codigo;
+		
+		private List<Parte> partes = new ArrayList<>();
 
 		public Long getId() {
 			return id;
@@ -374,6 +376,24 @@ public class ChequeEndpoint {
 		
 		public void setCodigo(String codigo) {
 			this.codigo = codigo;
+		}
+		
+		public List<Parte> getPartes() {
+			return partes;
+		}
+		
+	}
+	
+	class Parte {
+		
+		private String descricao;
+		
+		public String getDescricao() {
+			return descricao;
+		}
+	
+		public void setDescricao(String descricao) {
+			this.descricao = descricao;
 		}
 		
 	}

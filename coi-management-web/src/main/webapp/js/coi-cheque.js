@@ -1,6 +1,6 @@
 "use strict";
 
-COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
+COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 
 	var Pessoa = Backbone.Model.extend({
 		defaults: {
@@ -33,27 +33,18 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var ChequeView = Marionette.ItemView.extend({
+	var ChequeView = COI.FormView.extend({
 		template: '#cheque_template',
-		tagName: 'form',
-		cliente: new Pessoa(),
-		paciente: new Pessoa(),
-		modelBinder: function() {
-			return new Backbone.ModelBinder();
-		},
-		events: {
-			'click .coi-action-confirm': 'doConfirm',
-			'click .coi-action-cancel': 'doCancel'
-		},
-		ui: {
+		regions: {
 			'cliente': '#cliente',
 			'paciente': '#paciente'
 		},
+		modelEvents: {
+			'change:cliente': 'renderCliente',
+			'change:paciente': 'renderPaciente'
+		},
 		initialize: function() {
-			_.bindAll(this);
-			if (this.model.isNew()) {
-				this.onNew();				
-			} else {
+			if (!this.model.isNew()) {
 				this.model.fetch({
 					success: this.onFetch
 				});
@@ -62,91 +53,27 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['dataDeposito'].converter = dateConverter;
-			bindings['valor'].converter = autoNumericConverter;
+			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
-			this.$el.form();
 			
-			var that = this;
-			this.ui.cliente.autocomplete({
-				source: '/rest/pessoas',
-				minLength: 3,
-				appendTo: this.ui.cliente.closest('.coi-form-item'),
-				response: function(event, ui) {
-					$.each(ui.content, function(index, element) {
-						element.label = '[' + element.codigo + '] ' + element.nome;
-						element.value = element.nome;
-					});
-				},
-				select: function(event, ui) {
-					var element = ui.item;
-					that.model.set('cliente', new Pessoa(_.omit(element, 'label', 'value', 'partes')));
-				}
-			})
-			.change(function() {
-				if ($(this).val() != that.model.get('cliente').get('nome')) {
-					$(this).val(null);
-				}
-			})
-			.blur(function() {
-				if ($.isBlank($(this).val())) {
-					that.model.get('cliente').clear();
-				} else if (that.model.get('cliente').isNew()) {
-					$(this).val(null).blur();
-				}
-			})
-			.autocomplete('widget')
-			.css('z-index', 100);
-
-			this.ui.paciente.autocomplete({
-				source: '/rest/pessoas',
-				minLength: 3,
-				appendTo: this.ui.paciente.closest('.coi-form-item'),
-				response: function(event, ui) {
-					$.each(ui.content, function(index, element) {
-						element.label = '[' + element.codigo + '] ' + element.nome;
-						element.value = element.nome;
-					});
-				},
-				select: function(event, ui) {
-					var element = ui.item;
-					that.model.set('paciente', new Pessoa(_.omit(element, 'label', 'value', 'partes')));
-				}
-			})
-			.change(function() {
-				if ($(this).val() != that.model.get('paciente').get('nome')) {
-					$(this).val(null);
-				}
-			})
-			.blur(function() {
-				if ($.isBlank($(this).val())) {
-					that.model.get('paciente').clear();
-				} else if (that.model.get('paciente').isNew()) {
-					$(this).val(null).blur();
-				}
-			})
-			.autocomplete('widget')
-			.css('z-index', 100);
+			this.renderCliente();
+			this.renderPaciente();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
 		},
-		onNew: function() {
-			
+		renderCliente: function() {
+			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
 		},
-		onFetch: function() {
-			this.ui.cliente.val(this.model.get('cliente').get('nome'));
-			this.ui.paciente.val(this.model.get('paciente').get('nome'));
-			this.$el.form();
+		renderPaciente: function() {
+			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
 		},
-		doCancel: function(e) {
-			e.preventDefault();
-			Backbone.history.navigate('entradas', true);
+		onCancel: function(e) {
+			Backbone.history.navigate('cheques', true);
 		},
-		doConfirm: function(e) {
-			e.preventDefault();
-			var that = this;
+		onConfirm: function(e) {
 			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: that.onComplete});
+				this.model.save(null, {wait: true, success: this.onComplete});
 			}
 		},
 		onComplete: function() {

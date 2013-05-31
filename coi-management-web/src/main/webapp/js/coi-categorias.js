@@ -13,29 +13,17 @@ COI.module("Categorias", function(Module, COI, Backbone, Marionette, $, _) {
 		model: Categoria
 	});
 	
-	var CategoriaRowView = Marionette.ItemView.extend({
+	var CategoriaRowView = COI.ActionRowView.extend({
 		template: '#categoria_row_template',
-		tagName: 'tr',
-		events: {
-			'click .coi-action-update': 'doUpdate',
-			'click .coi-action-delete': 'doDelete'
-		},
 		initialize: function() {
 			_.bindAll(this);
 		},
-		onRender: function() {
-			this.$('button').button();
+		onUpdate: function(e) {
+			Backbone.history.navigate('categoria/' + e.model.get('id'), true);
 		},
-		doUpdate: function(e) {
-			e.preventDefault();
-			Backbone.history.navigate('categoria/' + this.model.get('id'), true);
-		},
-		doDelete: function(e) {
-			e.preventDefault();
-			
-			var model = this.model;
+		onDelete: function(e) {
 			_promptDelete(function() {
-				model.destroy({
+				e.model.destroy({
 					wait: true,
 					success: function(model, response, options) {
 						_notifyDelete();
@@ -48,32 +36,21 @@ COI.module("Categorias", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var CategoriasView = Marionette.CompositeView.extend({
-		template: '#categorias_template',
-		tagName: 'form',
-		itemViewContainer: 'tbody',
+	var CategoriasView = COI.GridView.extend({
 		itemView: CategoriaRowView,
-		events: {
-			'click .coi-action-cancel': 'doCancel',
-			'click .coi-action-create': 'doCreate'
-		},
-		ui: {
-			'table': 'table'
+		templateHelpers: {
+			header: 'Categorias',
+			columns: {
+				descricao: 'Descrição'
+			}
 		},
 		initialize: function() {
-			_.bindAll(this);
 			this.collection.fetch();
 		},
-		onRender: function() {
-			this.$el.form();
-			this.ui.table.table().css('width', '100%');
-		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('', true);
 		},
-		doCreate: function(e) {
-			e.preventDefault();
+		onCreate: function(e) {
 			Backbone.history.navigate('categoria', true);
 		}
 	});

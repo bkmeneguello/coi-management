@@ -20,29 +20,14 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 		model: Entrada
 	});
 	
-	var EntradaRowView = Marionette.ItemView.extend({
+	var EntradaRowView = COI.ActionRowView.extend({
 		template: '#entrada_row_template',
-		tagName: 'tr',
-		events: {
-			'click .coi-action-update': 'doUpdate',
-			'click .coi-action-delete': 'doDelete'
-		},
-		initialize: function() {
-			_.bindAll(this);
-		},
-		onRender: function() {
-			this.$el.form();
-		},
-		doUpdate: function(e) {
-			e.preventDefault();
+		onUpdate: function(e) {
 			Backbone.history.navigate('entrada/' + this.model.get('id'), true);
 		},
-		doDelete: function(e) {
-			e.preventDefault();
-			
-			var model = this.model;
+		onDelete: function(e) {
 			_promptDelete(function() {
-				model.destroy({
+				e.model.destroy({
 					wait: true,
 					success: function(model, response, options) {
 						_notifyDelete();
@@ -55,32 +40,24 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var EntradasView = Marionette.CompositeView.extend({
-		template: '#entradas_template',
-		tagName: 'form',
-		itemViewContainer: 'tbody',
+	var EntradasView = COI.GridView.extend({
 		itemView: EntradaRowView,
-		events: {
-			'click .coi-action-cancel': 'doCancel',
-			'click .coi-action-create': 'doCreate'
-		},
-		ui: {
-			'table': 'table'
+		templateHelpers: {
+			header: 'Entradas',
+			columns: {
+				data: 'Data',
+				cliente: 'Cliente',
+				valor: 'Valor',
+				tipo: 'Tipo'
+			}
 		},
 		initialize: function() {
-			_.bindAll(this);
 			this.collection.fetch();
 		},
-		onRender: function() {
-			this.$el.form();
-			this.ui.table.table().css('width', '100%');
-		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('', true);
 		},
-		doCreate: function(e) {
-			e.preventDefault();
+		onCreate: function(e) {
 			Backbone.history.navigate('entrada', true);
 		}
 	});

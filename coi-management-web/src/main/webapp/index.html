@@ -30,18 +30,30 @@
 	<script type="text/javascript" src="/js/coi-cheques.js"></script>
 	<script type="text/javascript" src="/js/coi-cheque.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
-	<script type="text/template" id="index_template">
-<button id="categorias">Categorias</button>
-<button id="pessoas">Pessoas</button>
-<button id="entradas">Entradas</button>
-<button id="cheques">Cheques</button>
+	
+	<script type="text/template" id="coi_view_text_template">
+<dt><%= label %></dt>
+<dd><input type="text" name="<%= name %>"/></dd>
 	</script>
-	<script type="text/template" id="categorias_template">
-<header>Categorias</header>
-<table id="categorias">
+	<script type="text/template" id="coi_view_textarea_template">
+<dt><%= label %></dt>
+<dd><textarea name="<%= name %>"></textarea></dd>
+	</script>
+	<script type="text/template" id="coi_grid_view_template">
+<header><%= header %></header>
+<div class="coi-paginator">
+	<input type="text" class="coi-input-search"/>
+	<button class="coi-action-search">Pesquisar</button>
+	<button class="coi-action-clear">Limpar</button>
+	<button class="coi-action-prev">Anterior</button>
+	<button class="coi-action-prox">Próxima</button>
+</div>
+<table>
 	<thead>
 		<tr>
-			<th>Descrição</th>
+			<% _.each(columns, function(column) { %>
+			<th><%= column %></th>
+			<% }) %>
 			<th>Ações</th>
 		</tr>
 	</thead>
@@ -51,6 +63,41 @@
 	<button class="coi-action-cancel">Voltar</button>
 	<button class="coi-action-create">Adicionar</button>
 </footer>
+	</script>
+	<script type="text/template" id="coi_view_pessoa_template">
+<div class="coi-view-pessoa">
+	<dl class="coi-form-item">
+		<dt><%= label %></dt>
+		<dd>
+			<input type="text" name="nome" class="coi-view-pessoa-nome"/>
+		</dd>
+	</dl>
+</div>
+<div class="coi-view-pessoa-new coi-form-item">
+	<header>Novo <%= label %></header>
+	<dl class="coi-form-item">
+		<dt>Código:</dt>
+		<dd>
+			<input type="text" name="codigo" class="coi-view-pessoa-new-codigo"/>
+		</dd>
+	</dl>
+	<dl class="coi-form-item">
+		<dt>Nome:</dt>
+		<dd>
+			<input type="text" name="nome" class="coi-view-pessoa-new-nome"/>
+		</dd>
+	</dl>
+	<div>
+		<button class="coi-action-cancel">Cancelar</button>
+	</div>
+</div>
+	</script>
+	
+	<script type="text/template" id="index_template">
+<button id="categorias">Categorias</button>
+<button id="pessoas">Pessoas</button>
+<button id="entradas">Entradas</button>
+<button id="cheques">Cheques</button>
 	</script>
 	<script type="text/template" id="categoria_row_template">
 <td><%= descricao %></td>
@@ -61,79 +108,58 @@
 	</script>
 	<script type="text/template" id="categoria_template">
 <header>Categoria</header>
-<input type="text" name="descricao" class="coi-validation-required" data-label="Descrição:"/>
-<div class="coi-form-item" id="produtos"/>
-<div class="coi-form-item" id="comissoes"/>
+<div class="coi-view-text" data-label="Descrição:" data-attribute="descricao" data-required="true"/>
+<div id="produtos"/>
+<div id="comissoes"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
 	<script type="text/template" id="categoria_produtos_template">
-<label>Produtos:</label>
-<table>
-	<thead>
-		<tr>
-			<th>Código</th>
-			<th>Descrição</th>
-			<th>Custo</th>
-			<th>Preço</th>
-			<th>Ações</th>
-		<tr>
-	</thead>
-	<tbody/>
-</table>
+<dt>Produtos:</dt>
+<dd>
+	<table>
+		<thead>
+			<tr>
+				<th>Código</th>
+				<th>Descrição</th>
+				<th>Custo</th>
+				<th>Preço</th>
+				<th>Ações</th>
+			<tr>
+		</thead>
+		<tbody/>
+	</table>
+</dd>
 	</script>
 	<script type="text/template" id="categoria_comissoes_template">
-<label>Comissões:</label>
-<table/>
+<dt>Comissoes:</dt>
+<dd>
+	<table/>
+</dd>
 	</script>
 	<script type="text/template" id="categoria_comissao_template">
 <td class="coi-row-label"><%= parte %>:</td>
 <td class="coi-row-item">
-	<input type="text" class="coi-format-percentage" name="porcentagem"/>
+	<input type="text" name="porcentagem"/>
 </td>
 	</script>
 	<script type="text/template" id="categoria_produtos_row_template">
 <td><%= codigo %></td>
 <td><%= descricao %></td>
-<td class="coi-format-decimal"><%= custo %></td>
-<td class="coi-format-decimal"><%= preco %></td>
+<td><%= decimalConverter('ModelToView', custo) %></td>
+<td><%= decimalConverter('ModelToView', preco) %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
 	<button class="coi-action-delete">Remover</button>
 </td>
 	</script>
 	<script type="text/template" id="categoria_produto_template">
-<input id="codigo-produto" type="text" class="coi-validation-required" name="codigo" data-label="Código:"/>
-<input id="descricao-produto" type="text" class="coi-validation-required" name="descricao" data-label="Descrição:"/>
-<input id="custo-produto" class="coi-format-money coi-validation-required" type="text" name="custo" data-label="Custo:"/>
-<input id="preco-produto" class="coi-format-money coi-validation-required" type="text" name="preco" data-label="Preço:"/>
-	</script>
-	<script type="text/template" id="pessoas_template">
-<header>Pessoas</header>
-<div class="coi-paginator">
-	<input type="text" class="coi-input-search"/>
-	<button class="coi-action-search">Pesquisar</button>
-	<button class="coi-action-clear">Limpar</button>
-	<button class="coi-action-prev">Anterior</button>
-	<button class="coi-action-prox">Próxima</button>
-</div>
-<table id="pessoas">
-	<thead>
-		<tr>
-			<th>Nome</th>
-			<th>Código</th>
-			<th>Ações</th>
-		</tr>
-	</thead>
-	<tbody/>
-</table>
-<footer>
-	<button class="coi-action-cancel">Voltar</button>
-	<button class="coi-action-create">Adicionar</button>
-	<button class="coi-action-import">Importar</button>
-</footer>
+<div class="coi-view-text" data-attribute="codigo" data-label="Código:" data-required="true"/>
+<div class="coi-view-text" data-attribute="descricao" data-label="Descrição:" data-required="true"/>
+<div class="coi-view-text" data-attribute="custo" data-label="Custo:" data-required="true"/>
+<div class="coi-view-text" data-attribute="preco" data-label="Preço:" data-required="true"/>
 	</script>
 	<script type="text/template" id="pessoas_import_template">
 <style>
@@ -158,24 +184,24 @@
 	</script>
 	<script type="text/template" id="pessoa_template">
 <header>Pessoa</header>
-<input type="text" name="codigo" class="coi-validation-required" data-label="Código:"/>
-<input type="text" name="nome" class="coi-validation-required" data-label="Nome:"/>
-<div class="coi-form-item" id="partes"/>
+<div class="coi-view-text" data-attribute="codigo" data-label="Código:" data-required="true"/>
+<div class="coi-view-text" data-attribute="nome" data-label="Nome:" data-required="true"/>
+<div id="partes"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
 	<script type="text/template" id="pessoa_partes_template">
-<label>Partes:</label>
-<div class="coi-form-item">
-	<select id="parte">
+<dt>Partes:</dt>
+<dd>
+	<select>
 		<% _.each(partes_list, function(parte) { %>
 		<option><%= parte %></option>
 		<%}); %>
 	</select>
 	<button class="coi-action-include">Adicionar</button>
-</div>
+</dd>
 <table/>
 	</script>
 	<script type="text/template" id="pessoa_parte_template">
@@ -184,29 +210,10 @@
 	<button class="coi-action-remove">Remover</button>
 </td>
 	</script>
-	<script type="text/template" id="entradas_template">
-<header>Entradas</header>
-<table>
-	<thead>
-		<tr>
-			<th>Data</th>
-			<th>Cliente</th>
-			<th>Valor</th>
-			<th>Tipo</th>
-			<th>Ações</th>
-		</tr>
-	</thead>
-	<tbody/>
-</table>
-<footer>
-	<button class="coi-action-cancel">Voltar</button>
-	<button class="coi-action-create">Adicionar</button>
-</footer>
-	</script>
 	<script type="text/template" id="entrada_row_template">
-<td class="coi-format-date"><%= data %></td>
+<td><%= data %></td>
 <td><%= cliente %></td>
-<td class="coi-format-decimal"><%= valor %></td>
+<td><%= decimalConverter('ModelToView', valor) %></td>
 <td><%= tipo %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
@@ -215,27 +222,33 @@
 	</script>
 	<script type="text/template" id="entrada_template">
 <header>Entrada</header>
-<input type="text" name="data" class="coi-validation-required coi-format-date" data-label="Data:"/>
-<input type="text" id="paciente" class="coi-validation-required" data-label="Paciente:"/>
-<input type="text" name="valor" class="coi-validation-required coi-format-money" data-label="Valor:"/>
-<select name="tipo" data-label="Meio de Pagamento:">
-	<option/>
-	<% _.each(tipos_list, function(tipo) { %>
-	<option><%= tipo %></option>
-	<%}); %>
-</select>
-<div class="coi-form-item" id="produtos"/>
+<div class="coi-view-text" data-attribute="data" data-label="Data:" data-required="true"/>
+<div id="paciente"/>
+<class class="coi-view-text" data-attribute="valor" data-label="Valor:" data-required="true"/>
+<div id="meio-pagamento"/>
+<div id="produtos"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
+	<script type="text/template" id="entrada_meio_pagamento_template">
+<dt><%= label %></dt>
+<dd>
+	<select name="<%= name %>">
+		<option/>
+		<% _.each(tipos_list, function(tipo) { %>
+		<option><%= tipo %></option>
+		<%}); %>
+	</select>
+<dd>
+	</script>
 	<script type="text/template" id="entrada_produtos_template">
-<label>Produtos:</label>
-<div class="coi-form-item">
-	<input type="text" id="produto" class=""/>
+<dt><%= label %></dt>
+<dd>
+	<input type="text" class="coi-view-produto"/>
 	<button class="coi-action-include">Adicionar</button>
-</div>
+</dd>
 <table>
 	<thead>
 		<tr>
@@ -252,34 +265,16 @@
 	<script type="text/template" id="entrada_produto_template">
 <td class="coi-row-item"><%= codigo %></td>
 <td class="coi-row-item"><%= descricao %></td>
-<td class="coi-row-item coi-format-decimal"><%= preco %></td>
+<td class="coi-row-item"><%= decimalConverter('ModelToView', preco) %></td>
 <td class="coi-row-item"><input type="text" name="quantidade"/></td>
 <td class="coi-row-item">
 	<button class="coi-action-remove">Remover</button>
 </td>
 	</script>
-	<script type="text/template" id="cheques_template">
-<header>Cheques</header>
-<table>
-	<thead>
-		<tr>
-			<th>Paciente</th>
-			<th>Data</th>
-			<th>Valor</th>
-			<th>Ações</th>
-		</tr>
-	</thead>
-	<tbody/>
-</table>
-<footer>
-	<button class="coi-action-cancel">Voltar</button>
-	<button class="coi-action-create">Adicionar</button>
-</footer>
-	</script>
 	<script type="text/template" id="cheque_row_template">
 <td><%= paciente %></td>
-<td class="coi-format-date"><%= data %></td>
-<td class="coi-format-decimal"><%= valor %></td>
+<td><%= data %></td>
+<td><%= decimalConverter('ModelToView', valor) %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
 	<button class="coi-action-delete">Remover</button>
@@ -287,16 +282,16 @@
 	</script>
 	<script type="text/template" id="cheque_template">
 <header>Cheque</header>
-<input type="text" name="numero" class="coi-validation-required" data-label="Numero:"/>
-<input type="text" name="conta" class="coi-validation-required" data-label="Conta:"/>
-<input type="text" name="agencia" class="coi-validation-required" data-label="Agência:"/>
-<input type="text" name="banco" class="coi-validation-required" data-label="Banco:"/>
-<input type="text" name="documento" class="coi-validation-required" data-label="CPF/CNPJ:"/>
-<input type="text" name="valor" class="coi-validation-required coi-format-money" data-label="Valor:"/>
-<input type="text" name="dataDeposito" class="coi-validation-required coi-format-date" data-label="Data:"/>
-<textarea name="observacao" class="" data-label="Observação:"/>
-<input type="text" id="cliente" class="coi-validation-required" data-label="Cliente:"/>
-<input type="text" id="paciente" class="coi-validation-required" data-label="Paciente:"/>
+<div data-attribute="numero" class="coi-view-text" data-label="Numero:" data-required="true"/>
+<div data-attribute="conta" class="coi-view-text" data-label="Conta:" data-required="true"/>
+<div data-attribute="agencia" class="coi-view-text" data-label="Agência:" data-required="true"/>
+<div data-attribute="banco" class="coi-view-text" data-label="Banco:" data-required="true"/>
+<div data-attribute="documento" class="coi-view-text" data-label="CPF/CNPJ:" data-required="true"/>
+<div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
+<div data-attribute="dataDeposito" class="coi-view-text" data-label="Data:" data-required="true"/>
+<div data-attribute="observacao" class="coi-view-textarea" data-label="Observação:"/>
+<div id="cliente"/>
+<div id="paciente"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>

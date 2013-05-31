@@ -19,29 +19,14 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 		model: Cheque
 	});
 	
-	var RowView = Marionette.ItemView.extend({
+	var RowView = COI.ActionRowView.extend({
 		template: '#cheque_row_template',
-		tagName: 'tr',
-		events: {
-			'click .coi-action-update': 'doUpdate',
-			'click .coi-action-delete': 'doDelete'
-		},
-		initialize: function() {
-			_.bindAll(this);
-		},
-		onRender: function() {
-			this.$el.form();
-		},
-		doUpdate: function(e) {
-			e.preventDefault();
+		onUpdate: function(e) {
 			Backbone.history.navigate('cheque/' + this.model.get('id'), true);
 		},
 		doDelete: function(e) {
-			e.preventDefault();
-			
-			var model = this.model;
 			_promptDelete(function() {
-				model.destroy({
+				e.model.destroy({
 					wait: true,
 					success: function(model, response, options) {
 						_notifyDelete();
@@ -54,32 +39,23 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var ChequesView = Marionette.CompositeView.extend({
-		template: '#cheques_template',
-		tagName: 'form',
-		itemViewContainer: 'tbody',
+	var ChequesView = COI.GridView.extend({
 		itemView: RowView,
-		events: {
-			'click .coi-action-cancel': 'doCancel',
-			'click .coi-action-create': 'doCreate'
-		},
-		ui: {
-			'table': 'table'
+		templateHelpers: {
+			header: 'Cheques',
+			columns: {
+				paciente: 'Paciente',
+				data: 'Data',
+				valor: 'Valor'
+			}
 		},
 		initialize: function() {
-			_.bindAll(this);
 			this.collection.fetch();
 		},
-		onRender: function() {
-			this.$el.form();
-			this.ui.table.table().css('width', '100%');
-		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('', true);
 		},
-		doCreate: function(e) {
-			e.preventDefault();
+		onCreate: function(e) {
 			Backbone.history.navigate('cheque', true);
 		}
 	});

@@ -28,29 +28,14 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var PessoaRowView = Marionette.ItemView.extend({
+	var PessoaRowView = COI.ActionRowView.extend({
 		template: '#pessoa_row_template',
-		tagName: 'tr',
-		events: {
-			'click .coi-action-update': 'doUpdate',
-			'click .coi-action-delete': 'doDelete'
+		onUpdate: function(e) {
+			Backbone.history.navigate('pessoa/' + e.model.get('id'), true);
 		},
-		initialize: function() {
-			_.bindAll(this);
-		},
-		onRender: function() {
-			this.$('button').button();
-		},
-		doUpdate: function(e) {
-			e.preventDefault();
-			Backbone.history.navigate('pessoa/' + this.model.get('id'), true);
-		},
-		doDelete: function(e) {
-			e.preventDefault();
-			
-			var model = this.model;
+		onDelete: function(e) {
 			_promptDelete(function() {
-				model.destroy({
+				e.model.destroy({
 					wait: true,
 					success: function(model, response, options) {
 						_notifyDelete();
@@ -63,8 +48,11 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var PessoasImportView = Marionette.ItemView.extend({
+	var PessoasImportView = COI.PopupFormView.extend({
 		template: '#pessoas_import_template',
+		header: 'Importar Clientes',
+		height: 200,
+		width: 400,
 		initialize: function() {
 			_.bindAll(this);
 		},
@@ -73,7 +61,6 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onRender: function() {
 			var that = this;
-			this.$el.form();
 			this.ui.file.fileupload({
 				url: '/rest/pessoas/import',
 				autoUpload: false,
@@ -90,84 +77,43 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		            $('#progress .bar').css('width', progress + '%');
 		        }
 		    });
-			this.$el.dialog({
-				title: 'Importar Clientes',
-				dialogClass: 'no-close',
-				height: 200,
-				width: 400,
-				modal: true,
-				buttons: {
-					'Cancelar': that.onCancel,
-					'Confirmar': that.onConfirm
-				}
-			});
 		},
 		onCancel: function(e) {
-			e.preventDefault();
 			this.$el.dialog('close');
 			this.close();
 		},
 		onConfirm: function(e) {
-			e.preventDefault();
 			this.ui.file.fileupload('send', {fileInput: this.ui.file});
 		}
 	});
 	
-	var PessoasView = Marionette.CompositeView.extend({
-		template: '#pessoas_template',
-		tagName: 'form',
-		itemViewContainer: 'tbody',
+	var PessoasView = COI.GridView.extend({
+		search: true,
 		itemView: PessoaRowView,
-		events: {
-			'click .coi-action-cancel': 'doCancel',
-			'click .coi-action-create': 'doCreate',
-			'click .coi-action-import': 'doImport',
-			'click .coi-action-search': 'doSearch',
-			'click .coi-action-clear': 'doClear',
-			'click .coi-action-prev': 'doPrev',
-			'click .coi-action-prox': 'doNext'
+		templateHelpers: {
+			header: 'Pessoas',
+			columns: {
+				nome: 'Nome',
+				codigo: 'Código'
+			}
 		},
-		ui: {
-			'table': 'table',
-			'fileupload': '#fileupload',
-			'search': '.coi-input-search'
+		extras: {
+			'import': {
+				text: 'Importar',
+				trigger: 'import'
+			}
 		},
 		initialize: function() {
-			_.bindAll(this);
 			this.collection.fetch();
 		},
-		onRender: function() {
-			this.$el.form();
-			this.ui.table.table().css('width', '100%');
-		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('', true);
 		},
-		doCreate: function(e) {
-			e.preventDefault();
+		onCreate: function(e) {
 			Backbone.history.navigate('pessoa', true);
 		},
-		doImport: function(e) {
-			e.preventDefault();
+		onImport: function(e) {
 			new PessoasImportView({collection: this.collection}).render(); //FIXME
-		},
-		doSearch: function(e) {
-			e.preventDefault();
-			this.collection.fetch({data: {term: this.ui.search.val()}});
-		},
-		doClear: function(e) {
-			e.preventDefault();
-			this.ui.search.val(null);
-			this.collection.fetch();
-		},
-		doPrev: function(e) {
-			e.preventDefault();
-			this.collection.prevPage({data: {term: this.ui.search.val()}});
-		},
-		doNext: function(e) {
-			e.preventDefault();
-			this.collection.nextPage({data: {term: this.ui.search.val()}});
 		}
 	});
 	

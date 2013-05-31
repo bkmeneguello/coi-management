@@ -34,23 +34,22 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
 		},
-		events: {
-			'click .coi-action-remove': 'doRemove'
+		ui: {
+			'removeButton': 'button.coi-action-remove'
 		},
-		initialize: function() {
-			_.bindAll(this);
+		triggers: {
+			'click .coi-action-remove': 'remove'
 		},
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.$el);
-			this.$el.form();
+			this.ui.removeButton.button();
 		},
-		doRemove: function(e) {
-			e.preventDefault();
+		onRemove: function(e) {
 			this.model.collection.remove(this.model);
 		}
 	});
 	
-	var PessoaPartesView = Marionette.CompositeView.extend({
+	var PessoaPartesView = COI.FormCompositeView.extend({
 		template: '#pessoa_partes_template',
 		itemViewContainer: 'table',
 		itemView: PessoaParteView,
@@ -58,13 +57,13 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			partes_list: []
 		},
 		ui: {
-			'parte': '#parte'
+			'parte': 'select',
+			'includeButton': '.coi-action-include'
 		},
-		events: {
-			'click .coi-action-include': 'doInclude'
+		triggers: {
+			'click .coi-action-include': 'include'
 		},
 		initialize: function() {
-			_.bindAll(this);
 			var that = this;
 			that.templateHelpers.partes_list.length = 0;
 			new Partes().fetch({
@@ -77,39 +76,29 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			});
 		},
 		onRender: function() {
-			this.$el.form();
+			this.ui.parte.input();
+			this.ui.includeButton.button();
 		},
-		doInclude: function(e) {
-			e.preventDefault();
+		onInclude: function(e) {
 			this.collection.add(new Parte({descricao: this.ui.parte.val()}));
 		}
 	});
 	
-	var PessoaView = Marionette.Layout.extend({
+	var PessoaView = COI.FormView.extend({
 		template: '#pessoa_template',
-		tagName: 'form',
-		modelBinder: function() {
-			return new Backbone.ModelBinder();
-		},
-		events: {
-			'click .coi-action-confirm': 'doConfirm',
-			'click .coi-action-cancel': 'doCancel'
-		},
 		regions: {
 			'partes': '#partes'
 		},
+		modelEvents: {
+			'change:partes': 'renderPartes'
+		},
 		initialize: function() {
-			_.bindAll(this);
-			this.listenTo(this.model, 'change:partes', this.renderPartes);
-			if (this.model.isNew()) {
-				this.onNew();
-			} else {
+			if (!this.model.isNew()) {
 				this.model.fetch();
 			}
 		},
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.el);
-			this.$el.form();
 			this.renderPartes();
 		},
 		onShow: function() {
@@ -118,15 +107,10 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 		renderPartes: function() {
 			this.partes.show(new PessoaPartesView({collection: this.model.get('partes')}));
 		},
-		onNew: function() {
-			
-		},
-		doCancel: function(e) {
-			e.preventDefault();
+		onCancel: function(e) {
 			Backbone.history.navigate('pessoas', true);
 		},
-		doConfirm: function(e) {
-			e.preventDefault();
+		onConfirm: function(e) {
 			var that = this;
 			if (_validate(this)) {
 				this.model.save(null, {wait: true, success: that.onComplete});
