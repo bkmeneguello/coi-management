@@ -39,6 +39,10 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			'cliente': '#cliente',
 			'paciente': '#paciente'
 		},
+		modelEvents: {
+			'change:cliente': 'renderCliente',
+			'change:paciente': 'renderPaciente'
+		},
 		initialize: function() {
 			if (!this.model.isNew()) {
 				this.model.fetch({
@@ -52,11 +56,17 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
-			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
-			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
+			this.renderCliente();
+			this.renderPaciente();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
+		},
+		renderCliente: function() {
+			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
+		},
+		renderPaciente: function() {
+			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
 		},
 		onCancel: function(e) {
 			Backbone.history.navigate('cheques', true);

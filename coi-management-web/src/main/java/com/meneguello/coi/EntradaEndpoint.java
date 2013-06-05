@@ -419,17 +419,17 @@ public class EntradaEndpoint {
 		
 		private Date data;
 		
-		private Pessoa paciente;
+		private Pessoa paciente = new Pessoa();
 		
-		private Pessoa medico;
+		private Pessoa medico = new Pessoa();
 		
-		private Pessoa fisioterapeuta;
+		private Pessoa fisioterapeuta = new Pessoa();
 		
 		private BigDecimal valor;
 		
 		private String tipo;
 		
-		private Cheque cheque;
+		private Cheque cheque = new Cheque();
 		
 		private List<Produto> produtos = new ArrayList<>();
 
@@ -641,10 +641,8 @@ private static class Cheque {
 		
 		private String observacao;
 		
-		private Pessoa cliente;
+		private Pessoa cliente = new Pessoa();
 		
-		private Pessoa paciente;
-
 		public Long getId() {
 			return id;
 		}
@@ -725,14 +723,6 @@ private static class Cheque {
 			this.cliente = cliente;
 		}
 
-		public Pessoa getPaciente() {
-			return paciente;
-		}
-
-		public void setPaciente(Pessoa paciente) {
-			this.paciente = paciente;
-		}
-		
 	}
 	
 }
