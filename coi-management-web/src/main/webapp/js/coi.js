@@ -1,8 +1,8 @@
 "use strict";
 
 function _validate(element) {
-	element.$(':coi-validate').validate('validate');
-	if(element.$('.coi-validation-invalid').length) {
+	element.$(':coi-validate:visible').validate('validate');
+	if(element.$('.coi-validation-invalid:visible').length) {
 		_notifyValidation();
 		return false;
 	}
@@ -332,12 +332,14 @@ COI.PessoaView = Marionette.ItemView.extend({
 		this.ui.inputNewCodigo.val(null);
 		this.ui.inputNewNome.val(null);
 		this.ui.pessoaNewSession.show();
+		this.ui.inputNewCodigo.focus();
 	},
 	onCancel: function(e) {
 		this.ui.pessoaNewSession.hide();
 		e.model.clear();
 		this.ui.input.val(null);
 		this.ui.pessoaSession.show();
+		this.ui.input.focus();
 	}
 });
 

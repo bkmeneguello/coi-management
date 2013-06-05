@@ -112,6 +112,17 @@ public class ChequeEndpoint {
 		return new Transaction<Cheque>(true) {
 			@Override
 			public Cheque execute(Executor database) {
+				
+				final Pessoa cliente = cheque.getCliente();
+				if (cliente.getId() == null) {
+					createPessoa(database, cliente);
+				}
+				
+				final Pessoa paciente = cheque.getPaciente();
+				if (paciente.getId() == null) {
+					createPessoa(database, paciente);
+				}
+				
 				final ChequeRecord record = database.insertInto(
 						CHEQUE, 
 						CHEQUE.NUMERO,
@@ -134,8 +145,8 @@ public class ChequeEndpoint {
 							cheque.getValor(),
 							new java.sql.Date(cheque.getDataDeposito().getTime()),
 							trimToNull(cheque.getObservacao()),
-							cheque.getCliente().getId(),
-							cheque.getPaciente().getId()
+							cliente.getId(),
+							paciente.getId()
 					)
 					.returning(CHEQUE.ID)
 					.fetchOne();
@@ -146,6 +157,22 @@ public class ChequeEndpoint {
 		}.execute();
 	}
 	
+	private void createPessoa(Executor database, final Pessoa pessoa) {
+		final PessoaRecord pessoaRecord = database.insertInto(
+				PESSOA, 
+				PESSOA.NOME,
+				PESSOA.CODIGO
+				)
+				.values(
+						trimToNull(pessoa.getNome()),
+						trimToNull(pessoa.getCodigo())
+						)
+						.returning(PESSOA.ID)
+						.fetchOne();
+		
+		pessoa.setId(pessoaRecord.getId());
+	}
+	
 	@PUT
 	@Path("/{id}")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -154,6 +181,16 @@ public class ChequeEndpoint {
 		return new Transaction<Cheque>(true) {
 			@Override
 			public Cheque execute(Executor database) {
+				final Pessoa cliente = cheque.getCliente();
+				if (cliente.getId() == null) {
+					createPessoa(database, cliente);
+				}
+				
+				final Pessoa paciente = cheque.getPaciente();
+				if (paciente.getId() == null) {
+					createPessoa(database, paciente);
+				}
+				
 				database.update(CHEQUE)
 						.set(CHEQUE.NUMERO, trimToNull(cheque.getNumero()))
 						.set(CHEQUE.CONTA, trimToNull(cheque.getConta()))

@@ -224,6 +224,8 @@
 <header>Entrada</header>
 <div class="coi-view-text" data-attribute="data" data-label="Data:" data-required="true"/>
 <div id="paciente"/>
+<div id="medico"/>
+<div id="fisioterapeuta"/>
 <class class="coi-view-text" data-attribute="valor" data-label="Valor:" data-required="true"/>
 <div id="meio-pagamento"/>
 <div id="produtos"/>
@@ -233,15 +235,36 @@
 </footer>
 	</script>
 	<script type="text/template" id="entrada_meio_pagamento_template">
-<dt><%= label %></dt>
-<dd>
-	<select name="<%= name %>">
-		<option/>
-		<% _.each(tipos_list, function(tipo) { %>
-		<option><%= tipo %></option>
-		<%}); %>
-	</select>
-<dd>
+<dl class="coi-form-item">
+	<dt><%= label %></dt>
+	<dd>
+		<select name="<%= name %>">
+			<option/>
+			<% _.each(tipos_list, function(tipo) { %>
+			<option><%= tipo %></option>
+			<%}); %>
+		</select>
+	<dd>
+</dl>
+<div id="cheque"/>
+	</script>
+	<script type="text/template" id="entrada_meio_pagamento_cheque_template">
+	<button class="coi-action-create">Adicionar</button>
+	<div class="coi-view-cheque-new">
+		<header>Novo Cheque</header>
+		<div data-attribute="numero" class="coi-view-text" data-label="Numero:" data-required="true"/>
+		<div data-attribute="conta" class="coi-view-text" data-label="Conta:" data-required="true"/>
+		<div data-attribute="agencia" class="coi-view-text" data-label="Agência:" data-required="true"/>
+		<div data-attribute="banco" class="coi-view-text" data-label="Banco:" data-required="true"/>
+		<div data-attribute="documento" class="coi-view-text" data-label="CPF/CNPJ:" data-required="true"/>
+		<div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
+		<div data-attribute="dataDeposito" class="coi-view-text" data-label="Data:" data-required="true"/>
+		<div data-attribute="observacao" class="coi-view-textarea" data-label="Observação:"/>
+		<div id="cliente"/>
+		<div>
+			<button class="coi-action-cancel">Cancelar</button>
+		</div>
+	</div>
 	</script>
 	<script type="text/template" id="entrada_produtos_template">
 <dt><%= label %></dt>

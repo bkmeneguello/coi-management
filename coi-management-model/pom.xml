@@ -112,6 +112,10 @@
 							<excludes></excludes>
 							<inputSchema>PUBLIC</inputSchema>
 						</database>
+						<generate>
+							<relations>true</relations>
+							<deprecated>false</deprecated>
+						</generate>
 						<target>
 							<packageName>com.meneguello.coi.model</packageName>
 							<directory>${project.build.directory}/generated-sources/jooq</directory>

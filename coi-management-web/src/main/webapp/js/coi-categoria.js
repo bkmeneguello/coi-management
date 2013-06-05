@@ -17,8 +17,8 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		defaults: {
 			codigo: null,
 			descricao: null,
-			custo: 0,
-			preco: 0
+			custo: null,
+			preco: null
 		}
 	});
 
@@ -29,7 +29,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	var Comissao = Backbone.Model.extend({
 		defaults: {
 			parte: null,
-			porcentagem: 0
+			porcentagem: null
 		}
 	});
 
@@ -47,8 +47,8 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.produtos = new Produtos(resp.produtos);
-			resp.comissoes = new Comissoes(resp.comissoes);
+			resp.produtos = new Produtos(resp.produtos, {parse: true});
+			resp.comissoes = new Comissoes(resp.comissoes, {parse: true});
 			return resp;
 		},
 		validate: function(attrs, options) {
@@ -136,12 +136,12 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			this.ui.produtos.table({
 				buttons: {
-					'Adicionar': this.doCreate
+					'Adicionar': this.onCreate
 				}
 			}).css('width', '100%');
 		},
-		doCreate: function(e) {
-			e.preventDefault();
+		onCreate: function(e) {
+			e.preventDefault(); //FIXME
 			new CategoriaProdutoView({model: new Produto(), collection: this.collection}).render(); //FIXME
 		}
 	});
@@ -162,6 +162,8 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.$el, 'name');
 			bindings['porcentagem'].converter = percentageConverter;
 			this.modelBinder().bind(this.model, this.$el, bindings);
+			
+			this.ui.input.input();
 		}
 	});
 	
@@ -194,7 +196,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 						partes.each(function(parte) {
 							comissoes.push(new Comissao({
 								parte: parte.get('descricao'),
-								porcentagem: 0
+								porcentagem: null
 							}));
 						});
 						model.get('comissoes').add(comissoes);

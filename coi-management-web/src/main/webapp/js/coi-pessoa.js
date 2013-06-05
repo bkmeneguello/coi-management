@@ -23,7 +23,7 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.partes = new Partes(resp.partes);
+			resp.partes = new Partes(resp.partes, {parse: true});
 			return resp;
 		}
 	});

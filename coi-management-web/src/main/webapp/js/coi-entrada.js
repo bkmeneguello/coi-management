@@ -19,21 +19,48 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		model: Produto
 	});
 	
+	var Cheque = Backbone.Model.extend({
+		defaults: function() {
+			return {
+				numero: null,
+				conta: null,
+				agencia: null,
+				banco: null,
+				documento: null,
+				valor: null,
+				dataDeposito: null,
+				observacao: null,
+				cliente: new Pessoa()
+			};
+		},
+		parse: function(resp, options) {
+			resp.dataDeposito = resp.dataDeposito ? $.datepicker.parseDate('yy-mm-dd', resp.dataDeposito) : null;
+			resp.cliente = new Pessoa(resp.cliente, {parse: true});
+			return resp;
+		}
+	});
+	
 	var Entrada = Backbone.Model.extend({
 		urlRoot: '/rest/entradas',
 		defaults: function() {
 			return {
 				data: new Date(),
 				paciente: new Pessoa(),
-				valor: 0,
+				medico: new Pessoa(),
+				fisioterapeuta: new Pessoa(),
+				valor: null,
 				tipo: null,
+				cheque: new Cheque(),
 				produtos: new Produtos()
 			};
 		},
 		parse: function(resp, options) {
 			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
-			resp.paciente = new Pessoa(resp.paciente);
-			resp.produtos = new Produtos(resp.produtos);
+			resp.paciente = new Pessoa(resp.paciente, {parse: true});
+			resp.medico = new Pessoa(resp.medico, {parse: true});
+			resp.fisioterapeuta = new Pessoa(resp.fisioterapeuta, {parse: true});
+			resp.cheque = new Cheque(resp.cheque, {parse: true});
+			resp.produtos = new Produtos(resp.produtos, {parse: true});
 			return resp;
 		}
 	});
@@ -115,18 +142,81 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			.css('z-index', 100);
 		},
 		onInclude: function(e) {
+			this.ui.input.val(null);
 			this.collection.add(this.model);
 			this.model = new Produto();
 		}
 	});
 	
-	var MeioPagamentoView = COI.FormItemView.extend({
+	var ChequeView = COI.Window.extend({
+		template: '#entrada_meio_pagamento_cheque_template',
+		className: 'coi-view-cheque coi-form-item',
+		regions: {
+			'cliente': '#cliente'
+		},
+		triggers: {
+			'click .coi-action-create': 'create',
+			'click .coi-action-cancel': 'cancel'
+		},
+		ui: {
+			'cheque': '.coi-view-cheque',
+			'chequeNew': '.coi-view-cheque-new',
+			'buttonCreate': 'button.coi-action-create',
+			'buttonCancel': 'button.coi-action-cancel'
+		},
+		onRender: function() {
+			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
+			bindings['dataDeposito'].converter = dateConverter;
+			bindings['valor'].converter = moneyConverter;
+			this.modelBinder().bind(this.model, this.el, bindings);
+			
+			this.ui.buttonCreate.button();
+			this.ui.buttonCancel.button();
+			
+			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
+			
+			if (this.model.isNew()) {
+				this.ui.cheque.hide();
+				this.ui.chequeNew.hide();
+			} else {
+				this.$('input,textarea').disable();
+				this.ui.buttonCreate.hide();
+				this.ui.buttonCancel.hide();
+			}
+		},
+		onCreate: function(e) {
+			this.ui.buttonCreate.hide();
+			this.ui.chequeNew.show();
+		},
+		onCancel: function(e) {
+			this.ui.buttonCreate.show();
+			this.ui.chequeNew.hide();
+		}
+	});
+	
+	var MeioPagamentoView = Marionette.Layout.extend({
 		template: '#entrada_meio_pagamento_template',
 		templateHelpers: {
 			tipos_list: []
 		},
+		regions: {
+			'cheque': '#cheque'
+		},
 		ui: {
 			'select': 'select'
+		},
+		modelEvents: {
+			'change:tipo': 'updateTipo'
+		},
+		modelBinder: function() {
+			return new Backbone.ModelBinder();
+		},
+		serializeData: function() {
+			var data = Marionette.ItemView.prototype.serializeData.apply(this, Array.prototype.slice.apply(arguments));
+			return _.extend(data, {
+				name: this.options.attribute,
+				label: this.options.label
+			});
 		},
 		initialize: function() {
 			var that = this;
@@ -141,6 +231,13 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.el);
 			this.ui.select.input();
+		},
+		updateTipo: function(model, value) {
+			if ('Cheque' == value) {
+				this.cheque.show(new ChequeView({model: this.model.get('cheque')}));
+			} else {
+				this.cheque.close();
+			}
 		}
 	});
 	
@@ -148,11 +245,15 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		template: '#entrada_template',
 		regions: {
 			'paciente': '#paciente',
+			'medico': '#medico',
+			'fisioterapeuta': '#fisioterapeuta',
 			'meioPagamento': '#meio-pagamento',
 			'produtos': '#produtos'
 		},
 		modelEvents: {
 			'change:paciente': 'renderPaciente',
+			'change:medico': 'renderMedico',
+			'change:fisioterapeuta': 'renderFisioterapeuta',
 			'change:produtos': 'renderProdutos'
 		},
 		initialize: function() {
@@ -169,6 +270,8 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.renderPaciente();
+			this.renderMedico();
+			this.renderFisioterapeuta();
 			this.renderMeioPagamento();
 			this.renderProdutos();
 		},
@@ -177,6 +280,12 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		renderPaciente: function() {
 			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
+		},
+		renderMedico: function() {
+			this.medico.show(new COI.PessoaView({model: this.model.get('medico'), label: 'Médico:', attribute: 'medico', required: true}));
+		},
+		renderFisioterapeuta: function() {
+			this.fisioterapeuta.show(new COI.PessoaView({model: this.model.get('fisioterapeuta'), label: 'Fisioterapeuta:', attribute: 'fisioterapeuta'}));
 		},
 		renderMeioPagamento: function() {
 			this.meioPagamento.show(new MeioPagamentoView({model: this.model, label: 'Meio Pagamento:', attribute: 'tipo'}));

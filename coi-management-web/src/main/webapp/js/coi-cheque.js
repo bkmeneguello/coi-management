@@ -26,9 +26,9 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.dataDeposito = new Date(resp.dataDeposito);
-			resp.cliente = new Pessoa(resp.cliente);
-			resp.paciente = new Pessoa(resp.paciente);
+			resp.dataDeposito = $.datepicker.parseDate('yy-mm-dd', resp.dataDeposito);
+			resp.cliente = new Pessoa(resp.cliente, {parse: true});
+			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			return resp;
 		}
 	});
@@ -38,10 +38,6 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 		regions: {
 			'cliente': '#cliente',
 			'paciente': '#paciente'
-		},
-		modelEvents: {
-			'change:cliente': 'renderCliente',
-			'change:paciente': 'renderPaciente'
 		},
 		initialize: function() {
 			if (!this.model.isNew()) {
@@ -56,17 +52,11 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
-			this.renderCliente();
-			this.renderPaciente();
+			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
+			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
-		},
-		renderCliente: function() {
-			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
-		},
-		renderPaciente: function() {
-			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
 		},
 		onCancel: function(e) {
 			Backbone.history.navigate('cheques', true);
