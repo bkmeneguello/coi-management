@@ -150,6 +150,7 @@ public class ProducaoMensal extends JFrame {
 	private class No {
 		public Map<Character, No> filhos = new HashMap<Character, No>();
 		public String categoria;
+		public boolean padrao;
 	}
 	
 	static {
@@ -462,8 +463,11 @@ public class ProducaoMensal extends JFrame {
 	}
 	
 	private void adicionaCategoria(No no, String categoria, String linha, int indice) {
-		if (indice >= linha.length() || linha.charAt(indice) == '*') {
+		if (indice >= linha.length()) {
 			no.categoria = categoria;
+		} else if (linha.charAt(indice) == '*') {
+			no.categoria = categoria;
+			no.padrao = true;
 		} else if (!Character.isDigit(linha.charAt(indice))) {
 			adicionaCategoria(no, categoria, linha, indice + 1);
 		} else {
@@ -634,8 +638,7 @@ public class ProducaoMensal extends JFrame {
 			BufferedReader categoriasReader = new BufferedReader(new StringReader(textCategorias.getText()));
 			String linha = null;
 			String categoria = null;
-			while((linha = categoriasReader.readLine()) != null) {
-				
+			while((linha = categoriasReader.readLine()) != null) {				
 				linha = trim(linha);
 				if (linha.endsWith(":")) {
 					categoria = linha.substring(0, linha.length() - 1);
@@ -885,7 +888,7 @@ public class ProducaoMensal extends JFrame {
 		if (no == null) {
 			return codigo;
 		}
-		if (no.categoria != null) {
+		if (no.categoria != null && no.padrao || codigo.length() == indice) {
 			return no.categoria;
 		}
 		if (!Character.isDigit(codigo.charAt(indice))) {
