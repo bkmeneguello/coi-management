@@ -22,7 +22,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jooq.Record2;
+import org.jooq.DeleteConditionStep;
+import org.jooq.Record3;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
@@ -100,8 +101,9 @@ public class CategoriaEndpoint {
 					categoria.getProdutos().add(buildProduto(produtoRecord));
 				}
 				
-				final Result<Record2<String, BigDecimal>> recordsComissao = database.select(
+				final Result<Record3<String, String, BigDecimal>> recordsComissao = database.select(
 							PARTE.DESCRICAO,
+							COMISSAO.DESCRICAO,
 							COMISSAO.PORCENTAGEM
 						)
 						.from(COMISSAO)
@@ -109,9 +111,10 @@ public class CategoriaEndpoint {
 						.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
 						.fetch();
 				
-				for (Record2<String, BigDecimal> recordComissao : recordsComissao) {
+				for (Record3<String, String, BigDecimal> recordComissao : recordsComissao) {
 					final Comissao comissao = new Comissao();
 					comissao.setParte(recordComissao.getValue(PARTE.DESCRICAO));
+					comissao.setDescricao(recordComissao.getValue(COMISSAO.DESCRICAO));
 					comissao.setPorcentagem(recordComissao.getValue(COMISSAO.PORCENTAGEM));
 					categoria.getComissoes().add(comissao);
 				}
@@ -173,11 +176,13 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE_ID, 
+								COMISSAO.DESCRICAO, 
 								COMISSAO.PORCENTAGEM
 							)
 							.values(
 									id, 
 									parteRecord.getId(), 
+									comissao.getDescricao(),
 									comissao.getPorcentagem())
 							.execute();
 				}
@@ -234,10 +239,12 @@ public class CategoriaEndpoint {
 					produtoIds.add(produto.getId());
 				}
 				
-				database.delete(PRODUTO)
-					.where(PRODUTO.CATEGORIA_ID.eq(id))
-					.and(PRODUTO.ID.notIn(produtoIds))
-					.execute();
+				DeleteConditionStep<ProdutoRecord> delete = database.delete(PRODUTO)
+					.where(PRODUTO.CATEGORIA_ID.eq(id));
+				if (!produtoIds.isEmpty()) {
+					delete.and(PRODUTO.ID.notIn(produtoIds));
+				}
+				delete.execute();
 				
 				database.delete(COMISSAO)
 						.where(COMISSAO.CATEGORIA_ID.eq(id))
@@ -251,11 +258,13 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE_ID, 
+								COMISSAO.DESCRICAO,
 								COMISSAO.PORCENTAGEM
 							)
 							.values(
 									id, 
 									parteRecord.getId(), 
+									comissao.getDescricao(),
 									comissao.getPorcentagem())
 							.execute();
 				}
@@ -386,6 +395,8 @@ class Comissao {
 	
 	private String parte;
 	
+	private String descricao;
+	
 	private BigDecimal porcentagem = BigDecimal.ZERO;
 
 	public String getParte() {
@@ -394,6 +405,14 @@ class Comissao {
 
 	public void setParte(String parte) {
 		this.parte = parte;
+	}
+	
+	public String getDescricao() {
+		return descricao;
+	}
+	
+	public void setDescricao(String descricao) {
+		this.descricao = descricao;
 	}
 
 	public BigDecimal getPorcentagem() {

@@ -8,9 +8,12 @@ import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.Result;
+import org.jooq.SelectConditionStep;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.ParteRecord;
@@ -40,13 +43,19 @@ public class ParteEndpoint {
 	@GET
 	@Path("/comissionadas")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Parte> listComissionadas() throws Exception {
+	public List<Parte> listComissionadas(final @QueryParam("term") String term) throws Exception {
 		return new Transaction<List<Parte>>() {
 			@Override
 			protected List<Parte> execute(Executor database) {
 				ArrayList<Parte> partes = new ArrayList<Parte>();
-				Result<ParteRecord> partesRecord = database.selectFrom(PARTE)
-						.where(PARTE.COMISSIONADO.eq("S"))
+				SelectConditionStep<ParteRecord> select = database.selectFrom(PARTE)
+				.where(PARTE.COMISSIONADO.eq("S"));
+				
+				if (StringUtils.isNotBlank(term)) {
+					select.and(PARTE.DESCRICAO.likeIgnoreCase(term + "%"));
+				}
+				
+				Result<ParteRecord> partesRecord = select
 						.fetch();
 				for (ParteRecord parteRecord : partesRecord) {
 					Parte parte = new Parte();

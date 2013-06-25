@@ -2,17 +2,6 @@
 
 COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	
-	var Parte = Backbone.Model.extend({
-		defaults: {
-			descricao: null
-		}
-	});
-
-	var PartesComissionadas = Backbone.Collection.extend({
-		url: '/rest/partes/comissionadas',
-		model: Parte
-	});
-	
 	var Produto = Backbone.Model.extend({
 		defaults: {
 			codigo: null,
@@ -29,6 +18,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	var Comissao = Backbone.Model.extend({
 		defaults: {
 			parte: null,
+			descricao: null,
 			porcentagem: null
 		}
 	});
@@ -171,8 +161,36 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		template: '#categoria_comissoes_template',
 		itemView: CategoriaComissaoView,
 		itemViewContainer: 'table',
+		ui : {
+			'parte': '#parte',
+			'buttonInclude': '.coi-action-include'
+		},
+		triggers: {
+			'click .coi-action-include': 'include'
+		},
 		initialize: function() {
 			_.bindAll(this);
+		},
+		onRender: function() {
+			this.ui.parte.input();
+			this.ui.buttonInclude.button();
+			this.ui.parte.autocomplete({
+				source: '/rest/partes/comissionadas',
+				appendTo: this.ui.parte.closest('.coi-form-item'),
+				response: function(event, ui) {
+					$.each(ui.content, function(index, element) {
+						element.label = element.descricao;
+						element.value = element.descricao;
+					});
+				}
+			})
+			.autocomplete('widget')
+			.css('z-index', 100);
+		},
+		onInclude: function(e) {
+			this.collection.add(new Comissao({
+				parte: this.ui.parte.val()
+			}));
 		}
 	});
 	
@@ -188,21 +206,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		initialize: function() {
 			_.bindAll(this);
-			if (this.model.isNew()) {
-				var model = this.model;
-				new PartesComissionadas().fetch({
-					success: function(partes) {
-						var comissoes = [];
-						partes.each(function(parte) {
-							comissoes.push(new Comissao({
-								parte: parte.get('descricao'),
-								porcentagem: null
-							}));
-						});
-						model.get('comissoes').add(comissoes);
-					}
-				});
-			} else {
+			if (!this.model.isNew()) {
 				this.model.fetch();
 			}
 		},

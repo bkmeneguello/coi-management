@@ -134,15 +134,20 @@
 </dd>
 	</script>
 	<script type="text/template" id="categoria_comissoes_template">
-<dt>Comissoes:</dt>
+<dt>Comissões:</dt>
 <dd>
+	<input type="text" id="parte"/>
+	<button class="coi-action-include">Adicionar</button>
 	<table/>
 </dd>
 	</script>
 	<script type="text/template" id="categoria_comissao_template">
 <td class="coi-row-label"><%= parte %>:</td>
 <td class="coi-row-item">
-	<input type="text" name="porcentagem"/>
+	<input type="text" name="descricao" placeholder=" descrição"/>
+</td>
+<td class="coi-row-item">
+	<input type="text" name="porcentagem" placeholder=" porcentagem"/>
 </td>
 	</script>
 	<script type="text/template" id="categoria_produtos_row_template">
