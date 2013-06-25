@@ -1,8 +1,12 @@
 package com.meneguello.coi;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
 import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.Executor;
@@ -46,15 +50,11 @@ public abstract class Transaction<T> {
 	
 	private Connection openConnection() throws SQLException {
 		try {
-			loadDriver();
-			return DriverManager.getConnection(System.getProperty("database.url"), System.getProperty("database.username"), System.getProperty("database.password"));
-		} catch(ClassNotFoundException e) {
+			DataSource ds = (DataSource) new InitialContext().lookup("java:/comp/env/jdbc/dataSource");
+			return ds.getConnection();
+		} catch(NamingException e) {
 			throw new DataAccessException(e.getMessage(), e);
 		}
-	}
-
-	private void loadDriver() throws ClassNotFoundException {
-		Class.forName(System.getProperty("database.driver"));
 	}
 
 }

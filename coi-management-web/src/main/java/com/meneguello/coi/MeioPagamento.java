@@ -1,4 +1,4 @@
-package com.meneguello.coi.model;
+package com.meneguello.coi;
 
 public enum MeioPagamento {
 	

@@ -12,7 +12,7 @@
 	<properties>
 		<junit.version>3.8.1</junit.version>
 		<jersey.version>1.17.1</jersey.version>
-		<wro4j.version>1.6.2</wro4j.version>
+		<jooq.version>3.0.0-RC2</jooq.version>
 		<javax.servlet.version>3.0.1</javax.servlet.version>
 	</properties>
 	<build>
@@ -27,48 +27,23 @@
 					<failOnMissingWebXml>false</failOnMissingWebXml>
 				</configuration>
 			</plugin>
-			<!-- <plugin> -->
-			<!-- <groupId>ro.isdc.wro4j</groupId> -->
-			<!-- <artifactId>wro4j-maven-plugin</artifactId> -->
-			<!-- <version>${wro4j.version}</version> -->
-			<!-- <executions> -->
-			<!-- <execution> -->
-			<!-- <phase>compile</phase> -->
-			<!-- <goals> -->
-			<!-- <goal>run</goal> -->
-			<!-- </goals> -->
-			<!-- </execution> -->
-			<!-- </executions> -->
-			<!-- <configuration> -->
-			<!-- <targetGroups>all</targetGroups> -->
-			<!-- <destinationFolder>${project.build.directory}/${project.build.finalName}/wro/</destinationFolder> -->
-			<!-- <wroManagerFactory>ro.isdc.wro.maven.plugin.manager.factory.ConfigurableWroManagerFactory</wroManagerFactory> -->
-			<!-- <ignoreMissingResources>true</ignoreMissingResources> -->
-			<!-- </configuration> -->
-			<!-- </plugin> -->
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.7</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>properties-maven-plugin</artifactId>
+				<version>1.0-alpha-2</version>
 				<executions>
 					<execution>
-						<id>unpack</id>
-						<phase>generate-sources</phase>
+						<phase>initialize</phase>
 						<goals>
-							<goal>unpack</goal>
+							<goal>set-system-properties</goal>
 						</goals>
 						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>com.meneguello.coi</groupId>
-									<artifactId>coi-management-model</artifactId>
-									<version>${project.version}</version>
-									<type>jar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.build.directory}/model</outputDirectory>
-									<includes>**/*.sql</includes>
-								</artifactItem>
-							</artifactItems>
+							<properties>
+								<property>
+									<name>log4j.configuration</name>
+									<value>file:${basedir}/log4j.properties</value>
+								</property>
+							</properties>
 						</configuration>
 					</execution>
 				</executions>
@@ -86,7 +61,7 @@
 				</dependencies>
 				<configuration>
 					<driver>org.hsqldb.jdbc.JDBCDriver</driver>
-					<url>jdbc:hsqldb:file:${project.build.directory}/db/schema;shutdown=true</url>
+					<url>jdbc:hsqldb:file:${project.build.directory}/db/schema;shutdown=true;hsqldb.write_delay=false</url>
 					<username>SA</username>
 					<password></password>
 				</configuration>
@@ -100,11 +75,67 @@
 						<configuration>
 							<autocommit>true</autocommit>
 							<srcFiles>
-								<srcFile>${project.build.directory}/model/schema.sql</srcFile>
+								<srcFile>src/main/resources/schema.sql</srcFile>
 							</srcFiles>
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq-codegen-maven</artifactId>
+				<version>${jooq.version}</version>
+				<executions>
+					<execution>
+						<id>generate-entities</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.hsqldb</groupId>
+						<artifactId>hsqldb</artifactId>
+						<version>${hsqldb.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-api</artifactId>
+						<version>${slf4j.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-log4j12</artifactId>
+						<version>${slf4j.version}</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<jdbc>
+						<driver>org.hsqldb.jdbc.JDBCDriver</driver>
+						<url>jdbc:hsqldb:file:${project.build.directory}/db/schema;readonly=true</url>
+						<user>SA</user>
+						<password></password>
+					</jdbc>
+					<generator>
+						<name>org.jooq.util.DefaultGenerator</name>
+						<database>
+							<name>org.jooq.util.hsqldb.HSQLDBDatabase</name>
+							<includes>.*</includes>
+							<excludes></excludes>
+							<inputSchema>PUBLIC</inputSchema>
+						</database>
+						<generate>
+							<relations>true</relations>
+							<deprecated>false</deprecated>
+						</generate>
+						<target>
+							<packageName>com.meneguello.coi.model</packageName>
+							<directory>${project.build.directory}/generated-sources/jooq</directory>
+						</target>
+					</generator>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.tomcat.maven</groupId>
@@ -125,15 +156,20 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>com.meneguello.coi</groupId>
-			<artifactId>coi-management-core</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>${junit.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq</artifactId>
+			<version>${jooq.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq-meta</artifactId>
+			<version>${jooq.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
@@ -156,16 +192,6 @@
 			<version>${jersey.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>ro.isdc.wro4j</groupId>
-			<artifactId>wro4j-core</artifactId>
-			<version>${wro4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>ro.isdc.wro4j</groupId>
-			<artifactId>wro4j-extensions</artifactId>
-			<version>${wro4j.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>${javax.servlet.version}</version>
@@ -181,6 +207,11 @@
 			<groupId>net.sf.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
 			<version>2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.1</version>
 		</dependency>
 	</dependencies>
 </project>

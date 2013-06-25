@@ -14,8 +14,6 @@
 	</properties>
 	<modules>
 		<module>coi-management-report</module>
-		<module>coi-management-model</module>
-		<module>coi-management-core</module>
 		<module>coi-management-web</module>
 	</modules>
 	<build>

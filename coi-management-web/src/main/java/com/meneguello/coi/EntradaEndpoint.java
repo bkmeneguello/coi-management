@@ -27,7 +27,7 @@ import org.jooq.Result;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.Keys;
-import com.meneguello.coi.model.MeioPagamento;
+import com.meneguello.coi.MeioPagamento;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
 import com.meneguello.coi.model.tables.records.EntradaRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
