@@ -9,6 +9,10 @@ function _validate(element) {
 	return true;
 }
 
+function _notifyError(text) {
+	noty({text: text, type: 'error'});
+}
+
 function _notifyWarning(text) {
 	noty({text: text, type: 'warning', timeout: 5000});
 }
@@ -26,11 +30,11 @@ function _notifyDelete() {
 }
 
 function _notifyDeleteFailure() {
-	noty({text: 'Falha na exclusão do registro', type: 'error'});
+	_notifyError('Falha na exclusão do registro');
 }
 
 function _notifyUpdateFailure() {
-	noty({text: 'Falha no cadastro do registro', type: 'error'});
+	_notifyError('Falha no cadastro do registro');
 }
 
 function _promptDelete(confirm) {
@@ -316,6 +320,7 @@ COI.PessoaView = Marionette.ItemView.extend({
 	},
 	template: '#coi_view_pessoa_template',
 	ui: {
+		'label': 'dt',
 		'input': 'input[type=text].coi-view-pessoa-nome',
 		'pessoaSession': 'div.coi-view-pessoa',
 		'pessoaNewSession': 'div.coi-view-pessoa-new',
@@ -325,6 +330,11 @@ COI.PessoaView = Marionette.ItemView.extend({
 	},
 	triggers: {
 		'click .coi-action-cancel': 'cancel'
+	},
+	onRender: function() {
+		if ($.isBlank(this.options.label)) {
+			this.ui.label.hide();
+		}
 	},
 	onCreatePessoa: function(e) {
 		this.ui.pessoaSession.hide();

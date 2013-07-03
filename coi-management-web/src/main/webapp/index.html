@@ -229,11 +229,10 @@
 <header>Entrada</header>
 <div class="coi-view-text" data-attribute="data" data-label="Data:" data-required="true"/>
 <div id="paciente"/>
-<div id="medico"/>
-<div id="fisioterapeuta"/>
+<div id="produtos"/>
+<div id="partes"/>
 <class class="coi-view-text" data-attribute="valor" data-label="Valor:" data-required="true"/>
 <div id="meio-pagamento"/>
-<div id="produtos"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
@@ -254,22 +253,22 @@
 <div id="cheque"/>
 	</script>
 	<script type="text/template" id="entrada_meio_pagamento_cheque_template">
-	<button class="coi-action-create">Adicionar</button>
-	<div class="coi-view-cheque-new">
-		<header>Novo Cheque</header>
-		<div data-attribute="numero" class="coi-view-text" data-label="Numero:" data-required="true"/>
-		<div data-attribute="conta" class="coi-view-text" data-label="Conta:" data-required="true"/>
-		<div data-attribute="agencia" class="coi-view-text" data-label="Agência:" data-required="true"/>
-		<div data-attribute="banco" class="coi-view-text" data-label="Banco:" data-required="true"/>
-		<div data-attribute="documento" class="coi-view-text" data-label="CPF/CNPJ:" data-required="true"/>
-		<div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
-		<div data-attribute="dataDeposito" class="coi-view-text" data-label="Data:" data-required="true"/>
-		<div data-attribute="observacao" class="coi-view-textarea" data-label="Observação:"/>
-		<div id="cliente"/>
-		<div>
-			<button class="coi-action-cancel">Cancelar</button>
-		</div>
+<button class="coi-action-create">Adicionar</button>
+<div class="coi-view-cheque-new">
+	<header>Novo Cheque</header>
+	<div data-attribute="numero" class="coi-view-text" data-label="Numero:" data-required="true"/>
+	<div data-attribute="conta" class="coi-view-text" data-label="Conta:" data-required="true"/>
+	<div data-attribute="agencia" class="coi-view-text" data-label="Agência:" data-required="true"/>
+	<div data-attribute="banco" class="coi-view-text" data-label="Banco:" data-required="true"/>
+	<div data-attribute="documento" class="coi-view-text" data-label="CPF/CNPJ:" data-required="true"/>
+	<div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
+	<div data-attribute="dataDeposito" class="coi-view-text" data-label="Data:" data-required="true"/>
+	<div data-attribute="observacao" class="coi-view-textarea" data-label="Observação:"/>
+	<div id="cliente"/>
+	<div>
+		<button class="coi-action-cancel">Cancelar</button>
 	</div>
+</div>
 	</script>
 	<script type="text/template" id="entrada_produtos_template">
 <dt><%= label %></dt>
@@ -298,6 +297,30 @@
 <td class="coi-row-item">
 	<button class="coi-action-remove">Remover</button>
 </td>
+	</script>
+	<script type="text/template" id="entrada_partes_template">
+<dl class="coi-form-item">
+	<dt>Partes:</dt>
+	<dd>
+		<input type="text" id="parte"/>
+		<button class="coi-action-include">Adicionar</button>
+	</dd>
+</dl>
+<div id="partes-itens" class="coi-form-item"/>
+	</script>
+	<script type="text/template" id="entrada_parte_template">
+<dl class="coi-form-item">
+	<dt><%= parte %>:</dt>
+	<dd>
+		<input type="text" class="coi-view-text" name="descricao" placeholder=" descrição"/>
+	</dd>
+</dl>
+<div class="coi-view-pessoa"/>
+<dl class="coi-form-item">
+	<dd>
+		<button class="coi-action-remove">Remover</button>
+	</dd>
+</dl>
 	</script>
 	<script type="text/template" id="cheque_row_template">
 <td><%= paciente %></td>

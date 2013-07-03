@@ -1,8 +1,12 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
+import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
+import static com.meneguello.coi.model.tables.EntradaParte.ENTRADA_PARTE;
 import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
+import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
@@ -20,39 +24,28 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
+import lombok.Data;
+
+import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.jooq.Record;
+import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.Keys;
-import com.meneguello.coi.MeioPagamento;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
 import com.meneguello.coi.model.tables.records.EntradaRecord;
+import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
 @Path("/entradas")
 public class EntradaEndpoint {
-	
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<EntradaList> list() throws Exception {
-		return new Transaction<List<EntradaList>>() {
-			@Override
-			protected List<EntradaList> execute(Executor database) {
-				final ArrayList<EntradaList> result = new ArrayList<EntradaList>();
-				final Result<Record> resultRecord = database.selectFrom(ENTRADA
-							.join(PESSOA).onKey(Keys.ENTRADA_FK_PACIENTE)
-						)
-						.fetch();
-				for (Record record : resultRecord) {
-					result.add(buildEntradaList(record));
-				}
-				return result;
-			}
-		}.execute();
-	}
 	
 	@GET
 	@Path("/meios")
@@ -65,7 +58,25 @@ public class EntradaEndpoint {
 		return result;
 	}
 	
-	private EntradaList buildEntradaList(Record record) {
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<EntradaList> list() throws Exception {
+		return new Transaction<List<EntradaList>>() {
+			@Override
+			protected List<EntradaList> execute(Executor database) {
+				final ArrayList<EntradaList> result = new ArrayList<EntradaList>();
+				final Result<Record> resultRecord = database.selectFrom(ENTRADA
+							.join(PESSOA).onKey(Keys.ENTRADA_FK_PACIENTE)
+						).fetch();
+				for (Record record : resultRecord) {
+					result.add(buildEntradaList(database, record));
+				}
+				return result;
+			}
+		}.execute();
+	}
+	
+	private EntradaList buildEntradaList(Executor database, Record record) {
 		final EntradaList entrada = new EntradaList();
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
@@ -82,22 +93,28 @@ public class EntradaEndpoint {
 		return new Transaction<Entrada>() {
 			@Override
 			protected Entrada execute(Executor database) {
-				com.meneguello.coi.model.tables.Pessoa pacienteAlias = PESSOA.as("PACIENTE");
-				com.meneguello.coi.model.tables.Pessoa medicoAlias = PESSOA.as("MEDICO");
-				com.meneguello.coi.model.tables.Pessoa fisioterapeutaAlias = PESSOA.as("FISIOTERAPEUTA");
 				final Record record = database.selectFrom(ENTRADA
-							.join(pacienteAlias).on(pacienteAlias.ID.equal(ENTRADA.PACIENTE_ID))
-							.join(medicoAlias).on(medicoAlias.ID.equal(ENTRADA.MEDICO_ID))
-							.join(fisioterapeutaAlias).on(fisioterapeutaAlias.ID.equal(ENTRADA.FISIOTERAPEUTA_ID))
-							.join(CHEQUE).onKey()
+							.join(PESSOA).onKey(Keys.ENTRADA_FK_PACIENTE)
+							.leftOuterJoin(CHEQUE).onKey()
 						)
 						.where(ENTRADA.ID.eq(id))
 						.fetchOne();
 				
 				final Entrada entrada = buildEntrada(record);
-				entrada.setPaciente(buildPessoa(record, pacienteAlias));
-				entrada.setMedico(buildPessoa(record, medicoAlias));
-				entrada.setFisioterapeuta(buildPessoa(record, fisioterapeutaAlias));
+				entrada.setPaciente(buildPessoa(record));
+				
+				final Result<Record> recordsParte = database.selectFrom(ENTRADA_PARTE
+							.join(PARTE).onKey()
+							.join(PESSOA).onKey()
+						).where(ENTRADA_PARTE.ENTRADA_ID.eq(id))
+						.fetch();
+				for (Record recordParte : recordsParte) {
+					final Parte parte = new Parte();
+					parte.setPessoa(buildPessoa(recordParte));
+					parte.setDescricao(recordParte.getValue(ENTRADA_PARTE.DESCRICAO));
+					parte.setParte(recordParte.getValue(PARTE.DESCRICAO));
+					entrada.getPartes().add(parte);
+				}
 				
 				final Result<Record> recordsProduto = database.selectFrom(PRODUTO
 							.join(ENTRADA_PRODUTO).onKey()
@@ -133,11 +150,11 @@ public class EntradaEndpoint {
 		return entrada;
 	}
 	
-	private Pessoa buildPessoa(Record record, com.meneguello.coi.model.tables.Pessoa pessoaAlias) {
+	private Pessoa buildPessoa(Record record) {
 		final Pessoa pessoa = new Pessoa();
-		pessoa.setId(record.getValue(pessoaAlias.ID));
-		pessoa.setNome(record.getValue(pessoaAlias.NOME));
-		pessoa.setCodigo(record.getValue(pessoaAlias.CODIGO));
+		pessoa.setId(record.getValue(PESSOA.ID));
+		pessoa.setNome(record.getValue(PESSOA.NOME));
+		pessoa.setCodigo(record.getValue(PESSOA.CODIGO));
 		return pessoa;
 	}
 	
@@ -152,7 +169,7 @@ public class EntradaEndpoint {
 		cheque.setValor(record.getValue(CHEQUE.VALOR));
 		cheque.setDataDeposito(record.getValue(CHEQUE.DATA_DEPOSITO));
 		cheque.setObservacao(record.getValue(CHEQUE.OBSERVACAO));
-		cheque.setCliente(buildPessoa(record, PESSOA));
+		cheque.setCliente(buildPessoa(record));
 		return cheque;
 	}
 
@@ -160,22 +177,12 @@ public class EntradaEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Entrada create(final Entrada entrada) throws Exception {
-		new Transaction<Void>(true) {
+		return new Transaction<Entrada>(true) {
 			@Override
-			public Void execute(Executor database) {
+			public Entrada execute(Executor database) {
 				final Pessoa paciente = entrada.getPaciente();
 				if (paciente.getId() == null) {
 					createPessoa(database, paciente);
-				}
-				
-				final Pessoa medico = entrada.getMedico();
-				if (medico.getId() == null) {
-					createPessoa(database, medico);
-				}
-				
-				final Pessoa fisioterapeuta = entrada.getFisioterapeuta();
-				if (fisioterapeuta.getId() == null && fisioterapeuta.getCodigo() != null) {
-					createPessoa(database, fisioterapeuta);
 				}
 				
 				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
@@ -222,8 +229,6 @@ public class EntradaEndpoint {
 							ENTRADA.DATA,
 							ENTRADA.VALOR,
 							ENTRADA.PACIENTE_ID,
-							ENTRADA.MEDICO_ID,
-							ENTRADA.FISIOTERAPEUTA_ID,
 							ENTRADA.MEIO_PAGAMENTO,
 							ENTRADA.CHEQUE_ID
 						)
@@ -231,8 +236,6 @@ public class EntradaEndpoint {
 								new java.sql.Date(entrada.getData().getTime()),
 								entrada.getValor(),
 								paciente.getId(),
-								medico.getId(),
-								fisioterapeuta.getId(),
 								meioPagamento.name(),
 								entrada.getCheque().getId()
 						)
@@ -240,25 +243,33 @@ public class EntradaEndpoint {
 						.fetchOne();
 				
 				entrada.setId(record.getId());
+				
+				final List<Long> produtoIds = new ArrayList<>();
 				for (Produto produto : entrada.getProdutos()) {
-					database.insertInto(ENTRADA_PRODUTO, 
-								ENTRADA_PRODUTO.ENTRADA_ID, 
-								ENTRADA_PRODUTO.PRODUTO_ID,
-								ENTRADA_PRODUTO.QUANTIDADE
-							)
-							.values(
-									entrada.getId(), 
-									produto.getId(),
-									produto.getQuantidade()
-							)
-							.execute();
+					produtoIds.add(produto.getId());
+					createProduto(database, entrada, produto);
 				}
 				
-				return null;
+				final List<String> comissoes = loadComissoes(database, produtoIds);
+				
+				final List<String> partes = new ArrayList<>();
+				for (Parte parte : entrada.getPartes()) {
+					if (StringUtils.isNotBlank(parte.getDescricao())) {
+						partes.add(parte.getDescricao());
+					}
+					createParte(database, entrada, parte);
+				}
+				
+				comissoes.removeAll(partes);
+				if (!comissoes.isEmpty()) {
+					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
+							.build());
+				}
+				
+				return entrada;
 			}
 		}.execute();
-		
-		return entrada;
 	}
 	
 	private void createPessoa(Executor database, final Pessoa pessoa) {
@@ -282,24 +293,12 @@ public class EntradaEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Entrada update(final @PathParam("id") Long id, final Entrada entrada) throws Exception {
-		new Transaction<Void>(true) {
+		return new Transaction<Entrada>(true) {
 			@Override
-			public Void execute(Executor database) {
+			public Entrada execute(Executor database) {
 				final Pessoa paciente = entrada.getPaciente();
-				if (paciente.getId() == null) {
-					final PessoaRecord pessoaRecord = database.insertInto(
-								PESSOA, 
-								PESSOA.NOME,
-								PESSOA.CODIGO
-							)
-							.values(
-									trimToNull(paciente.getNome()),
-									trimToNull(paciente.getCodigo())
-							)
-							.returning(PESSOA.ID)
-							.fetchOne();
-					
-					paciente.setId(pessoaRecord.getId());
+				if (paciente.getId() == null && paciente.getCodigo() != null) {
+					createPessoa(database, paciente);
 				}
 				
 				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
@@ -315,29 +314,60 @@ public class EntradaEndpoint {
 						.where(ENTRADA.ID.eq(id))
 						.execute();
 				
-				database.delete(ENTRADA_PRODUTO)
-						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(id))
-						.execute();
+				deleteProdutos(database, id);
 				
+				final List<Long> produtoIds = new ArrayList<>();
 				for (Produto produto : entrada.getProdutos()) {
-					database.insertInto(ENTRADA_PRODUTO, 
-								ENTRADA_PRODUTO.ENTRADA_ID, 
-								ENTRADA_PRODUTO.PRODUTO_ID,
-								ENTRADA_PRODUTO.QUANTIDADE
-							)
-							.values(
-									id, 
-									produto.getId(),
-									produto.getQuantidade()
-							)
-							.execute();
+					produtoIds.add(produto.getId());
+					createProduto(database, entrada, produto);
 				}
 				
-				return null;
+				final List<String> comissoes = loadComissoes(database, produtoIds);
+				
+				deletePartes(database, id);
+				
+				final List<String> partes = new ArrayList<>();
+				for (Parte parte : entrada.getPartes()) {
+					if (StringUtils.isNotBlank(parte.getDescricao())) {
+						partes.add(parte.getDescricao());
+					}
+					createParte(database, entrada, parte);
+				}
+				
+				comissoes.removeAll(partes);
+				if (!comissoes.isEmpty()) {
+					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
+							.build());
+				}
+				
+				return entrada;
 			}
 		}.execute();
+	}
+	
+	private void createParte(Executor database, final Entrada entrada, Parte parte) {
+		final ParteRecord parteRecord = database.selectFrom(PARTE)
+				.where(PARTE.DESCRICAO.eq(parte.getParte()))
+				.fetchOne();
 		
-		return entrada;
+		final Pessoa pessoa = parte.getPessoa();
+		if (pessoa.getId() == null && pessoa.getCodigo() != null) {
+			createPessoa(database, pessoa);
+		}
+		
+		database.insertInto(ENTRADA_PARTE,
+				ENTRADA_PARTE.DESCRICAO,
+				ENTRADA_PARTE.ENTRADA_ID,
+				ENTRADA_PARTE.PARTE_ID,
+				ENTRADA_PARTE.PESSOA_ID
+			)
+			.values(parte.getDescricao(),
+				entrada.getId(),
+				parteRecord.getId(),
+				parte.getPessoa().getId()
+			)
+			.execute();
 	}
 	
 	@DELETE
@@ -346,10 +376,8 @@ public class EntradaEndpoint {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(Executor database) {
-				database.delete(ENTRADA_PRODUTO)
-						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(id))
-						.execute();
-				
+				deleteProdutos(database, id);
+				deletePartes(database, id);
 				database.delete(ENTRADA)
 						.where(ENTRADA.ID.eq(id))
 						.execute();
@@ -358,371 +386,111 @@ public class EntradaEndpoint {
 			}
 		}.execute();
 	}
+	
+	private void deleteProdutos(Executor database, final Long entradaId) {
+		database.delete(ENTRADA_PRODUTO)
+				.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(entradaId))
+				.execute();
+	}
 
+	private void deletePartes(Executor database, final Long entradaId) {
+		database.delete(ENTRADA_PARTE)
+			.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
+			.execute();
+	}
+
+	private void createProduto(Executor database, final Entrada entrada, Produto produto) {
+		database.insertInto(ENTRADA_PRODUTO, 
+					ENTRADA_PRODUTO.ENTRADA_ID, 
+					ENTRADA_PRODUTO.PRODUTO_ID,
+					ENTRADA_PRODUTO.QUANTIDADE
+				)
+				.values(
+						entrada.getId(), 
+						produto.getId(),
+						produto.getQuantidade()
+				)
+				.execute();
+	}
+
+	private List<String> loadComissoes(Executor database,
+			final List<Long> produtoIds) {
+		final List<String> comissoes = new ArrayList<>();
+		if (!produtoIds.isEmpty()) {
+			final Result<Record1<String>> comissaoRecords = database.select(COMISSAO.DESCRICAO)
+				.from(PRODUTO
+					.join(CATEGORIA).onKey()
+					.join(COMISSAO).onKey(Keys.COMISSAO_FK_CATEGORIA)
+				)
+				.where(PRODUTO.ID.in(produtoIds))
+				.fetch();
+			for (Record1<String> comissaoRecord : comissaoRecords) {
+				final String descricao = comissaoRecord.getValue(COMISSAO.DESCRICAO);
+				if (StringUtils.isNotBlank(descricao)) {
+					comissoes.add(descricao);
+				}
+			}
+		}
+		return comissoes;
+	}
+
+	@Data
 	private static class EntradaList {
-		
 		private Long id;
-		
 		private Date data;
-		
 		private String cliente;
-		
 		private BigDecimal valor;
-		
 		private String tipo;
-		
-		public Long getId() {
-			return id;
-		}
-		
-		public void setId(Long id) {
-			this.id = id;
-		}
-		
-		public Date getData() {
-			return data;
-		}
-		
-		public void setData(Date data) {
-			this.data = data;
-		}
-		
-		public String getCliente() {
-			return cliente;
-		}
-		
-		public void setCliente(String cliente) {
-			this.cliente = cliente;
-		}
-		
-		public BigDecimal getValor() {
-			return valor;
-		}
-		
-		public void setValor(BigDecimal valor) {
-			this.valor = valor;
-		}
-		
-		public String getTipo() {
-			return tipo;
-		}
-		
-		public void setTipo(String tipo) {
-			this.tipo = tipo;
-		}
-		
 	}
 	
+	@Data
 	private static class Entrada {
-		
 		private Long id;
-		
 		private Date data;
-		
 		private Pessoa paciente = new Pessoa();
-		
-		private Pessoa medico = new Pessoa();
-		
-		private Pessoa fisioterapeuta = new Pessoa();
-		
 		private BigDecimal valor;
-		
 		private String tipo;
-		
 		private Cheque cheque = new Cheque();
-		
 		private List<Produto> produtos = new ArrayList<>();
-
-		public Long getId() {
-			return id;
-		}
-
-		public void setId(Long id) {
-			this.id = id;
-		}
-
-		public Date getData() {
-			return data;
-		}
-
-		public void setData(Date data) {
-			this.data = data;
-		}
-
-		public Pessoa getPaciente() {
-			return paciente;
-		}
-
-		public void setPaciente(Pessoa paciente) {
-			this.paciente = paciente;
-		}
-
-		public Pessoa getMedico() {
-			return medico;
-		}
-
-		public void setMedico(Pessoa medico) {
-			this.medico = medico;
-		}
-
-		public Pessoa getFisioterapeuta() {
-			return fisioterapeuta;
-		}
-
-		public void setFisioterapeuta(Pessoa fisioterapeuta) {
-			this.fisioterapeuta = fisioterapeuta;
-		}
-
-		public BigDecimal getValor() {
-			return valor;
-		}
-
-		public void setValor(BigDecimal valor) {
-			this.valor = valor;
-		}
-		
-		public String getTipo() {
-			return tipo;
-		}
-		
-		public void setTipo(String tipo) {
-			this.tipo = tipo;
-		}
-
-		public Cheque getCheque() {
-			return cheque;
-		}
-
-		public void setCheque(Cheque cheque) {
-			this.cheque = cheque;
-		}
-
-		public List<Produto> getProdutos() {
-			return produtos;
-		}
-		
-	}
-	
-	private static class Pessoa {
-		
-		private Long id;
-		
-		private String nome;
-		
-		private String codigo;
-		
 		private List<Parte> partes = new ArrayList<>();
-		
-		public Long getId() {
-			return id;
-		}
-		
-		public void setId(Long id) {
-			this.id = id;
-		}
-		
-		public String getNome() {
-			return nome;
-		}
-		
-		public void setNome(String nome) {
-			this.nome = nome;
-		}
-		
-		public String getCodigo() {
-			return codigo;
-		}
-		
-		public void setCodigo(String codigo) {
-			this.codigo = codigo;
-		}
-		
-		public List<Parte> getPartes() {
-			return partes;
-		}
-		
 	}
 	
-	private static class Parte {
-		
-		private String descricao;
-		
-		public String getDescricao() {
-			return descricao;
-		}
-
-		public void setDescricao(String descricao) {
-			this.descricao = descricao;
-		}
-		
-	}
-	
-	private static class Produto {
-		
+	@Data @JsonIgnoreProperties({"partes"})
+	private static class Pessoa {
 		private Long id;
-		
+		private String nome;
 		private String codigo;
-		
-		private String descricao;
-		
-		private BigDecimal custo = BigDecimal.ZERO;
-		
-		private BigDecimal preco = BigDecimal.ZERO;
-		
-		private Integer quantidade;
-		
-		public Long getId() {
-			return id;
-		}
-		
-		public void setId(Long id) {
-			this.id = id;
-		}
-		
-		public String getCodigo() {
-			return codigo;
-		}
-		
-		public void setCodigo(String codigo) {
-			this.codigo = codigo;
-		}
-		
-		public String getDescricao() {
-			return descricao;
-		}
-		
-		public void setDescricao(String descricao) {
-			this.descricao = descricao;
-		}
-		
-		public BigDecimal getCusto() {
-			return custo;
-		}
-		
-		public void setCusto(BigDecimal custo) {
-			this.custo = custo;
-		}
-		
-		public BigDecimal getPreco() {
-			return preco;
-		}
-		
-		public void setPreco(BigDecimal preco) {
-			this.preco = preco;
-		}
-		
-		public Integer getQuantidade() {
-			return quantidade;
-		}
-		
-		public void setQuantidade(Integer quantidade) {
-			this.quantidade = quantidade;
-		}
-		
 	}
 	
-private static class Cheque {
-		
+	@Data
+	private static class Parte {
+		private Pessoa pessoa = new Pessoa();
+		private String descricao;
+		private String parte;
+	}
+	
+	@Data
+	private static class Produto {
 		private Long id;
-		
+		private String codigo;
+		private String descricao;
+		private BigDecimal custo = BigDecimal.ZERO;
+		private BigDecimal preco = BigDecimal.ZERO;
+		private Integer quantidade;
+	}
+	
+	@Data
+	private static class Cheque {
+		private Long id;
 		private String numero;
-		
 		private String conta;
-		
 		private String agencia;
-		
 		private String banco;
-		
 		private String documento;
-		
 		private BigDecimal valor;
-		
 		private Date dataDeposito;
-		
 		private String observacao;
-		
 		private Pessoa cliente = new Pessoa();
-		
-		public Long getId() {
-			return id;
-		}
-
-		public void setId(Long id) {
-			this.id = id;
-		}
-
-		public String getNumero() {
-			return numero;
-		}
-
-		public void setNumero(String numero) {
-			this.numero = numero;
-		}
-
-		public String getConta() {
-			return conta;
-		}
-
-		public void setConta(String conta) {
-			this.conta = conta;
-		}
-
-		public String getAgencia() {
-			return agencia;
-		}
-
-		public void setAgencia(String agencia) {
-			this.agencia = agencia;
-		}
-
-		public String getBanco() {
-			return banco;
-		}
-
-		public void setBanco(String banco) {
-			this.banco = banco;
-		}
-
-		public String getDocumento() {
-			return documento;
-		}
-
-		public void setDocumento(String documento) {
-			this.documento = documento;
-		}
-
-		public BigDecimal getValor() {
-			return valor;
-		}
-
-		public void setValor(BigDecimal valor) {
-			this.valor = valor;
-		}
-
-		public Date getDataDeposito() {
-			return dataDeposito;
-		}
-
-		public void setDataDeposito(Date dataDeposito) {
-			this.dataDeposito = dataDeposito;
-		}
-
-		public String getObservacao() {
-			return observacao;
-		}
-
-		public void setObservacao(String observacao) {
-			this.observacao = observacao;
-		}
-
-		public Pessoa getCliente() {
-			return cliente;
-		}
-
-		public void setCliente(Pessoa cliente) {
-			this.cliente = cliente;
-		}
-
 	}
 	
 }

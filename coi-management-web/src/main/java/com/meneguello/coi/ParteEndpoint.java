@@ -11,6 +11,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.Result;
 import org.jooq.SelectConditionStep;
@@ -66,19 +68,10 @@ public class ParteEndpoint {
 			}
 		}.execute();
 	}
-
-	class Parte {
-		
-		private String descricao;
-		
-		public String getDescricao() {
-			return descricao;
-		}
 	
-		public void setDescricao(String descricao) {
-			this.descricao = descricao;
-		}
-		
+	@Data
+	private static class Parte {
+		private String descricao;
 	}
 
 }

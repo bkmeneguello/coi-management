@@ -24,7 +24,7 @@
 	<security-role>
 		<role-name>admin</role-name>
 	</security-role>
-
+	
 	<resource-ref>
 		<res-ref-name>jdbc/dataSource</res-ref-name>
 		<res-type>javax.sql.DataSource</res-type>

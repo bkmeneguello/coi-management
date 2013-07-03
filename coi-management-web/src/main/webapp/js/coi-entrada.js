@@ -40,27 +40,43 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var Parte = Backbone.Model.extend({
+		defaults: function() {
+			return {
+				pessoa: new Pessoa(),
+				descricao: null,
+				parte: null
+			};
+		},
+		parse: function(resp, options) {
+			resp.pessoa = new Pessoa(resp.pessoa, {parse: true});
+			return resp;
+		}
+	});
+	
+	var Partes = Backbone.Collection.extend({
+		model: Parte
+	});
+	
 	var Entrada = Backbone.Model.extend({
 		urlRoot: '/rest/entradas',
 		defaults: function() {
 			return {
 				data: new Date(),
 				paciente: new Pessoa(),
-				medico: new Pessoa(),
-				fisioterapeuta: new Pessoa(),
 				valor: null,
 				tipo: null,
 				cheque: new Cheque(),
-				produtos: new Produtos()
+				produtos: new Produtos(),
+				partes: new Partes()
 			};
 		},
 		parse: function(resp, options) {
 			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
-			resp.medico = new Pessoa(resp.medico, {parse: true});
-			resp.fisioterapeuta = new Pessoa(resp.fisioterapeuta, {parse: true});
 			resp.cheque = new Cheque(resp.cheque, {parse: true});
 			resp.produtos = new Produtos(resp.produtos, {parse: true});
+			resp.partes = new Partes(resp.partes, {parse: true});
 			return resp;
 		}
 	});
@@ -241,20 +257,83 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var EntradaParteView = Marionette.ItemView.extend({
+		template: '#entrada_parte_template',
+		ui: {
+			'input': '.coi-view-text',
+			'pessoa': '.coi-view-pessoa',
+			'buttonRemove': '.coi-action-remove'
+		},
+		triggers: {
+			'click .coi-action-remove': 'remove'
+		},
+		modelBinder: function() {
+			return new Backbone.ModelBinder();
+		},
+		initialize: function() {
+			_.bindAll(this);
+		},
+		onRender: function() {
+			this.modelBinder().bind(this.model, this.$el);
+			this.ui.input.input();
+			new COI.PessoaView({el: this.ui.pessoa, model: this.model.get('pessoa'), attribute: 'pessoa', required: true}).render();
+			this.ui.buttonRemove.button();
+		},
+		onRemove: function(e) {
+			this.model.collection.remove(this.model);
+		}
+	});
+	
+	var EntradaPartesView = Marionette.CompositeView.extend({
+		template: '#entrada_partes_template',
+		itemView: EntradaParteView,
+		itemViewContainer: '#partes-itens',
+		ui : {
+			'parte': '#parte',
+			'buttonInclude': '.coi-action-include'
+		},
+		triggers: {
+			'click .coi-action-include': 'include'
+		},
+		initialize: function() {
+			_.bindAll(this);
+		},
+		onRender: function() {
+			this.ui.parte.input();
+			this.ui.buttonInclude.button();
+			this.ui.parte.autocomplete({
+				source: '/rest/partes/comissionadas',
+				appendTo: this.ui.parte.closest('.coi-form-item'),
+				response: function(event, ui) {
+					$.each(ui.content, function(index, element) {
+						element.label = element.descricao;
+						element.value = element.descricao;
+					});
+				}
+			})
+			.autocomplete('widget')
+			.css('z-index', 100);
+		},
+		onInclude: function(e) {
+			this.collection.add(new Parte({
+				parte: this.ui.parte.val()
+			}));
+			this.ui.parte.val(null);
+		}
+	});
+	
 	var EntradaView = COI.FormView.extend({
 		template: '#entrada_template',
 		regions: {
+			'produtos': '#produtos',
 			'paciente': '#paciente',
-			'medico': '#medico',
-			'fisioterapeuta': '#fisioterapeuta',
+			'partes': '#partes',
 			'meioPagamento': '#meio-pagamento',
-			'produtos': '#produtos'
 		},
 		modelEvents: {
+			'change:produtos': 'renderProdutos',
 			'change:paciente': 'renderPaciente',
-			'change:medico': 'renderMedico',
-			'change:fisioterapeuta': 'renderFisioterapeuta',
-			'change:produtos': 'renderProdutos'
+			'change:partes': 'renderPartes'
 		},
 		initialize: function() {
 			if (!this.model.isNew()) {
@@ -270,22 +349,12 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.renderPaciente();
-			this.renderMedico();
-			this.renderFisioterapeuta();
-			this.renderMeioPagamento();
 			this.renderProdutos();
+			this.renderMeioPagamento();
+			this.renderPartes();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
-		},
-		renderPaciente: function() {
-			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
-		},
-		renderMedico: function() {
-			this.medico.show(new COI.PessoaView({model: this.model.get('medico'), label: 'Médico:', attribute: 'medico', required: true}));
-		},
-		renderFisioterapeuta: function() {
-			this.fisioterapeuta.show(new COI.PessoaView({model: this.model.get('fisioterapeuta'), label: 'Fisioterapeuta:', attribute: 'fisioterapeuta'}));
 		},
 		renderMeioPagamento: function() {
 			this.meioPagamento.show(new MeioPagamentoView({model: this.model, label: 'Meio Pagamento:', attribute: 'tipo'}));
@@ -293,17 +362,26 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		renderProdutos: function() {
 			this.produtos.show(new EntradaProdutosView({collection: this.model.get('produtos'), label: 'Produtos:', attribute: 'produtos'}));
 		},
+		renderPaciente: function() {
+			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
+		},
+		renderPartes: function() {
+			this.partes.show(new EntradaPartesView({collection: this.model.get('partes'), label: 'Partes:', attribute: 'partes'}));
+		},
 		onCancel: function(e) {
 			Backbone.history.navigate('entradas', true);
 		},
 		onConfirm: function(e) {
 			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: this.onComplete});
+				this.model.save(null, {wait: true, success: this.onComplete, error: this.onError});
 			}
 		},
-		onComplete: function() {
+		onComplete: function(e) {
 			Backbone.history.navigate('entradas', true);
 			_notifySuccess();
+		},
+		onError: function(model, resp, options) {
+			_notifyError(resp.responseText);
 		}
 	});
 	

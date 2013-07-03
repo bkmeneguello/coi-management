@@ -21,6 +21,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.DeleteConditionStep;
 import org.jooq.Record3;
@@ -298,129 +300,29 @@ public class CategoriaEndpoint {
 			}
 		}.execute();
 	}
-
-}
-
-class Categoria {
 	
-	private Long id;
-	
-	private String descricao;
-	
-	private List<Produto> produtos = new ArrayList<>();
-	
-	private List<Comissao> comissoes = new ArrayList<>();
-	
-	public Long getId() {
-		return id;
+	@Data
+	private static class Categoria {
+		private Long id;
+		private String descricao;
+		private List<Produto> produtos = new ArrayList<>();
+		private List<Comissao> comissoes = new ArrayList<>();
 	}
 	
-	public void setId(Long id) {
-		this.id = id;
+	@Data
+	private static class Produto {
+		private Long id;
+		private String codigo;
+		private String descricao;
+		private BigDecimal custo = BigDecimal.ZERO;
+		private BigDecimal preco = BigDecimal.ZERO;
 	}
 	
-	public String getDescricao() {
-		return descricao;
-	}
-
-	public void setDescricao(String descricao) {
-		this.descricao = descricao;
+	@Data
+	private static class Comissao {
+		private String parte;
+		private String descricao;
+		private BigDecimal porcentagem = BigDecimal.ZERO;
 	}
 
-	public List<Produto> getProdutos() {
-		return produtos;
-	}
-
-	public List<Comissao> getComissoes() {
-		return comissoes;
-	}
-	
-}
-
-class Produto {
-	
-	private Long id;
-	
-	private String codigo;
-	
-	private String descricao;
-	
-	private BigDecimal custo = BigDecimal.ZERO;
-	
-	private BigDecimal preco = BigDecimal.ZERO;
-	
-	public Long getId() {
-		return id;
-	}
-	
-	public void setId(Long id) {
-		this.id = id;
-	}
-	
-	public String getCodigo() {
-		return codigo;
-	}
-	
-	public void setCodigo(String codigo) {
-		this.codigo = codigo;
-	}
-	
-	public String getDescricao() {
-		return descricao;
-	}
-	
-	public void setDescricao(String descricao) {
-		this.descricao = descricao;
-	}
-	
-	public BigDecimal getCusto() {
-		return custo;
-	}
-	
-	public void setCusto(BigDecimal custo) {
-		this.custo = custo;
-	}
-	
-	public BigDecimal getPreco() {
-		return preco;
-	}
-	
-	public void setPreco(BigDecimal preco) {
-		this.preco = preco;
-	}
-	
-}
-
-class Comissao {
-	
-	private String parte;
-	
-	private String descricao;
-	
-	private BigDecimal porcentagem = BigDecimal.ZERO;
-
-	public String getParte() {
-		return parte;
-	}
-
-	public void setParte(String parte) {
-		this.parte = parte;
-	}
-	
-	public String getDescricao() {
-		return descricao;
-	}
-	
-	public void setDescricao(String descricao) {
-		this.descricao = descricao;
-	}
-
-	public BigDecimal getPorcentagem() {
-		return porcentagem;
-	}
-
-	public void setPorcentagem(BigDecimal porcentagem) {
-		this.porcentagem = porcentagem;
-	}
-	
 }

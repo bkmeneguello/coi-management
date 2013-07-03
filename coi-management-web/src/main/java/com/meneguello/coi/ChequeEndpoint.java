@@ -19,6 +19,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import lombok.Data;
+
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
@@ -224,215 +226,40 @@ public class ChequeEndpoint {
 		}.execute();
 	}
 
+	@Data
 	private static class ChequeList {
-		
 		private Long id;
-		
 		private BigDecimal valor;
-		
 		private Date data;
-		
 		private String paciente;
-
-		public Long getId() {
-			return id;
-		}
-
-		public void setId(Long id) {
-			this.id = id;
-		}
-
-		public BigDecimal getValor() {
-			return valor;
-		}
-
-		public void setValor(BigDecimal valor) {
-			this.valor = valor;
-		}
-
-		public Date getData() {
-			return data;
-		}
-
-		public void setData(Date data) {
-			this.data = data;
-		}
-
-		public String getPaciente() {
-			return paciente;
-		}
-
-		public void setPaciente(String paciente) {
-			this.paciente = paciente;
-		}
-		
 	}
+	
+	@Data
 	private static class Cheque {
-		
 		private Long id;
-		
 		private String numero;
-		
 		private String conta;
-		
 		private String agencia;
-		
 		private String banco;
-		
 		private String documento;
-		
 		private BigDecimal valor;
-		
 		private Date dataDeposito;
-		
 		private String observacao;
-		
 		private Pessoa cliente;
-		
 		private Pessoa paciente;
-
-		public Long getId() {
-			return id;
-		}
-
-		public void setId(Long id) {
-			this.id = id;
-		}
-
-		public String getNumero() {
-			return numero;
-		}
-
-		public void setNumero(String numero) {
-			this.numero = numero;
-		}
-
-		public String getConta() {
-			return conta;
-		}
-
-		public void setConta(String conta) {
-			this.conta = conta;
-		}
-
-		public String getAgencia() {
-			return agencia;
-		}
-
-		public void setAgencia(String agencia) {
-			this.agencia = agencia;
-		}
-
-		public String getBanco() {
-			return banco;
-		}
-
-		public void setBanco(String banco) {
-			this.banco = banco;
-		}
-
-		public String getDocumento() {
-			return documento;
-		}
-
-		public void setDocumento(String documento) {
-			this.documento = documento;
-		}
-
-		public BigDecimal getValor() {
-			return valor;
-		}
-
-		public void setValor(BigDecimal valor) {
-			this.valor = valor;
-		}
-
-		public Date getDataDeposito() {
-			return dataDeposito;
-		}
-
-		public void setDataDeposito(Date dataDeposito) {
-			this.dataDeposito = dataDeposito;
-		}
-
-		public String getObservacao() {
-			return observacao;
-		}
-
-		public void setObservacao(String observacao) {
-			this.observacao = observacao;
-		}
-
-		public Pessoa getCliente() {
-			return cliente;
-		}
-
-		public void setCliente(Pessoa cliente) {
-			this.cliente = cliente;
-		}
-
-		public Pessoa getPaciente() {
-			return paciente;
-		}
-
-		public void setPaciente(Pessoa paciente) {
-			this.paciente = paciente;
-		}
-		
 	}
 	
+	@Data
 	private static class Pessoa {
-		
 		private Long id;
-		
 		private String nome;
-		
 		private String codigo;
-		
 		private List<Parte> partes = new ArrayList<>();
-
-		public Long getId() {
-			return id;
-		}
-
-		public void setId(Long id) {
-			this.id = id;
-		}
-
-		public String getNome() {
-			return nome;
-		}
-
-		public void setNome(String nome) {
-			this.nome = nome;
-		}
-		
-		public String getCodigo() {
-			return codigo;
-		}
-		
-		public void setCodigo(String codigo) {
-			this.codigo = codigo;
-		}
-		
-		public List<Parte> getPartes() {
-			return partes;
-		}
-		
 	}
 	
-	class Parte {
-		
+	@Data
+	private static class Parte {
 		private String descricao;
-		
-		public String getDescricao() {
-			return descricao;
-		}
-	
-		public void setDescricao(String descricao) {
-			this.descricao = descricao;
-		}
-		
 	}
 	
 }

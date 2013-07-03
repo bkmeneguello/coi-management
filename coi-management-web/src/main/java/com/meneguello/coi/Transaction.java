@@ -27,24 +27,20 @@ public abstract class Transaction<T> {
 	protected abstract T execute(Executor database);
 	
 	public T execute() throws DataAccessException {
-		Connection connection = null;
-		T result = null;
-		try {
-			connection = openConnection();
-			connection.setAutoCommit(!atomic);
-			result = execute(new Executor(connection, SQLDialect.HSQLDB));
-			connection.setAutoCommit(true);
-			return result;
-		} catch(SQLException e) {
-			throw new DataAccessException(e.getMessage(), e);
-		} finally {
-			if (connection != null) {
-				try {
-					connection.close();
-				} catch(SQLException e) {
-					e.printStackTrace();
-				}
+		try(Connection connection = openConnection()) {
+			try {
+				connection.setAutoCommit(!atomic);
+				final T result = execute(new Executor(connection, SQLDialect.HSQLDB));
+				connection.setAutoCommit(true);
+				return result;
+			} catch(Exception e) {
+				connection.rollback();
+				throw e;
 			}
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new DataAccessException(e.getMessage(), e);
 		}
 	}
 	
