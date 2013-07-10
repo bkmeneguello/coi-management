@@ -24,7 +24,7 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 		onUpdate: function(e) {
 			Backbone.history.navigate('cheque/' + this.model.get('id'), true);
 		},
-		doDelete: function(e) {
+		onDelete: function(e) {
 			_promptDelete(function() {
 				e.model.destroy({
 					wait: true,
@@ -44,7 +44,7 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 		templateHelpers: {
 			header: 'Cheques',
 			columns: {
-				paciente: 'Paciente',
+				paciente: 'Beneficiário',
 				data: 'Data',
 				valor: 'Valor'
 			}

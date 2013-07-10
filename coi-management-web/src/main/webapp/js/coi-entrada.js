@@ -168,7 +168,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		template: '#entrada_meio_pagamento_cheque_template',
 		className: 'coi-view-cheque coi-form-item',
 		regions: {
-			'cliente': '#cliente'
+			'emissor': '#emissor'
 		},
 		triggers: {
 			'click .coi-action-create': 'create',
@@ -189,7 +189,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			this.ui.buttonCreate.button();
 			this.ui.buttonCancel.button();
 			
-			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
+			this.emissor.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Emissor:', attribute: 'cliente', required: true}));
 			
 			if (this.model.isNew()) {
 				this.ui.cheque.hide();

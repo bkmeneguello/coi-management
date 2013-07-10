@@ -302,7 +302,7 @@ public class EntradaEndpoint {
 				}
 				
 				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
-				if (MeioPagamento.CHEQUE.equals(meioPagamento)) {
+				if (!MeioPagamento.CHEQUE.equals(meioPagamento)) {
 					entrada.setCheque(new Cheque());
 				}
 				database.update(ENTRADA)

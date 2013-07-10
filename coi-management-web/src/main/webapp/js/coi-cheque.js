@@ -36,12 +36,12 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 	var ChequeView = COI.FormView.extend({
 		template: '#cheque_template',
 		regions: {
-			'cliente': '#cliente',
-			'paciente': '#paciente'
+			'emissor': '#emissor',
+			'beneficiario': '#beneficiario'
 		},
 		modelEvents: {
-			'change:cliente': 'renderCliente',
-			'change:paciente': 'renderPaciente'
+			'change:cliente': 'renderEmissor',
+			'change:paciente': 'renderBeneficiario'
 		},
 		initialize: function() {
 			if (!this.model.isNew()) {
@@ -56,17 +56,17 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
-			this.renderCliente();
-			this.renderPaciente();
+			this.renderEmissor();
+			this.renderBeneficiario();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
 		},
-		renderCliente: function() {
-			this.cliente.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Cliente:', attribute: 'cliente', required: true}));
+		renderEmissor: function() {
+			this.emissor.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Emissor:', attribute: 'cliente', required: true}));
 		},
-		renderPaciente: function() {
-			this.paciente.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Paciente:', attribute: 'paciente', required: true}));
+		renderBeneficiario: function() {
+			this.beneficiario.show(new COI.PessoaView({model: this.model.get('paciente'), label: 'Beneficiário:', attribute: 'paciente', required: true}));
 		},
 		onCancel: function(e) {
 			Backbone.history.navigate('cheques', true);
