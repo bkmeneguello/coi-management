@@ -4,11 +4,14 @@ import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
 import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
+import static com.meneguello.coi.model.tables.EntradaCheque.ENTRADA_CHEQUE;
 import static com.meneguello.coi.model.tables.EntradaParte.ENTRADA_PARTE;
 import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.join;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
@@ -66,7 +69,7 @@ public class EntradaEndpoint {
 			protected List<EntradaList> execute(Executor database) {
 				final ArrayList<EntradaList> result = new ArrayList<EntradaList>();
 				final Result<Record> resultRecord = database.selectFrom(ENTRADA
-							.join(PESSOA).onKey(Keys.ENTRADA_FK_PACIENTE)
+							.join(PESSOA).onKey()
 						).fetch();
 				for (Record record : resultRecord) {
 					result.add(buildEntradaList(database, record));
@@ -74,16 +77,6 @@ public class EntradaEndpoint {
 				return result;
 			}
 		}.execute();
-	}
-	
-	private EntradaList buildEntradaList(Executor database, Record record) {
-		final EntradaList entrada = new EntradaList();
-		entrada.setId(record.getValue(ENTRADA.ID));
-		entrada.setData(record.getValue(ENTRADA.DATA));
-		entrada.setCliente(record.getValue(PESSOA.NOME));
-		entrada.setValor(record.getValue(ENTRADA.VALOR));
-		entrada.setTipo(MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO)).getValue());
-		return entrada;
 	}
 	
 	@GET
@@ -94,8 +87,7 @@ public class EntradaEndpoint {
 			@Override
 			protected Entrada execute(Executor database) {
 				final Record record = database.selectFrom(ENTRADA
-							.join(PESSOA).onKey(Keys.ENTRADA_FK_PACIENTE)
-							.leftOuterJoin(CHEQUE).onKey()
+							.join(PESSOA).onKey()
 						)
 						.where(ENTRADA.ID.eq(id))
 						.fetchOne();
@@ -109,11 +101,7 @@ public class EntradaEndpoint {
 						).where(ENTRADA_PARTE.ENTRADA_ID.eq(id))
 						.fetch();
 				for (Record recordParte : recordsParte) {
-					final Parte parte = new Parte();
-					parte.setPessoa(buildPessoa(recordParte));
-					parte.setDescricao(recordParte.getValue(ENTRADA_PARTE.DESCRICAO));
-					parte.setParte(recordParte.getValue(PARTE.DESCRICAO));
-					entrada.getPartes().add(parte);
+					entrada.getPartes().add(buildParte(recordParte));
 				}
 				
 				final Result<Record> recordsProduto = database.selectFrom(PRODUTO
@@ -122,19 +110,193 @@ public class EntradaEndpoint {
 						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(record.getValue(ENTRADA.ID)))
 						.fetch();
 				for (Record recordProduto : recordsProduto) {
-					final Produto produto = new Produto();
-					produto.setId(recordProduto.getValue(PRODUTO.ID));
-					produto.setCodigo(recordProduto.getValue(PRODUTO.CODIGO));
-					produto.setDescricao(recordProduto.getValue(PRODUTO.DESCRICAO));
-					produto.setCusto(recordProduto.getValue(PRODUTO.CUSTO));
-					produto.setPreco(recordProduto.getValue(PRODUTO.PRECO));
-					produto.setQuantidade(recordProduto.getValue(ENTRADA_PRODUTO.QUANTIDADE));
-					entrada.getProdutos().add(produto);
+					entrada.getProdutos().add(buildProduto(recordProduto));
 				}
-
+				
+				final Result<Record> recordsCheque = database.selectFrom(CHEQUE
+							.join(ENTRADA_CHEQUE).onKey()
+							.join(PESSOA).onKey(Keys.CHEQUE_FK_CLIENTE)
+						)
+						.where(ENTRADA_CHEQUE.ENTRADA_ID.eq(record.getValue(ENTRADA.ID)))
+						.fetch();
+				for (Record recordCheque : recordsCheque) {
+					entrada.getCheques().add(buildCheque(recordCheque));
+				}
+	
 				return entrada;
 			}
 		}.execute();
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Entrada create(final Entrada entrada) throws Exception {
+		return new Transaction<Entrada>(true) {
+			@Override
+			public Entrada execute(Executor database) {
+				final Pessoa paciente = entrada.getPaciente();
+				if (paciente.getId() == null) {
+					createPessoa(database, paciente);
+				}
+				
+				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
+				
+				final EntradaRecord record = database.insertInto(
+							ENTRADA, 
+							ENTRADA.DATA,
+							ENTRADA.VALOR,
+							ENTRADA.PACIENTE_ID,
+							ENTRADA.MEIO_PAGAMENTO
+						)
+						.values(
+								new Date(entrada.getData().getTime()),
+								entrada.getValor(),
+								paciente.getId(),
+								meioPagamento.name()
+						)
+						.returning(ENTRADA.ID)
+						.fetchOne();
+				
+				entrada.setId(record.getId());
+				
+				final List<Long> produtoIds = new ArrayList<>();
+				for (Produto produto : entrada.getProdutos()) {
+					produtoIds.add(produto.getId());
+					createProduto(database, entrada, produto);
+				}
+				
+				final List<String> comissoes = loadComissoes(database, produtoIds);
+				
+				final List<String> partes = new ArrayList<>();
+				for (Parte parte : entrada.getPartes()) {
+					if (StringUtils.isNotBlank(parte.getDescricao())) {
+						partes.add(parte.getDescricao());
+					}
+					createParte(database, entrada, parte);
+				}
+				
+				comissoes.removeAll(partes);
+				if (!comissoes.isEmpty()) {
+					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+							.entity("Comissões ("+ join(comissoes.toArray(), ", ") +") não cadastradas!")
+							.build());
+				}
+				
+				if (MeioPagamento.CHEQUE.equals(meioPagamento)) {
+					for (Cheque cheque : entrada.getCheques()) {
+						final Pessoa emissor = cheque.getCliente();
+						if (emissor.getId() == null && isNotBlank(emissor.getCodigo())) {
+							createPessoa(database, emissor);
+						}
+						
+						createCheque(database, cheque, emissor, paciente);
+						createEntradaCheque(database, entrada, cheque);
+					}
+				}
+				
+				return entrada;
+			}
+		}.execute();
+	}
+
+	@PUT
+	@Path("/{id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Entrada update(final @PathParam("id") Long id, final Entrada entrada) throws Exception {
+		return new Transaction<Entrada>(true) {
+			@Override
+			public Entrada execute(Executor database) {
+				final Pessoa paciente = entrada.getPaciente();
+				if (paciente.getId() == null && paciente.getCodigo() != null) {
+					createPessoa(database, paciente);
+				}
+				
+				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
+				
+				database.update(ENTRADA)
+						.set(ENTRADA.DATA, new java.sql.Date(entrada.getData().getTime()))
+						.set(ENTRADA.VALOR, entrada.getValor())
+						.set(ENTRADA.PACIENTE_ID, paciente.getId())
+						.set(ENTRADA.MEIO_PAGAMENTO, meioPagamento.name())
+						.where(ENTRADA.ID.eq(id))
+						.execute();
+				
+				deleteProdutos(database, id);
+				
+				final List<Long> produtoIds = new ArrayList<>();
+				for (Produto produto : entrada.getProdutos()) {
+					produtoIds.add(produto.getId());
+					createProduto(database, entrada, produto);
+				}
+				
+				final List<String> comissoes = loadComissoes(database, produtoIds);
+				
+				deletePartes(database, id);
+				
+				final List<String> partes = new ArrayList<>();
+				for (Parte parte : entrada.getPartes()) {
+					if (StringUtils.isNotBlank(parte.getDescricao())) {
+						partes.add(parte.getDescricao());
+					}
+					createParte(database, entrada, parte);
+				}
+				
+				comissoes.removeAll(partes);
+				if (!comissoes.isEmpty()) {
+					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
+							.build());
+				}
+				
+				deleteEntradaCheque(database, entrada.getId());
+				if (MeioPagamento.CHEQUE.equals(meioPagamento)) {
+					for (Cheque cheque : entrada.getCheques()) {
+						final Pessoa emissor = cheque.getCliente();
+						if (emissor.getId() == null && isNotBlank(emissor.getCodigo())) {
+							createPessoa(database, emissor);
+						}
+						
+						if (cheque.getId() == null) {
+							createCheque(database, cheque, emissor, paciente);
+						}
+						
+						createEntradaCheque(database, entrada, cheque);
+					}
+				}
+				
+				return entrada;
+			}
+		}.execute();
+	}
+
+	@DELETE
+	@Path("/{id}")
+	public void delete(final @PathParam("id") Long id) throws Exception {
+		new Transaction<Void>(true) {
+			@Override
+			protected Void execute(Executor database) {
+				deleteProdutos(database, id);
+				deletePartes(database, id);
+				deleteEntradaCheque(database, id);
+				database.delete(ENTRADA)
+						.where(ENTRADA.ID.eq(id))
+						.execute();
+				
+				return null;
+			}
+		}.execute();
+	}
+
+	private EntradaList buildEntradaList(Executor database, Record record) {
+		final EntradaList entrada = new EntradaList();
+		entrada.setId(record.getValue(ENTRADA.ID));
+		entrada.setData(record.getValue(ENTRADA.DATA));
+		entrada.setCliente(record.getValue(PESSOA.NOME));
+		entrada.setValor(record.getValue(ENTRADA.VALOR));
+		entrada.setTipo(MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO)).getValue());
+		return entrada;
 	}
 	
 	private Entrada buildEntrada(Record record) {
@@ -144,9 +306,6 @@ public class EntradaEndpoint {
 		entrada.setValor(record.getValue(ENTRADA.VALOR));
 		final MeioPagamento meioPagamento = MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO));
 		entrada.setTipo(meioPagamento.getValue());
-		if (MeioPagamento.CHEQUE.equals(meioPagamento)) {
-			entrada.setCheque(buildCheque(record));
-		}
 		return entrada;
 	}
 	
@@ -173,106 +332,38 @@ public class EntradaEndpoint {
 		return cheque;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Entrada create(final Entrada entrada) throws Exception {
-		return new Transaction<Entrada>(true) {
-			@Override
-			public Entrada execute(Executor database) {
-				final Pessoa paciente = entrada.getPaciente();
-				if (paciente.getId() == null) {
-					createPessoa(database, paciente);
-				}
-				
-				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
-				if (MeioPagamento.CHEQUE.equals(meioPagamento)) {
-					final Cheque cheque = entrada.getCheque();
-					
-					final Pessoa cliente = cheque.getCliente();
-					if (cliente.getId() == null) {
-						createPessoa(database, cliente);
-					}
-					
-					final ChequeRecord record = database.insertInto(
-							CHEQUE, 
-							CHEQUE.NUMERO,
-							CHEQUE.CONTA,
-							CHEQUE.AGENCIA,
-							CHEQUE.BANCO,
-							CHEQUE.DOCUMENTO,
-							CHEQUE.VALOR,
-							CHEQUE.DATA_DEPOSITO,
-							CHEQUE.OBSERVACAO,
-							CHEQUE.CLIENTE_ID,
-							CHEQUE.PACIENTE_ID
-						)
-						.values(
-								trimToNull(cheque.getNumero()),
-								trimToNull(cheque.getConta()),
-								trimToNull(cheque.getAgencia()),
-								trimToNull(cheque.getBanco()),
-								trimToNull(cheque.getDocumento()),
-								cheque.getValor(),
-								new java.sql.Date(cheque.getDataDeposito().getTime()),
-								trimToNull(cheque.getObservacao()),
-								cliente.getId(),
-								paciente.getId()
-						)
-						.returning(CHEQUE.ID)
-						.fetchOne();
-					cheque.setId(record.getId());
-				}
-				
-				final EntradaRecord record = database.insertInto(
-							ENTRADA, 
-							ENTRADA.DATA,
-							ENTRADA.VALOR,
-							ENTRADA.PACIENTE_ID,
-							ENTRADA.MEIO_PAGAMENTO,
-							ENTRADA.CHEQUE_ID
-						)
-						.values(
-								new java.sql.Date(entrada.getData().getTime()),
-								entrada.getValor(),
-								paciente.getId(),
-								meioPagamento.name(),
-								entrada.getCheque().getId()
-						)
-						.returning(ENTRADA.ID)
-						.fetchOne();
-				
-				entrada.setId(record.getId());
-				
-				final List<Long> produtoIds = new ArrayList<>();
-				for (Produto produto : entrada.getProdutos()) {
-					produtoIds.add(produto.getId());
-					createProduto(database, entrada, produto);
-				}
-				
-				final List<String> comissoes = loadComissoes(database, produtoIds);
-				
-				final List<String> partes = new ArrayList<>();
-				for (Parte parte : entrada.getPartes()) {
-					if (StringUtils.isNotBlank(parte.getDescricao())) {
-						partes.add(parte.getDescricao());
-					}
-					createParte(database, entrada, parte);
-				}
-				
-				comissoes.removeAll(partes);
-				if (!comissoes.isEmpty()) {
-					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
-							.build());
-				}
-				
-				return entrada;
-			}
-		}.execute();
+	private void createCheque(Executor database, Cheque cheque, Pessoa emissor, Pessoa beneficiario) {
+		final ChequeRecord record = database.insertInto(
+				CHEQUE, 
+				CHEQUE.NUMERO,
+				CHEQUE.CONTA,
+				CHEQUE.AGENCIA,
+				CHEQUE.BANCO,
+				CHEQUE.DOCUMENTO,
+				CHEQUE.VALOR,
+				CHEQUE.DATA_DEPOSITO,
+				CHEQUE.OBSERVACAO,
+				CHEQUE.CLIENTE_ID,
+				CHEQUE.PACIENTE_ID
+			)
+			.values(
+					trimToNull(cheque.getNumero()),
+					trimToNull(cheque.getConta()),
+					trimToNull(cheque.getAgencia()),
+					trimToNull(cheque.getBanco()),
+					trimToNull(cheque.getDocumento()),
+					cheque.getValor(),
+					new Date(cheque.getDataDeposito().getTime()),
+					trimToNull(cheque.getObservacao()),
+					emissor.getId(),
+					beneficiario.getId()
+			)
+			.returning(CHEQUE.ID)
+			.fetchOne();
+		cheque.setId(record.getId());
 	}
 	
-	private void createPessoa(Executor database, final Pessoa pessoa) {
+	private void createPessoa(Executor database, Pessoa pessoa) {
 		final PessoaRecord pessoaRecord = database.insertInto(
 				PESSOA, 
 				PESSOA.NOME,
@@ -288,65 +379,7 @@ public class EntradaEndpoint {
 		pessoa.setId(pessoaRecord.getId());
 	}
 	
-	@PUT
-	@Path("/{id}")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Entrada update(final @PathParam("id") Long id, final Entrada entrada) throws Exception {
-		return new Transaction<Entrada>(true) {
-			@Override
-			public Entrada execute(Executor database) {
-				final Pessoa paciente = entrada.getPaciente();
-				if (paciente.getId() == null && paciente.getCodigo() != null) {
-					createPessoa(database, paciente);
-				}
-				
-				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
-				if (!MeioPagamento.CHEQUE.equals(meioPagamento)) {
-					entrada.setCheque(new Cheque());
-				}
-				database.update(ENTRADA)
-						.set(ENTRADA.DATA, new java.sql.Date(entrada.getData().getTime()))
-						.set(ENTRADA.VALOR, entrada.getValor())
-						.set(ENTRADA.PACIENTE_ID, paciente.getId())
-						.set(ENTRADA.MEIO_PAGAMENTO, meioPagamento.name())
-						.set(ENTRADA.CHEQUE_ID, entrada.getCheque().getId())
-						.where(ENTRADA.ID.eq(id))
-						.execute();
-				
-				deleteProdutos(database, id);
-				
-				final List<Long> produtoIds = new ArrayList<>();
-				for (Produto produto : entrada.getProdutos()) {
-					produtoIds.add(produto.getId());
-					createProduto(database, entrada, produto);
-				}
-				
-				final List<String> comissoes = loadComissoes(database, produtoIds);
-				
-				deletePartes(database, id);
-				
-				final List<String> partes = new ArrayList<>();
-				for (Parte parte : entrada.getPartes()) {
-					if (StringUtils.isNotBlank(parte.getDescricao())) {
-						partes.add(parte.getDescricao());
-					}
-					createParte(database, entrada, parte);
-				}
-				
-				comissoes.removeAll(partes);
-				if (!comissoes.isEmpty()) {
-					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
-							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
-							.build());
-				}
-				
-				return entrada;
-			}
-		}.execute();
-	}
-	
-	private void createParte(Executor database, final Entrada entrada, Parte parte) {
+	private void createParte(Executor database, Entrada entrada, Parte parte) {
 		final ParteRecord parteRecord = database.selectFrom(PARTE)
 				.where(PARTE.DESCRICAO.eq(parte.getParte()))
 				.fetchOne();
@@ -370,36 +403,19 @@ public class EntradaEndpoint {
 			.execute();
 	}
 	
-	@DELETE
-	@Path("/{id}")
-	public void delete(final @PathParam("id") Long id) throws Exception {
-		new Transaction<Void>(true) {
-			@Override
-			protected Void execute(Executor database) {
-				deleteProdutos(database, id);
-				deletePartes(database, id);
-				database.delete(ENTRADA)
-						.where(ENTRADA.ID.eq(id))
-						.execute();
-				
-				return null;
-			}
-		}.execute();
-	}
-	
-	private void deleteProdutos(Executor database, final Long entradaId) {
+	private void deleteProdutos(Executor database, Long entradaId) {
 		database.delete(ENTRADA_PRODUTO)
 				.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(entradaId))
 				.execute();
 	}
 
-	private void deletePartes(Executor database, final Long entradaId) {
+	private void deletePartes(Executor database, Long entradaId) {
 		database.delete(ENTRADA_PARTE)
 			.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
 			.execute();
 	}
 
-	private void createProduto(Executor database, final Entrada entrada, Produto produto) {
+	private void createProduto(Executor database, Entrada entrada, Produto produto) {
 		database.insertInto(ENTRADA_PRODUTO, 
 					ENTRADA_PRODUTO.ENTRADA_ID, 
 					ENTRADA_PRODUTO.PRODUTO_ID,
@@ -413,8 +429,7 @@ public class EntradaEndpoint {
 				.execute();
 	}
 
-	private List<String> loadComissoes(Executor database,
-			final List<Long> produtoIds) {
+	private List<String> loadComissoes(Executor database, List<Long> produtoIds) {
 		final List<String> comissoes = new ArrayList<>();
 		if (!produtoIds.isEmpty()) {
 			final Result<Record1<String>> comissaoRecords = database.select(COMISSAO.DESCRICAO)
@@ -434,6 +449,44 @@ public class EntradaEndpoint {
 		return comissoes;
 	}
 
+	private Produto buildProduto(Record recordProduto) {
+		final Produto produto = new Produto();
+		produto.setId(recordProduto.getValue(PRODUTO.ID));
+		produto.setCodigo(recordProduto.getValue(PRODUTO.CODIGO));
+		produto.setDescricao(recordProduto.getValue(PRODUTO.DESCRICAO));
+		produto.setCusto(recordProduto.getValue(PRODUTO.CUSTO));
+		produto.setPreco(recordProduto.getValue(PRODUTO.PRECO));
+		produto.setQuantidade(recordProduto.getValue(ENTRADA_PRODUTO.QUANTIDADE));
+		return produto;
+	}
+
+	private Parte buildParte(Record recordParte) {
+		final Parte parte = new Parte();
+		parte.setPessoa(buildPessoa(recordParte));
+		parte.setDescricao(recordParte.getValue(ENTRADA_PARTE.DESCRICAO));
+		parte.setParte(recordParte.getValue(PARTE.DESCRICAO));
+		return parte;
+	}
+
+	private void createEntradaCheque(Executor database, final Entrada entrada,
+			Cheque cheque) {
+		database.insertInto(ENTRADA_CHEQUE,
+				ENTRADA_CHEQUE.ENTRADA_ID,
+				ENTRADA_CHEQUE.CHEQUE_ID
+			)
+			.values(
+				entrada.getId(),
+				cheque.getId()
+			)
+			.execute();
+	}
+
+	private void deleteEntradaCheque(Executor database, Long entradaId) {
+		database.delete(ENTRADA_CHEQUE)
+			.where(ENTRADA_CHEQUE.ENTRADA_ID.eq(entradaId))
+			.execute();
+	}
+
 	@Data
 	private static class EntradaList {
 		private Long id;
@@ -450,9 +503,9 @@ public class EntradaEndpoint {
 		private Pessoa paciente = new Pessoa();
 		private BigDecimal valor;
 		private String tipo;
-		private Cheque cheque = new Cheque();
 		private List<Produto> produtos = new ArrayList<>();
 		private List<Parte> partes = new ArrayList<>();
+		private List<Cheque> cheques = new ArrayList<>();
 	}
 	
 	@Data @JsonIgnoreProperties({"partes"})

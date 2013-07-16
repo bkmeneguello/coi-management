@@ -40,6 +40,10 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var Cheques = Backbone.Collection.extend({
+		model: Cheque
+	});
+	
 	var Parte = Backbone.Model.extend({
 		defaults: function() {
 			return {
@@ -66,17 +70,17 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 				paciente: new Pessoa(),
 				valor: null,
 				tipo: null,
-				cheque: new Cheque(),
 				produtos: new Produtos(),
-				partes: new Partes()
+				partes: new Partes(),
+				cheques: new Cheques(),
 			};
 		},
 		parse: function(resp, options) {
 			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
-			resp.cheque = new Cheque(resp.cheque, {parse: true});
 			resp.produtos = new Produtos(resp.produtos, {parse: true});
 			resp.partes = new Partes(resp.partes, {parse: true});
+			resp.cheques = new Cheques(resp.cheques, {parse: true});
 			return resp;
 		}
 	});
@@ -171,14 +175,11 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			'emissor': '#emissor'
 		},
 		triggers: {
-			'click .coi-action-create': 'create',
-			'click .coi-action-cancel': 'cancel'
+			'click .coi-action-remove': 'remove'
 		},
 		ui: {
 			'cheque': '.coi-view-cheque',
-			'chequeNew': '.coi-view-cheque-new',
-			'buttonCreate': 'button.coi-action-create',
-			'buttonCancel': 'button.coi-action-cancel'
+			'buttonRemove': '.coi-action-remove'
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
@@ -186,28 +187,21 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
-			this.ui.buttonCreate.button();
-			this.ui.buttonCancel.button();
+			this.ui.buttonRemove.button();
 			
 			this.emissor.show(new COI.PessoaView({model: this.model.get('cliente'), label: 'Emissor:', attribute: 'cliente', required: true}));
 			
-			if (this.model.isNew()) {
-				this.ui.cheque.hide();
-				this.ui.chequeNew.hide();
-			} else {
+			if (!this.model.isNew()) {
 				this.$('input,textarea').disable();
-				this.ui.buttonCreate.hide();
-				this.ui.buttonCancel.hide();
 			}
 		},
-		onCreate: function(e) {
-			this.ui.buttonCreate.hide();
-			this.ui.chequeNew.show();
-		},
-		onCancel: function(e) {
-			this.ui.buttonCreate.show();
-			this.ui.chequeNew.hide();
+		onRemove: function(e) {
+			this.model.collection.remove(this.model);
 		}
+	});
+	
+	var ChequesView = Marionette.CollectionView.extend({
+		itemView: ChequeView
 	});
 	
 	var MeioPagamentoView = Marionette.Layout.extend({
@@ -216,10 +210,14 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			tipos_list: []
 		},
 		regions: {
-			'cheque': '#cheque'
+			'cheques': '#cheques'
 		},
 		ui: {
-			'select': 'select'
+			'select': 'select',
+			'buttonCreate': '.coi-action-create'
+		},
+		triggers: {
+			'click .coi-action-create': 'create'
 		},
 		modelEvents: {
 			'change:tipo': 'updateTipo'
@@ -247,13 +245,20 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.el);
 			this.ui.select.input();
+			this.ui.buttonCreate.button().hide();
+			this.updateTipo(this.model, this.ui.select.val());
 		},
 		updateTipo: function(model, value) {
 			if ('Cheque' == value) {
-				this.cheque.show(new ChequeView({model: this.model.get('cheque')}));
+				this.cheques.show(new ChequesView({collection: this.model.get('cheques')}));
+				this.ui.buttonCreate.show();
 			} else {
-				this.cheque.close();
+				this.cheques.close();
+				this.ui.buttonCreate.hide();
 			}
+		},
+		onCreate: function(e) {
+			this.model.get('cheques').add(new Cheque());
 		}
 	});
 	
