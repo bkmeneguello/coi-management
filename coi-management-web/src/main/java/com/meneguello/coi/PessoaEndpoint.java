@@ -52,6 +52,22 @@ public class PessoaEndpoint {
 	private final Logger logger = LoggerFactory.getLogger(PessoaEndpoint.class);
 	
 	@GET
+	@Path("/next")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Integer next(final @QueryParam("prefix") String prefix) throws Exception {
+		return new Transaction<Integer>() {
+			@Override
+			protected Integer execute(Executor database) {
+				Record1<Integer> codigoRecord = database.select(PESSOA.CODIGO.max())
+						.from(PESSOA)
+						.where(PESSOA.PREFIXO.eq(prefix))
+						.fetchOne();
+				return codigoRecord != null && codigoRecord.value1() != null ? codigoRecord.value1() + 1 : 1;
+			}
+		}.execute();
+	}
+	
+	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<Pessoa> list(final @QueryParam("term") String term, final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<Pessoa>>() {

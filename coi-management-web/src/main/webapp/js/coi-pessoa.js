@@ -92,6 +92,9 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 		modelEvents: {
 			'change:partes': 'renderPartes'
 		},
+		triggers: {
+			'keyup input[name=codigo]': 'changeCodigo'
+		},
 		initialize: function() {
 			if (!this.model.isNew()) {
 				this.model.fetch();
@@ -106,6 +109,17 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		renderPartes: function() {
 			this.partes.show(new PessoaPartesView({collection: this.model.get('partes')}));
+		},
+		onChangeCodigo: function(e) {
+			var input = this.$("input[name=codigo]");
+			var codigo = input.val().toUpperCase();
+			if (codigo.length == 1) {
+				$.get('/rest/pessoas/next', {'prefix': codigo}, function(max) {
+					input.val(codigo + "-" + max);
+					input.get(0).setSelectionRange(2, input.val().length);
+					input.change();
+				});
+			}
 		},
 		onCancel: function(e) {
 			Backbone.history.navigate('pessoas', true);

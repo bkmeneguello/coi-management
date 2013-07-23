@@ -329,11 +329,23 @@ COI.PessoaView = Marionette.ItemView.extend({
 		'buttonCancel': 'button.coi-action-cancel'
 	},
 	triggers: {
-		'click .coi-action-cancel': 'cancel'
+		'click .coi-action-cancel': 'cancel',
+		'keyup input[type=text].coi-view-pessoa-new-codigo': 'changeCodigo'
 	},
 	onRender: function() {
 		if ($.isBlank(this.options.label)) {
 			this.ui.label.hide();
+		}
+	},
+	onChangeCodigo: function(e) {
+		var input = this.ui.inputNewCodigo;
+		var codigo = input.val().toUpperCase();
+		if (codigo.length == 1) {
+			$.get('/rest/pessoas/next', {'prefix': codigo}, function(max) {
+				input.val(codigo + "-" + max);
+				input.get(0).setSelectionRange(2, input.val().length);
+				input.change();
+			});
 		}
 	},
 	onCreatePessoa: function(e) {
@@ -388,17 +400,30 @@ COI.Window = Marionette.Layout.extend({
 COI.FormView = COI.Window.extend({
 	constructor: function() {
 		COI.Window.prototype.constructor.apply(this, Array.prototype.slice.apply(arguments));
+		var that = this;
 		this.listenTo(this, 'render', function() {
 			this.$el.form();
-			this.$('button.coi-action-cancel').button();
-			this.$('button.coi-action-confirm').button();
+			this.$('button.coi-action-cancel').button().click(function(e) {
+				if (e && e.preventDefault){ e.preventDefault(); }
+		        if (e && e.stopPropagation){ e.stopPropagation(); }
+				that.triggerMethod('cancel', {
+					view: that,
+					model: that.model,
+					collection: that.collection
+				});
+			});
+			this.$('button.coi-action-confirm').button().click(function(e) {
+				if (e && e.preventDefault){ e.preventDefault(); }
+		        if (e && e.stopPropagation){ e.stopPropagation(); }
+				that.triggerMethod('confirm', {
+					view: that,
+					model: that.model,
+					collection: that.collection
+				});
+			});
 		}, this);
 	},
-	tagName: 'form',
-	triggers: {
-		'click .coi-action-confirm': 'confirm',
-		'click .coi-action-cancel': 'cancel'
-	}
+	tagName: 'form'
 });
 
 COI.PopupFormView = COI.Window.extend({
