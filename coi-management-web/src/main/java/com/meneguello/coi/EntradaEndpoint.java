@@ -10,6 +10,8 @@ import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static javax.ws.rs.core.Response.status;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.join;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
@@ -18,6 +20,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,8 +32,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import lombok.Data;
 
@@ -178,7 +179,7 @@ public class EntradaEndpoint {
 				
 				comissoes.removeAll(partes);
 				if (!comissoes.isEmpty()) {
-					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
 							.entity("Comissões ("+ join(comissoes.toArray(), ", ") +") não cadastradas!")
 							.build());
 				}
@@ -245,7 +246,7 @@ public class EntradaEndpoint {
 				
 				comissoes.removeAll(partes);
 				if (!comissoes.isEmpty()) {
-					throw new WebApplicationException(Response.status(Status.INTERNAL_SERVER_ERROR)
+					throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
 							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
 							.build());
 				}
@@ -313,7 +314,7 @@ public class EntradaEndpoint {
 		final Pessoa pessoa = new Pessoa();
 		pessoa.setId(record.getValue(PESSOA.ID));
 		pessoa.setNome(record.getValue(PESSOA.NOME));
-		pessoa.setCodigo(record.getValue(PESSOA.CODIGO));
+		pessoa.setCodigo(record.getValue(PESSOA.PREFIXO), record.getValue(PESSOA.CODIGO));
 		return pessoa;
 	}
 	
@@ -367,11 +368,13 @@ public class EntradaEndpoint {
 		final PessoaRecord pessoaRecord = database.insertInto(
 				PESSOA, 
 				PESSOA.NOME,
+				PESSOA.PREFIXO,
 				PESSOA.CODIGO
 			)
 			.values(
 					trimToNull(pessoa.getNome()),
-					trimToNull(pessoa.getCodigo())
+					pessoa.getPrefixo(),
+					pessoa.getCodigoNumerico()
 				)
 				.returning(PESSOA.ID)
 				.fetchOne();
@@ -508,11 +511,27 @@ public class EntradaEndpoint {
 		private List<Cheque> cheques = new ArrayList<>();
 	}
 	
-	@Data @JsonIgnoreProperties({"partes"})
+	@Data @JsonIgnoreProperties({"partes", "prefixo", "codigoNumerico"})
 	private static class Pessoa {
 		private Long id;
 		private String nome;
 		private String codigo;
+		public void setCodigo(String codigo) {
+			if (!Pattern.matches("\\p{Upper}-\\d+", codigo)) 
+				throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
+						.entity("Código inválido")
+						.build());
+			this.codigo = codigo;
+		}
+		public void setCodigo(String prefixo, Integer codigo) {
+			setCodigo(prefixo + "-" + codigo.toString());
+		}
+		public Integer getCodigoNumerico() {
+			return Integer.parseInt(getCodigo().substring(2));
+		}
+		public String getPrefixo() {
+			return getCodigo().substring(0, 1);
+		}
 	}
 	
 	@Data

@@ -2,12 +2,15 @@ package com.meneguello.coi;
 
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
+import static javax.ws.rs.core.Response.status;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -17,10 +20,12 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import lombok.Data;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
@@ -86,7 +91,7 @@ public class ChequeEndpoint {
 				final Pessoa pessoa = new Pessoa();
 				pessoa.setId(pessoaRecord.getValue(PESSOA.ID));
 				pessoa.setNome(pessoaRecord.getValue(PESSOA.NOME));
-				pessoa.setCodigo(pessoaRecord.getValue(PESSOA.CODIGO));
+				pessoa.setCodigo(pessoaRecord.getValue(PESSOA.PREFIXO), pessoaRecord.getValue(PESSOA.CODIGO));
 				return pessoa;
 			}
 		}.execute();
@@ -163,14 +168,16 @@ public class ChequeEndpoint {
 		final PessoaRecord pessoaRecord = database.insertInto(
 				PESSOA, 
 				PESSOA.NOME,
+				PESSOA.PREFIXO,
 				PESSOA.CODIGO
-				)
-				.values(
-						trimToNull(pessoa.getNome()),
-						trimToNull(pessoa.getCodigo())
-						)
-						.returning(PESSOA.ID)
-						.fetchOne();
+			)
+			.values(
+				trimToNull(pessoa.getNome()),
+				pessoa.getPrefixo(),
+				pessoa.getCodigoNumerico()
+			)
+			.returning(PESSOA.ID)
+			.fetchOne();
 		
 		pessoa.setId(pessoaRecord.getId());
 	}
@@ -249,12 +256,28 @@ public class ChequeEndpoint {
 		private Pessoa paciente;
 	}
 	
-	@Data
+	@Data @JsonIgnoreProperties({"prefixo", "codigoNumerico"})
 	private static class Pessoa {
 		private Long id;
 		private String nome;
 		private String codigo;
 		private List<Parte> partes = new ArrayList<>();
+		public void setCodigo(String codigo) {
+			if (!Pattern.matches("\\p{Upper}-\\d+", codigo)) 
+				throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
+						.entity("Código inválido")
+						.build());
+			this.codigo = codigo;
+		}
+		public void setCodigo(String prefixo, Integer codigo) {
+			setCodigo(prefixo + "-" + codigo.toString());
+		}
+		public Integer getCodigoNumerico() {
+			return Integer.parseInt(getCodigo().substring(2));
+		}
+		public String getPrefixo() {
+			return getCodigo().substring(0, 1);
+		}
 	}
 	
 	@Data

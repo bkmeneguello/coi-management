@@ -113,12 +113,15 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 		onConfirm: function(e) {
 			var that = this;
 			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: that.onComplete});
+				this.model.save(null, {wait: true, success: that.onComplete, error: this.onError});
 			}
 		},
 		onComplete: function() {
 			Backbone.history.navigate('pessoas', true);
 			_notifySuccess();
+		},
+		onError: function(model, resp, options) {
+			_notifyError(resp.responseText);
 		}
 	});
 	

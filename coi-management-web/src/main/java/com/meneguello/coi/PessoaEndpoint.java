@@ -4,6 +4,8 @@ import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.PessoaParte.PESSOA_PARTE;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
+import static javax.ws.rs.core.Response.status;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.io.InputStreamReader;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -22,11 +25,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
@@ -62,7 +67,7 @@ public class PessoaEndpoint {
 					select.limit(10).offset(10 * page);
 				}
 				final Result<PessoaRecord> resultPessoaRecord = select
-						.orderBy(PESSOA.ID.desc())
+						.orderBy(PESSOA.PREFIXO.asc(), PESSOA.CODIGO.desc())
 						.fetch();
 				for (PessoaRecord pessoaRecord : resultPessoaRecord) {
 					pessoas.add(buildPessoa(pessoaRecord));
@@ -76,7 +81,7 @@ public class PessoaEndpoint {
 		final Pessoa pessoa = new Pessoa();
 		pessoa.setId(pessoaRecord.getId());
 		pessoa.setNome(pessoaRecord.getNome());
-		pessoa.setCodigo(pessoaRecord.getCodigo());
+		pessoa.setCodigo(pessoaRecord.getPrefixo(), pessoaRecord.getCodigo());
 		return pessoa;
 	}
  
@@ -118,11 +123,13 @@ public class PessoaEndpoint {
 				final PessoaRecord pessoaRecord = database.insertInto(
 						PESSOA, 
 						PESSOA.NOME,
+						PESSOA.PREFIXO,
 						PESSOA.CODIGO
 					)
 					.values(
 							trimToNull(pessoa.getNome()),
-							trimToNull(pessoa.getCodigo())
+							pessoa.getPrefixo(),
+							pessoa.getCodigoNumerico()
 					)
 					.returning(PESSOA.ID)
 					.fetchOne();
@@ -167,11 +174,13 @@ public class PessoaEndpoint {
 							database.insertInto(
 									PESSOA, 
 									PESSOA.NOME,
+									PESSOA.PREFIXO,
 									PESSOA.CODIGO
 							)
 							.values(
 									trimToNull(columns[10]),
-									trimToNull(columns[9])
+									"P", //FIXME: Fixo em Pacientes
+									Integer.parseInt(trimToNull(columns[9]))
 							)
 							.returning(PESSOA.ID)
 							.execute();
@@ -181,7 +190,8 @@ public class PessoaEndpoint {
 							if (e.getCause() instanceof SQLIntegrityConstraintViolationException) {
 								database.update(PESSOA)
 									.set(PESSOA.NOME, trimToNull(columns[10]))
-									.where(PESSOA.CODIGO.eq(columns[9]))
+									.where(PESSOA.CODIGO.eq(Integer.parseInt(columns[9])))
+									.and(PESSOA.PREFIXO.eq("P")) //TODO: Fixo em Pacientes
 									.execute();
 							} else {
 								logger.error("Falha na importação dos registros", e);
@@ -206,7 +216,8 @@ public class PessoaEndpoint {
 			public Void execute(Executor database) {
 				database.update(PESSOA)
 						.set(PESSOA.NOME, trimToNull(pessoa.getNome()))
-						.set(PESSOA.CODIGO, trimToNull(pessoa.getCodigo()))
+						.set(PESSOA.PREFIXO, pessoa.getPrefixo())
+						.set(PESSOA.CODIGO, pessoa.getCodigoNumerico())
 						.where(PESSOA.ID.eq(id))
 						.execute();
 				
@@ -256,12 +267,28 @@ public class PessoaEndpoint {
 		}.execute();
 	}
 	
-	@Data
+	@Data @JsonIgnoreProperties({"prefixo", "codigoNumerico"})
 	private static class Pessoa {
 		private Long id;
 		private String nome;
 		private String codigo;
 		private List<Parte> partes = new ArrayList<>();
+		public void setCodigo(String codigo) {
+			if (!Pattern.matches("\\p{Upper}-\\d+", codigo)) 
+				throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
+						.entity("Código inválido")
+						.build());
+			this.codigo = codigo;
+		}
+		public void setCodigo(String prefixo, Integer codigo) {
+			setCodigo(prefixo + "-" + codigo.toString());
+		}
+		public Integer getCodigoNumerico() {
+			return Integer.parseInt(getCodigo().substring(2));
+		}
+		public String getPrefixo() {
+			return getCodigo().substring(0, 1);
+		}
 	}
 	
 	@Data
