@@ -64,7 +64,7 @@ public class ChequeEndpoint {
 		return cheque;
 	}
 	
-	private Cheque buildCheque(ChequeRecord record) {
+	private Cheque buildCheque(Executor database, ChequeRecord record) {
 		final Cheque cheque = new Cheque();
 		cheque.setId(record.getId());
 		cheque.setNumero(record.getNumero());
@@ -75,26 +75,21 @@ public class ChequeEndpoint {
 		cheque.setValor(record.getValor());
 		cheque.setDataDeposito(record.getDataDeposito());
 		cheque.setObservacao(record.getObservacao());
-		cheque.setCliente(getPessoa(record.getClienteId()));
-		cheque.setPaciente(getPessoa(record.getPacienteId()));
+		cheque.setCliente(getPessoa(database, record.getClienteId()));
+		cheque.setPaciente(getPessoa(database, record.getPacienteId()));
 		return cheque;
 	}
 	
-	private Pessoa getPessoa(final Long id) {
-		return new Transaction<Pessoa>() {
-			@Override
-			protected Pessoa execute(Executor database) {
-				final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
-						.where(PESSOA.ID.eq(id))
-						.fetchOne();
-				
-				final Pessoa pessoa = new Pessoa();
-				pessoa.setId(pessoaRecord.getValue(PESSOA.ID));
-				pessoa.setNome(pessoaRecord.getValue(PESSOA.NOME));
-				pessoa.setCodigo(pessoaRecord.getValue(PESSOA.PREFIXO), pessoaRecord.getValue(PESSOA.CODIGO));
-				return pessoa;
-			}
-		}.execute();
+	private Pessoa getPessoa(Executor database, final Long id) {
+		final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
+				.where(PESSOA.ID.eq(id))
+				.fetchOne();
+		
+		final Pessoa pessoa = new Pessoa();
+		pessoa.setId(pessoaRecord.getValue(PESSOA.ID));
+		pessoa.setNome(pessoaRecord.getValue(PESSOA.NOME));
+		pessoa.setCodigo(pessoaRecord.getValue(PESSOA.PREFIXO), pessoaRecord.getValue(PESSOA.CODIGO));
+		return pessoa;
 	}
  
 	@GET
@@ -107,7 +102,7 @@ public class ChequeEndpoint {
 				final ChequeRecord record = database.selectFrom(CHEQUE)
 						.where(CHEQUE.ID.eq(id))
 						.fetchOne();
-				return buildCheque(record);
+				return buildCheque(database, record);
 			}
 		}.execute();
 	}

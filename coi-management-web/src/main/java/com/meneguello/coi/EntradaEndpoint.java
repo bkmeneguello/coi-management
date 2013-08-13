@@ -93,8 +93,7 @@ public class EntradaEndpoint {
 						.where(ENTRADA.ID.eq(id))
 						.fetchOne();
 				
-				final Entrada entrada = buildEntrada(record);
-				entrada.setPaciente(buildPessoa(record));
+				final Entrada entrada = buildEntrada(database, record);
 				
 				final Result<Record> recordsParte = database.selectFrom(ENTRADA_PARTE
 							.join(PARTE).onKey()
@@ -300,14 +299,26 @@ public class EntradaEndpoint {
 		return entrada;
 	}
 	
-	private Entrada buildEntrada(Record record) {
+	private Entrada buildEntrada(Executor database, Record record) {
 		final Entrada entrada = new Entrada();
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
 		entrada.setValor(record.getValue(ENTRADA.VALOR));
-		final MeioPagamento meioPagamento = MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO));
-		entrada.setTipo(meioPagamento.getValue());
+		entrada.setPaciente(getPessoa(database, record.getValue(ENTRADA.PACIENTE_ID)));
+		entrada.setTipo(MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO)).getValue());
 		return entrada;
+	}
+	
+	private Pessoa getPessoa(Executor database, final Long id) {
+		final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
+				.where(PESSOA.ID.eq(id))
+				.fetchOne();
+		
+		final Pessoa pessoa = new Pessoa();
+		pessoa.setId(pessoaRecord.getValue(PESSOA.ID));
+		pessoa.setNome(pessoaRecord.getValue(PESSOA.NOME));
+		pessoa.setCodigo(pessoaRecord.getValue(PESSOA.PREFIXO), pessoaRecord.getValue(PESSOA.CODIGO));
+		return pessoa;
 	}
 	
 	private Pessoa buildPessoa(Record record) {
@@ -471,8 +482,7 @@ public class EntradaEndpoint {
 		return parte;
 	}
 
-	private void createEntradaCheque(Executor database, final Entrada entrada,
-			Cheque cheque) {
+	private void createEntradaCheque(Executor database, final Entrada entrada, Cheque cheque) {
 		database.insertInto(ENTRADA_CHEQUE,
 				ENTRADA_CHEQUE.ENTRADA_ID,
 				ENTRADA_CHEQUE.CHEQUE_ID

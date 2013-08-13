@@ -29,6 +29,8 @@
 	<script type="text/javascript" src="/js/coi-entrada.js"></script>
 	<script type="text/javascript" src="/js/coi-cheques.js"></script>
 	<script type="text/javascript" src="/js/coi-cheque.js"></script>
+	<script type="text/javascript" src="/js/coi-laudos.js"></script>
+	<script type="text/javascript" src="/js/coi-laudo.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	
 	<script type="text/template" id="coi_view_text_template">
@@ -98,6 +100,7 @@
 <button id="pessoas">Pessoas</button>
 <button id="entradas">Entradas</button>
 <button id="cheques">Cheques</button>
+<button id="laudos">Laudos</button>
 	</script>
 	<script type="text/template" id="categoria_row_template">
 <td><%= descricao %></td>
@@ -345,6 +348,36 @@
 <div data-attribute="observacao" class="coi-view-textarea" data-label="Observação:"/>
 <div id="emissor"/>
 <div id="beneficiario"/>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
+	</script>
+	<script type="text/template" id="laudo_row_template">
+<td><%= paciente %></td>
+<td><%= data %></td>
+<td><%= status %></td>
+<td>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="laudo_template">
+<header>Cheque</header>
+<div data-attribute="data" class="coi-view-text" data-label="Data:" data-required="true"/>
+<div id="medico"/>
+<div id="paciente"/>
+<dl class="coi-form-item">
+	<dt>Status Hormonal:</dt>
+	<dd>
+		<select name="status">
+			<option>Pré-Menopausal</option>
+			<option>Pós-Menopausal</option>
+			<option>Transição Menopausal</option>
+		</select>
+	<dd>
+</dl>
+<div data-attribute="dataNascimento" class="coi-view-text" data-label="Data de Nascimento:" data-required="true"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
