@@ -216,7 +216,7 @@ public class EntradaEndpoint {
 				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
 				
 				database.update(ENTRADA)
-						.set(ENTRADA.DATA, new java.sql.Date(entrada.getData().getTime()))
+						.set(ENTRADA.DATA, new Date(entrada.getData().getTime()))
 						.set(ENTRADA.VALOR, entrada.getValor())
 						.set(ENTRADA.PACIENTE_ID, paciente.getId())
 						.set(ENTRADA.MEIO_PAGAMENTO, meioPagamento.name())

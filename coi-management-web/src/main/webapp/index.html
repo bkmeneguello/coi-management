@@ -17,6 +17,7 @@
 	<script type="text/javascript" src="/js/backbone.marionette.js"></script>
 	<script type="text/javascript" src="/js/Backbone.ModelBinder.js"></script>
 	<script type="text/javascript" src="/js/backbone.paginator.js"></script>
+	<script type="text/javascript" src="/js/deep-model.js"></script>
 	<script type="text/javascript" src="/js/autoNumeric.js"></script>
 	<script type="text/javascript" src="/js/jquery.fileupload.js"></script>
 	<script type="text/javascript" src="/js/coi-utils.js"></script>
@@ -371,17 +372,80 @@
 	<dt>Status Hormonal:</dt>
 	<dd>
 		<select name="status">
+			<option/>
 			<option>Pré-Menopausal</option>
 			<option>Pós-Menopausal</option>
 			<option>Transição Menopausal</option>
 		</select>
 	<dd>
 </dl>
+<dl class="coi-form-item">
+	<dt>Sexo:</dt>
+	<dd>
+		<select name="sexo">
+			<option/>
+			<option>Feminino</option>
+			<option>Masculino</option>
+		</select>
+	<dd>
+</dl>
 <div data-attribute="dataNascimento" class="coi-view-text" data-label="Data de Nascimento:" data-required="true"/>
+<div id="exame"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
+	</script>
+	<script type="text/template" id="exame_pre_menopausa_template">
+<dl class="coi-form-item">
+	<dt>Exame:</dt>
+	<dd>
+		<table>
+			<thead>
+				<tr>
+					<th width="50%">Local</th>
+					<th>Densidade</th>
+					<th>T-score</th>
+					<th>Z-score</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="coi-cell-item">
+					<td>
+						<span>Coluna Lombar</span>
+						<div>
+							<label><input type="checkbox" name="colunaLombarT1"> T1</label>
+							<label><input type="checkbox" name="colunaLombarT2"> T2</label>
+							<label><input type="checkbox" name="colunaLombarT3"> T3</label>
+							<label><input type="checkbox" name="colunaLombarT4"> T4</label>
+						</div>
+					</td>
+					<td><input type="text" name="colunaLombarDensidade"/></td>
+					<td><input type="text" name="colunaLombarTScore"/></td>
+					<td><input type="text" name="colunaLombarZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Colo Fêmur</td>
+					<td><input type="text" name="coloFemurDensidade"/></td>
+					<td><input type="text" name="coloFemurTScore"/></td>
+					<td><input type="text" name="coloFemurZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Fêmur Total</td>
+					<td><input type="text" name="femurTotalDensidade"/></td>
+					<td><input type="text" name="femurTotalTScore"/></td>
+					<td><input type="text" name="femurTotalZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Rádio 33%</td>
+					<td><input type="text" name="radioTercoDensidade"/></td>
+					<td><input type="text" name="radioTercoTScore"/></td>
+					<td><input type="text" name="radioTercoZScore"/></td>
+				</tr>
+			</tbody>
+		</table>
+	<dd>
+</dl>
 	</script>
 </head>
 <body>

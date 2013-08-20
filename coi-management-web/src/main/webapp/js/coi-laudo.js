@@ -17,14 +17,61 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 				status: null,
 				paciente: new Pessoa(),
 				medico: new Pessoa(),
-				dataNascimento: null
+				dataNascimento: null,
+				sexo: null,
+				colunaLombarT1: true,
+				colunaLombarT2: true,
+				colunaLombarT3: true,
+				colunaLombarT4: true,
+				colunaLombarDensidade: null,
+				colunaLombarTScore: null,
+				colunaLombarZScore: null,
+				coloFemurDensidade: null,
+				coloFemurTScore: null,
+				coloFemurZScore: null,
+				femurTotalDensidade: null,
+				femurTotalTScore: null,
+				femurTotalZScore: null,
+				radioTercoDensidade: null,
+				radioTercoTScore: null,
+				radioTercoZScore: null,
+				corpoInteiroDensidade: null,
+				corpoInteiroZScore: null
 			};
 		},
 		parse: function(resp, options) {
-			resp.data = $.datepicker.formatDate('dd/mm/yy', $.datepicker.parseDate('yy-mm-dd', resp.data));
+			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			resp.medico = new Pessoa(resp.medico, {parse: true});
+			resp.dataNascimento = resp.dataNascimento ? $.datepicker.parseDate('yy-mm-dd', resp.dataNascimento) : null;
 			return resp;
+		}
+	});
+	
+	var ExamePreMenopausaView = Marionette.ItemView.extend({
+		template: '#exame_pre_menopausa_template',
+		modelBinder: function() {
+			return new Backbone.ModelBinder();
+		},
+		onRender: function() {
+			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
+			bindings['colunaLombarDensidade'].converter = decimalConverter;
+			bindings['colunaLombarTScore'].converter = decimalConverter;
+			bindings['colunaLombarZScore'].converter = decimalConverter;
+			bindings['coloFemurDensidade'].converter = decimalConverter;
+			bindings['coloFemurTScore'].converter = decimalConverter;
+			bindings['coloFemurZScore'].converter = decimalConverter;
+			bindings['femurTotalDensidade'].converter = decimalConverter;
+			bindings['femurTotalTScore'].converter = decimalConverter;
+			bindings['femurTotalZScore'].converter = decimalConverter;
+			bindings['radioTercoDensidade'].converter = decimalConverter;
+			bindings['radioTercoTScore'].converter = decimalConverter;
+			bindings['radioTercoZScore'].converter = decimalConverter;
+			//bindings['corpoInteiroDensidade'].converter = decimalConverter;
+			//bindings['corpoInteiroZScore'].converter = decimalConverter;
+			this.modelBinder().bind(this.model, this.el, bindings);
+			
+			this.$('input[type=text]').input();
 		}
 	});
 	
@@ -32,22 +79,28 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		template: '#laudo_template',
 		regions: {
 			'paciente': '#paciente',
-			'medico': '#medico'
+			'medico': '#medico',
+			'exame': '#exame'
 		},
 		modelEvents: {
 			'change:paciente': 'renderPaciente',
 			'change:medico': 'renderMedico',
+			'change': 'renderExame'
 		},
 		initialize: function() {
-			
+			if (!this.model.isNew()) {
+				this.model.fetch();
+			}
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['data'].converter = dateConverter;
+			bindings['dataNascimento'].converter = dateConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.renderPaciente();
 			this.renderMedico();
+			this.renderExame();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
@@ -57,6 +110,9 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		renderMedico: function() {
 			this.medico.show(new COI.PessoaView({model: this.model.get('medico'), label: 'Médico:', attribute: 'cliente', required: true}));
+		},
+		renderExame: function() {
+			this.exame.show(new ExamePreMenopausaView({model: this.model}));
 		},
 		onCancel: function(e) {
 			Backbone.history.navigate('laudos', true);

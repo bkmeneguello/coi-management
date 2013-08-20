@@ -44,7 +44,9 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			'change:paciente': 'renderBeneficiario'
 		},
 		initialize: function() {
-			
+			if (!this.model.isNew()) {
+				this.model.fetch();
+			}
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');

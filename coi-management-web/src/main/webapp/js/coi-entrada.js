@@ -342,9 +342,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		initialize: function() {
 			if (!this.model.isNew()) {
-				this.model.fetch({
-					success: this.onFetch
-				});
+				this.model.fetch();
 			}
 		},
 		onRender: function() {
