@@ -123,10 +123,10 @@ public class LaudoEndpoint {
 							LAUDO.PACIENTE_ID,
 							LAUDO.MEDICO_ID,
 							LAUDO.STATUS_HORMONAL,
-							LAUDO.COLUNA_LOMBAR_T1,
-							LAUDO.COLUNA_LOMBAR_T2,
-							LAUDO.COLUNA_LOMBAR_T3,
-							LAUDO.COLUNA_LOMBAR_T4,
+							LAUDO.COLUNA_LOMBAR_L1,
+							LAUDO.COLUNA_LOMBAR_L2,
+							LAUDO.COLUNA_LOMBAR_L3,
+							LAUDO.COLUNA_LOMBAR_L4,
 							LAUDO.COLUNA_LOMBAR_DENSIDADE,
 							LAUDO.COLUNA_LOMBAR_TSCORE,
 							LAUDO.COLUNA_LOMBAR_ZSCORE,
@@ -147,10 +147,10 @@ public class LaudoEndpoint {
 								paciente.getId(),
 								medico.getId(),
 								statusHormonal.name(),
-								laudo.isColunaLombarT1() ? "S" : "N",
-								laudo.isColunaLombarT2() ? "S" : "N",
-								laudo.isColunaLombarT3() ? "S" : "N",
-								laudo.isColunaLombarT4() ? "S" : "N",
+								laudo.isColunaLombarL1() ? "S" : "N",
+								laudo.isColunaLombarL2() ? "S" : "N",
+								laudo.isColunaLombarL3() ? "S" : "N",
+								laudo.isColunaLombarL4() ? "S" : "N",
 								laudo.getColunaLombarDensidade(),
 								laudo.getColunaLombarTScore(),
 								laudo.getColunaLombarZScore(),
@@ -209,10 +209,10 @@ public class LaudoEndpoint {
 						.set(LAUDO.PACIENTE_ID, paciente.getId())
 						.set(LAUDO.MEDICO_ID, medico.getId())
 						.set(LAUDO.STATUS_HORMONAL, statusHormonal.name())
-						.set(LAUDO.COLUNA_LOMBAR_T1, laudo.isColunaLombarT1() ? "S" : "N")
-						.set(LAUDO.COLUNA_LOMBAR_T2, laudo.isColunaLombarT2() ? "S" : "N")
-						.set(LAUDO.COLUNA_LOMBAR_T3, laudo.isColunaLombarT3() ? "S" : "N")
-						.set(LAUDO.COLUNA_LOMBAR_T4, laudo.isColunaLombarT4() ? "S" : "N")
+						.set(LAUDO.COLUNA_LOMBAR_L1, laudo.isColunaLombarL1() ? "S" : "N")
+						.set(LAUDO.COLUNA_LOMBAR_L2, laudo.isColunaLombarL2() ? "S" : "N")
+						.set(LAUDO.COLUNA_LOMBAR_L3, laudo.isColunaLombarL3() ? "S" : "N")
+						.set(LAUDO.COLUNA_LOMBAR_L4, laudo.isColunaLombarL4() ? "S" : "N")
 						.set(LAUDO.COLUNA_LOMBAR_DENSIDADE, laudo.getColunaLombarDensidade())
 						.set(LAUDO.COLUNA_LOMBAR_TSCORE, laudo.getColunaLombarTScore())
 						.set(LAUDO.COLUNA_LOMBAR_ZSCORE, laudo.getColunaLombarZScore())
@@ -271,10 +271,10 @@ public class LaudoEndpoint {
 		final String sexo = record.getValue(PESSOA.SEXO);
 		laudo.setSexo(sexo != null ? Sexo.valueOf(sexo).getValue() : null);
 		
-		laudo.setColunaLombarT1(record.getValue(LAUDO.COLUNA_LOMBAR_T1).equals("S"));
-		laudo.setColunaLombarT2(record.getValue(LAUDO.COLUNA_LOMBAR_T2).equals("S"));
-		laudo.setColunaLombarT3(record.getValue(LAUDO.COLUNA_LOMBAR_T3).equals("S"));
-		laudo.setColunaLombarT4(record.getValue(LAUDO.COLUNA_LOMBAR_T4).equals("S"));
+		laudo.setColunaLombarL1(record.getValue(LAUDO.COLUNA_LOMBAR_L1).equals("S"));
+		laudo.setColunaLombarL2(record.getValue(LAUDO.COLUNA_LOMBAR_L2).equals("S"));
+		laudo.setColunaLombarL3(record.getValue(LAUDO.COLUNA_LOMBAR_L3).equals("S"));
+		laudo.setColunaLombarL4(record.getValue(LAUDO.COLUNA_LOMBAR_L4).equals("S"));
 		
 		laudo.setColunaLombarDensidade(record.getValue(LAUDO.COLUNA_LOMBAR_DENSIDADE));
 		laudo.setColunaLombarTScore(record.getValue(LAUDO.COLUNA_LOMBAR_TSCORE));
@@ -358,10 +358,10 @@ public class LaudoEndpoint {
 		private String status;
 		private Date dataNascimento;
 		private String sexo;
-		private boolean colunaLombarT1;
-		private boolean colunaLombarT2;
-		private boolean colunaLombarT3;
-		private boolean colunaLombarT4;
+		private boolean colunaLombarL1;
+		private boolean colunaLombarL2;
+		private boolean colunaLombarL3;
+		private boolean colunaLombarL4;
 		private BigDecimal colunaLombarDensidade;
 		private BigDecimal colunaLombarTScore;
 		private BigDecimal colunaLombarZScore;

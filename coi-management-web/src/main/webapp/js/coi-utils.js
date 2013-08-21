@@ -174,54 +174,5 @@ $.widget('coi.form', {
 		form.addClass('coi-form ui-dialog ui-widget ui-widget-content ui-corner-all');
 		form.children('header').addClass('ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix');
 		form.children('footer').addClass('ui-dialog-buttonpane ui-widget-content ui-helper-clearfix ui-corner-botton').wrapInner('<div class="ui-dialog-buttonset"/>');
-		
-//		var that = this;
-//		var inputs = this.element.find('input,select,textarea,button');
-//		$.each(inputs, function() {
-//			var input = $(this);
-//			
-//			if (input.data('label')) {
-//				that.label(input);
-//			}
-//			if(input.is('button', ':reset', ':submit', ':button')) {
-//				that.buttons(input);
-//			} else if(input.is(':checkbox')) {
-//				that.checkboxes(input);
-//			} else if(input.is('input[type=text]', 'textarea', 'input[type=password]')) {
-//				that.text(input);
-//			} else if(input.is(':radio')) {
-//				that.radio(input);
-//			} else if(input.is('select')) {
-//				that.selector(input);
-//			}
-//		});
-//		this.element.find('.coi-format-money').money();
-//		this.element.find('.coi-format-decimal').decimal();
-//		this.element.find('.coi-format-percentage').percentage();
-//		
-//		this.element.find('.coi-validation-required').required();
 	}
-//	label: function(element) {
-//		if (!element.hasClass('coi-form-input')) {
-//			element.addClass('coi-form-input')
-//				.wrap($('<dl/>', {'class': 'coi-form-item'}))
-//				.before($('<dt/>', {text: element.data('label')}))
-//				.wrap('<dd/>');
-//		}
-//	},
-//	text: function(element) {
-//		//element.input();
-//	},
-//	buttons: function(element) {
-//		element.button();
-//	},
-//	checkboxes: function(element) {
-//		element.button();
-//	},
-//	radio: function(element) {
-//		element.button();
-//	},
-//	selector: function(element) {
-//		element.input();
-//	}
 });

@@ -391,6 +391,51 @@
 </dl>
 <div data-attribute="dataNascimento" class="coi-view-text" data-label="Data de Nascimento:" data-required="true"/>
 <div id="exame"/>
+<dl class="coi-form-item">
+	<dt>Conclusão:</dt>
+	<dd>
+		<select name="conclusao">
+			<option/>
+			<option value="Normal">1 - Normal</option>
+			<option value="Osteopenia">2 - Osteopenia</option>
+			<option value="Osteoporose">3 - Osteoporose</option>
+			<option value="Dentro do eperado para a idade">4 - Dentro do eperado para a idade</option>
+			<option value="Baixa densidade óssea para a idade">5 - Baixa densidade óssea para a idade</option>
+		</select>
+	<dd>
+</dl>
+<dl class="coi-form-item">
+	<dt>Observações:</dt>
+	<dd>
+		<select id="observacoes">
+			<option/>
+<option data-code="1" data-value="Presença de alterações estruturais na coluna lombar que podem superestimar a real densidade óssea vertebral">
+	1 - Presença de alterações estruturais...</option>
+<option data-code="2" data-value="À critério clínico, sugerimos estudo radiográfico da coluna lombar para avaliar fraturas ou alterações degenerativas, devido à diferença de densidade mineral óssea observada entre ({}). Na presença de fraturas vertebrais, considerar o diagnóstico de osteoporose, independente dos valores da densitometria">
+	2 - À critério clínico, sugerimos estudo radiográfico...</option> 
+<option data-code="3" data-value="Devido à presença de alterações estruturais na coluna lombar procedemos a análise no antebraço">
+	3 - Devido à presença de alterações estruturais...</option>
+<option data-code="4" data-value="Presença de artefato ao nível de {}">
+	4 - Presença de artefato ao nível de...</option>
+<option data-code="5" data-value="Presença de vértebra de transição (VT)">
+	5 - Presença de vértebra de transição...</option>
+<option data-code="6" data-value="Devido dificuldade de rotação do quadril ou presença de material cirúrgico, não foi possível análise válida do fêmur direito. Por esse motivo, procedemos a análise de fêmur esquerdo">
+	6 - Devido dificuldade de rotação do quadril... fêmur direito...</option>
+<option data-code="7" data-value="Devido dificuldade de rotação do quadril ou presença de material cirúrgico, não foi possível análise válida de fêmur, tanto a direita quanto a esquerda">
+	7 - Devido dificuldade de rotação do quadril... ambos...</option>
+<option data-code="8" data-value="Sugerimos densitometria óssea de antebraço (Radio 33%)">
+	8 - Sugerimos densitometria óssea...</option>
+<option data-code="9" data-value="Presença de alterações estruturais no quadril que podem superestimar a real densidade óssea do fêmur">
+	9 - Presença de alterações estruturais...</option>
+<option data-code="10" data-value="Sugerimos afastar causa secundária de baixa densidade óssea para a idade">
+	10 - Sugerimos afastar causa secundária... baixa densidade...</option>
+<option data-code="11" data-value="Sugerimos afastar causa secundária de osteoporose (Z-score <= -2)">
+	11 - Sugerimos afastar causa secundária... osteoporose...</option>
+		</select>
+		<button id="adicionar-observacao" class="coi-action-include">Incluir</button>
+		<table id="observacoes-list"/>
+	<dd>
+</dl>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
@@ -414,10 +459,10 @@
 					<td>
 						<span>Coluna Lombar</span>
 						<div>
-							<label><input type="checkbox" name="colunaLombarT1"> T1</label>
-							<label><input type="checkbox" name="colunaLombarT2"> T2</label>
-							<label><input type="checkbox" name="colunaLombarT3"> T3</label>
-							<label><input type="checkbox" name="colunaLombarT4"> T4</label>
+							<label><input type="checkbox" name="colunaLombarL1"> T1</label>
+							<label><input type="checkbox" name="colunaLombarL2"> T2</label>
+							<label><input type="checkbox" name="colunaLombarL3"> T3</label>
+							<label><input type="checkbox" name="colunaLombarL4"> T4</label>
 						</div>
 					</td>
 					<td><input type="text" name="colunaLombarDensidade"/></td>
@@ -441,6 +486,57 @@
 					<td><input type="text" name="radioTercoDensidade"/></td>
 					<td><input type="text" name="radioTercoTScore"/></td>
 					<td><input type="text" name="radioTercoZScore"/></td>
+				</tr>
+			</tbody>
+		</table>
+	<dd>
+</dl>
+	</script>
+	<script type="text/template" id="exame_pos_menopausa_template">
+<dl class="coi-form-item">
+	<dt>Exame:</dt>
+	<dd>
+		<table>
+			<thead>
+				<tr>
+					<th width="60%">Local</th>
+					<th>Densidade</th>
+					<th>Z-score</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="coi-cell-item">
+					<td>
+						<span>Coluna Lombar</span>
+						<div>
+							<label><input type="checkbox" name="colunaLombarL1"> T1</label>
+							<label><input type="checkbox" name="colunaLombarL2"> T2</label>
+							<label><input type="checkbox" name="colunaLombarL3"> T3</label>
+							<label><input type="checkbox" name="colunaLombarL4"> T4</label>
+						</div>
+					</td>
+					<td><input type="text" name="colunaLombarDensidade"/></td>
+					<td><input type="text" name="colunaLombarZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Colo Fêmur</td>
+					<td><input type="text" name="coloFemurDensidade"/></td>
+					<td><input type="text" name="coloFemurZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Fêmur Total</td>
+					<td><input type="text" name="femurTotalDensidade"/></td>
+					<td><input type="text" name="femurTotalZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Rádio 33%</td>
+					<td><input type="text" name="radioTercoDensidade"/></td>
+					<td><input type="text" name="radioTercoZScore"/></td>
+				</tr>
+				<tr class="coi-cell-item">
+					<td>Corpo Inteiro</td>
+					<td><input type="text" name="corpoInteiroDensidade"/></td>
+					<td><input type="text" name="corpoInteiroZScore"/></td>
 				</tr>
 			</tbody>
 		</table>

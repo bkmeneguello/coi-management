@@ -9,6 +9,18 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var Observacao = Backbone.Model.extend({
+		defaults: {
+			codigo: null,
+			descricao: null,
+			extra: null
+		}
+	});
+	
+	var Observacoes = Backbone.Collection.extend({
+		model: Observacao
+	});
+	
 	var Laudo = Backbone.Model.extend({
 		urlRoot: '/rest/laudos',
 		defaults: function() {
@@ -19,10 +31,10 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 				medico: new Pessoa(),
 				dataNascimento: null,
 				sexo: null,
-				colunaLombarT1: true,
-				colunaLombarT2: true,
-				colunaLombarT3: true,
-				colunaLombarT4: true,
+				colunaLombarL1: true,
+				colunaLombarL2: true,
+				colunaLombarL3: true,
+				colunaLombarL4: true,
 				colunaLombarDensidade: null,
 				colunaLombarTScore: null,
 				colunaLombarZScore: null,
@@ -36,7 +48,9 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 				radioTercoTScore: null,
 				radioTercoZScore: null,
 				corpoInteiroDensidade: null,
-				corpoInteiroZScore: null
+				corpoInteiroZScore: null,
+				conclusao: null,
+				observacoes: new Observacoes()
 			};
 		},
 		parse: function(resp, options) {
@@ -44,6 +58,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			resp.medico = new Pessoa(resp.medico, {parse: true});
 			resp.dataNascimento = resp.dataNascimento ? $.datepicker.parseDate('yy-mm-dd', resp.dataNascimento) : null;
+			resp.observacoes = new Observacoes(resp.observacoes, {parse: true});
 			return resp;
 		}
 	});
@@ -55,24 +70,67 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
-			bindings['colunaLombarDensidade'].converter = decimalConverter;
+			bindings['colunaLombarDensidade'].converter = decimal3Converter;
 			bindings['colunaLombarTScore'].converter = decimalConverter;
 			bindings['colunaLombarZScore'].converter = decimalConverter;
-			bindings['coloFemurDensidade'].converter = decimalConverter;
+			bindings['coloFemurDensidade'].converter = decimal3Converter;
 			bindings['coloFemurTScore'].converter = decimalConverter;
 			bindings['coloFemurZScore'].converter = decimalConverter;
-			bindings['femurTotalDensidade'].converter = decimalConverter;
+			bindings['femurTotalDensidade'].converter = decimal3Converter;
 			bindings['femurTotalTScore'].converter = decimalConverter;
 			bindings['femurTotalZScore'].converter = decimalConverter;
-			bindings['radioTercoDensidade'].converter = decimalConverter;
+			bindings['radioTercoDensidade'].converter = decimal3Converter;
 			bindings['radioTercoTScore'].converter = decimalConverter;
 			bindings['radioTercoZScore'].converter = decimalConverter;
-			//bindings['corpoInteiroDensidade'].converter = decimalConverter;
-			//bindings['corpoInteiroZScore'].converter = decimalConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.$('input[type=text]').input();
 		}
+	});
+	
+	var ExamePosMenopausaView = Marionette.ItemView.extend({
+		template: '#exame_pos_menopausa_template',
+		modelBinder: function() {
+			return new Backbone.ModelBinder();
+		},
+		onRender: function() {
+			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
+			bindings['colunaLombarDensidade'].converter = decimal3Converter;
+			bindings['colunaLombarZScore'].converter = decimalConverter;
+			bindings['coloFemurDensidade'].converter = decimal3Converter;
+			bindings['coloFemurZScore'].converter = decimalConverter;
+			bindings['femurTotalDensidade'].converter = decimal3Converter;
+			bindings['femurTotalZScore'].converter = decimalConverter;
+			bindings['radioTercoDensidade'].converter = decimal3Converter;
+			bindings['radioTercoZScore'].converter = decimalConverter;
+			bindings['corpoInteiroDensidade'].converter = decimalConverter;
+			bindings['corpoInteiroZScore'].converter = decimalConverter;
+			this.modelBinder().bind(this.model, this.el, bindings);
+			
+			this.$('input[type=text]').input();
+		}
+	});
+	
+	var ObservacaoView = Backbone.View.extend({
+		tagName: 'tr',
+		className: 'coi-cell-item',
+		render: function() {
+			var that = this;
+			this.$el.append($('<td>' + this.model.get('codigo') + '</td>'));
+			this.$el.append($('<td>' + this.model.get('descricao').replace('{}', '<input type="text" name="extra"/>') + '</td>'));
+			this.$el.append($('<td/>').append($('<button/>', {text: 'Remover'}).click(function(e) {
+				if (e && e.preventDefault){ e.preventDefault(); }
+		        if (e && e.stopPropagation){ e.stopPropagation(); }
+				that.model.collection.remove(that.model);
+			}).button()));
+			this.$('input[type=text]').input();
+			
+			new Backbone.ModelBinder().bind(this.model, this.el);
+		}
+	});
+	
+	var ObservacoesView = Marionette.CollectionView.extend({
+		itemView: ObservacaoView
 	});
 	
 	var LaudoView = COI.FormView.extend({
@@ -80,12 +138,22 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		regions: {
 			'paciente': '#paciente',
 			'medico': '#medico',
-			'exame': '#exame'
+			'exame': '#exame',
+			'observacoes': '#observacoes-list'
 		},
 		modelEvents: {
 			'change:paciente': 'renderPaciente',
 			'change:medico': 'renderMedico',
-			'change': 'renderExame'
+			'change:status': 'updateExame',
+			'change:observacoes': 'renderObservacoes'
+		},
+		ui: {
+			'conclusao': '[name=conclusao]',
+			'observacoes': '#observacoes',
+			'buttonAdicionarObservacao': '#adicionar-observacao'
+		},
+		triggers: {
+			'click #adicionar-observacao': 'adicionarObservacao'
 		},
 		initialize: function() {
 			if (!this.model.isNew()) {
@@ -98,9 +166,13 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['dataNascimento'].converter = dateConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
+			this.ui.conclusao.input();
+			this.ui.observacoes.input();
+			this.ui.buttonAdicionarObservacao.button();
+			
 			this.renderPaciente();
 			this.renderMedico();
-			this.renderExame();
+			this.renderObservacoes();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
@@ -111,8 +183,34 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		renderMedico: function() {
 			this.medico.show(new COI.PessoaView({model: this.model.get('medico'), label: 'Médico:', attribute: 'cliente', required: true}));
 		},
-		renderExame: function() {
+		renderObservacoes: function() {
+			this.observacoes.show(new ObservacoesView({collection: this.model.get('observacoes')}));
+		},
+		renderExamePreMenopausa: function() {
 			this.exame.show(new ExamePreMenopausaView({model: this.model}));
+		},
+		renderExamePosMenopausa: function() {
+			this.exame.show(new ExamePosMenopausaView({model: this.model}));
+		},
+		onAdicionarObservacao: function(e) {
+			var data = this.ui.observacoes.children('option:selected').data();
+			this.model.get('observacoes').add(new Observacao({
+				codigo: data.code,
+				descricao: data.value
+			}));
+			
+			this.ui.observacoes.val(null);
+		},
+		updateExame: function() {
+			switch(this.model.get('status')) {
+			case 'Pré-Menopausal':
+				this.renderExamePreMenopausa();
+				break;
+			case 'Transição Menopausal':
+			case 'Pós-Menopausal':
+				this.renderExamePosMenopausa();
+				break;
+			}
 		},
 		onCancel: function(e) {
 			Backbone.history.navigate('laudos', true);

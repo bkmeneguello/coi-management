@@ -74,7 +74,20 @@ function decimalConverter(direction, value) {
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
-			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\.]+/g,""));
+			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\-\.]+/g,""));
+		} catch (e) {}
+	}
+};
+
+function decimal3Converter(direction, value) {
+	switch(direction) {
+	case 'ModelToView':
+		try {
+			return value ? (value.toFixed(3) + '').replace('.', ',') : value;
+		} catch (e) {}
+	case 'ViewToModel':
+		try {
+			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\-\.]+/g,""));
 		} catch (e) {}
 	}
 };
@@ -87,7 +100,7 @@ function moneyConverter(direction, value) {
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
-			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\.]+/g,""));
+			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\-\.]+/g,""));
 		} catch (e) {}
 	}
 };
@@ -100,7 +113,7 @@ function percentageConverter(direction, value) {
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
-			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\.]+/g,""));
+			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\-\.]+/g,""));
 		} catch (e) {}
 	}
 };
