@@ -1,6 +1,7 @@
 package com.meneguello.coi;
 
 import static com.meneguello.coi.model.tables.Laudo.LAUDO;
+import static com.meneguello.coi.model.tables.LaudoObservacao.LAUDO_OBSERVACAO;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -33,6 +34,7 @@ import org.jooq.Result;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.Keys;
+import com.meneguello.coi.model.tables.records.LaudoObservacaoRecord;
 import com.meneguello.coi.model.tables.records.LaudoRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
@@ -171,6 +173,23 @@ public class LaudoEndpoint {
 				
 				laudo.setId(record.getId());
 				
+				for (Observacao observacao : laudo.getObservacoes()) {
+					database.insertInto(
+							LAUDO_OBSERVACAO, 
+							LAUDO_OBSERVACAO.LAUDO_ID,
+							LAUDO_OBSERVACAO.CODIGO,
+							LAUDO_OBSERVACAO.DESCRICAO,
+							LAUDO_OBSERVACAO.EXTRA
+						)
+						.values(
+								laudo.getId(),
+								observacao.getCodigo(),
+								observacao.getDescricao(),
+								observacao.getExtra()
+						)
+						.execute();
+				}
+				
 				return laudo;
 			}
 		}.execute();
@@ -197,12 +216,13 @@ public class LaudoEndpoint {
 							Sexo.fromValue(laudo.getSexo()));
 				}
 				
-				final Pessoa medico = laudo.getPaciente();
+				final Pessoa medico = laudo.getMedico();
 				if (medico.getId() == null) {
 					createPessoa(database, medico, null, null);
 				}
 				
 				final StatusHormonal statusHormonal = StatusHormonal.fromValue(laudo.getStatus());
+				final ConclusaoLaudo conclusao = ConclusaoLaudo.fromValue(laudo.getConclusao());
 				
 				database.update(LAUDO)
 						.set(LAUDO.DATA, new java.sql.Date(laudo.getData().getTime()))
@@ -227,8 +247,30 @@ public class LaudoEndpoint {
 						.set(LAUDO.RADIO_TERCO_ZSCORE, laudo.getRadioTercoZScore())
 						.set(LAUDO.CORPO_INTEIRO_DENSIDADE, laudo.getCorpoInteiroDensidade())
 						.set(LAUDO.CORPO_INTEIRO_ZSCORE, laudo.getCorpoInteiroZScore())
+						.set(LAUDO.CONCLUSAO, conclusao.name())
 						.where(LAUDO.ID.eq(id))
 						.execute();
+				
+				database.delete(LAUDO_OBSERVACAO)
+						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudo.getId()))
+						.execute();
+				
+				for (Observacao observacao : laudo.getObservacoes()) {
+					database.insertInto(
+							LAUDO_OBSERVACAO, 
+							LAUDO_OBSERVACAO.LAUDO_ID,
+							LAUDO_OBSERVACAO.CODIGO,
+							LAUDO_OBSERVACAO.DESCRICAO,
+							LAUDO_OBSERVACAO.EXTRA
+						)
+						.values(
+								laudo.getId(),
+								observacao.getCodigo(),
+								observacao.getDescricao(),
+								observacao.getExtra()
+						)
+						.execute();
+				}
 				
 				return laudo;
 			}
@@ -241,6 +283,10 @@ public class LaudoEndpoint {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(Executor database) {
+				database.delete(LAUDO_OBSERVACAO)
+						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(id))
+						.execute();
+				
 				database.delete(LAUDO)
 						.where(LAUDO.ID.eq(id))
 						.execute();
@@ -294,6 +340,20 @@ public class LaudoEndpoint {
 		
 		laudo.setCorpoInteiroDensidade(record.getValue(LAUDO.CORPO_INTEIRO_DENSIDADE));
 		laudo.setCorpoInteiroZScore(record.getValue(LAUDO.CORPO_INTEIRO_ZSCORE));
+		
+		laudo.setConclusao(ConclusaoLaudo.valueOf(record.getValue(LAUDO.CONCLUSAO)).getValue());
+		
+		final Result<LaudoObservacaoRecord> observacoesRecord = database.selectFrom(LAUDO_OBSERVACAO)
+				.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudo.getId()))
+				.orderBy(LAUDO_OBSERVACAO.CODIGO)
+				.fetch();
+		for (LaudoObservacaoRecord observacaoRecord : observacoesRecord) {
+			final Observacao observacao = new Observacao();
+			observacao.setCodigo(observacaoRecord.getCodigo());
+			observacao.setDescricao(observacaoRecord.getDescricao());
+			observacao.setExtra(observacaoRecord.getExtra());
+			laudo.getObservacoes().add(observacao);
+		}
 		
 		return laudo;
 	}
@@ -376,7 +436,15 @@ public class LaudoEndpoint {
 		private BigDecimal radioTercoZScore;
 		private BigDecimal corpoInteiroDensidade;
 		private BigDecimal corpoInteiroZScore;
-		
+		private String conclusao;
+		private List<Observacao> observacoes = new ArrayList<>();
+	}
+	
+	@Data
+	private static class Observacao {
+		private Integer codigo;
+		private String descricao;
+		private String extra;
 	}
 	
 	@Data @JsonIgnoreProperties({"partes", "prefixo", "codigoNumerico"})
