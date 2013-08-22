@@ -7,10 +7,12 @@ import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -24,10 +26,20 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import lombok.Data;
+import net.sf.jasperreports.engine.JREmptyDataSource;
+import net.sf.jasperreports.engine.JRExporterParameter;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.export.JRPdfExporter;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.joda.time.DateTime;
+import org.joda.time.Years;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -52,6 +64,57 @@ public class LaudoEndpoint {
 		return result;
 	}
 	
+	@GET
+	@Path("/print/{id}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response print(final @PathParam("id") Long id) throws Exception {
+		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
+			@Override
+			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+				final LaudoRecord laudoRecord = database.fetchOne(LAUDO, LAUDO.ID.eq(id));
+				final PessoaRecord pacienteRecord = database.fetchOne(PESSOA, PESSOA.ID.eq(laudoRecord.getPacienteId()));
+				final PessoaRecord medicoRecord = database.fetchOne(PESSOA, PESSOA.ID.eq(laudoRecord.getMedicoId()));
+				
+				final StatusHormonal statusHormonal = StatusHormonal.valueOf(laudoRecord.getStatusHormonal());
+
+				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				
+				JasperReport jasperReportCapa = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream("laudo-capa.jrxml"));
+				HashMap<String, Object> capaParameters = new HashMap<String, Object>();
+				capaParameters.put("paciente", pacienteRecord.getNome());
+				capaParameters.put("medico", medicoRecord.getNome());
+				capaParameters.put("sexo", Sexo.valueOf(pacienteRecord.getSexo()).getValue());
+				capaParameters.put("idade", Years.yearsBetween(new DateTime(pacienteRecord.getDataNascimento().getTime()), DateTime.now()).getYears());
+				capaParameters.put("status", statusHormonal.getValue());
+				capaParameters.put("data", new Date(DateTime.now().getMillis()));
+				JasperPrint jasperPrintCapa = JasperFillManager.fillReport(jasperReportCapa, capaParameters, new JREmptyDataSource());
+				
+				String laudoNome = null;
+				switch (statusHormonal) {
+				case PRE_MENOPAUSAL:
+					laudoNome = "laudo-pre.jrxml";
+					break;
+				case TRANSICAO_MENOPAUSAL:
+				case POS_MENOPAUSAL:
+					laudoNome = "laudo-pos.jrxml";
+					break;
+				}
+				
+				JasperReport jasperReportLaudo = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream(laudoNome));
+				JasperPrint jasperPrintLaudo = JasperFillManager.fillReport(jasperReportLaudo, capaParameters, new JREmptyDataSource());
+				
+				JRPdfExporter exporter = new JRPdfExporter();
+				exporter.setParameter(JRExporterParameter.JASPER_PRINT_LIST, Arrays.asList(jasperPrintCapa, jasperPrintLaudo));
+				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
+				exporter.exportReport();
+				
+				return baos;
+			}
+		}.execute();
+		
+		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=laudo.pdf").build();
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<LaudoList> list() throws Exception {
@@ -118,6 +181,7 @@ public class LaudoEndpoint {
 				}
 				
 				final StatusHormonal statusHormonal = StatusHormonal.fromValue(laudo.getStatus());
+				final ConclusaoLaudo conclusao = ConclusaoLaudo.fromValue(laudo.getConclusao());
 				
 				final LaudoRecord record = database.insertInto(
 							LAUDO, 
@@ -142,7 +206,8 @@ public class LaudoEndpoint {
 							LAUDO.RADIO_TERCO_TSCORE,
 							LAUDO.RADIO_TERCO_ZSCORE,
 							LAUDO.CORPO_INTEIRO_DENSIDADE,
-							LAUDO.CORPO_INTEIRO_ZSCORE
+							LAUDO.CORPO_INTEIRO_ZSCORE,
+							LAUDO.CONCLUSAO
 						)
 						.values(
 								new Date(laudo.getData().getTime()),
@@ -166,7 +231,8 @@ public class LaudoEndpoint {
 								laudo.getRadioTercoTScore(),
 								laudo.getRadioTercoZScore(),
 								laudo.getCorpoInteiroDensidade(),
-								laudo.getCorpoInteiroZScore()
+								laudo.getCorpoInteiroZScore(),
+								conclusao.name()
 						)
 						.returning(LAUDO.ID)
 						.fetchOne();

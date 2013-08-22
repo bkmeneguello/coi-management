@@ -21,6 +21,19 @@ COI.module("Laudos", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var RowView = COI.ActionRowView.extend({
 		template: '#laudo_row_template',
+		onRender: function() {
+			var that = this;
+			this.$('.coi-action-print').click(function(e) {
+				if (e && e.preventDefault) e.preventDefault();
+				if (e && e.stopPropagation) e.stopPropagation();
+				var args = {
+					view : that,
+					model : that.model,
+					collection : that.collection
+				};
+				that.triggerMethod('print', args);
+			}).button();
+		},
 		onUpdate: function(e) {
 			Backbone.history.navigate('laudo/' + this.model.get('id'), true);
 		},
@@ -36,6 +49,9 @@ COI.module("Laudos", function(Module, COI, Backbone, Marionette, $, _) {
 					}
 				});
 			});
+		},
+		onPrint: function(e) {
+            this.$el.append($('<iframe/>', {'src': '/rest/laudos/print/' + this.model.get('id')}).hide());
 		}
 	});
 	

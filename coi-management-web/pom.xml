@@ -218,5 +218,27 @@
 			<artifactId>lombok</artifactId>
 			<version>0.11.8</version>
 		</dependency>
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>jasperreports</artifactId>
+			<version>5.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>xml-apis</groupId>
+			<artifactId>xml-apis</artifactId>
+			<version>1.0.b2</version>
+		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>djmaven2</id>
+			<url>http://archiva.fdvs.com.ar/repository/public1/</url>
+			<name>DynamicJasper public Repository</name>
+		</repository>
+	</repositories>
 </project>

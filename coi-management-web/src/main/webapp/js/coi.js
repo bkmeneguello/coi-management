@@ -555,18 +555,28 @@ COI.ActionRowView = Marionette.ItemView.extend({
 	constructor: function() {
 		Marionette.ItemView.prototype.constructor.apply(this, Array.prototype.slice.apply(arguments));
 		this.listenTo(this, 'render', function() {
-			this.ui.updateButton.button();
-			this.ui.deleteButton.button();
+			var that = this;
+			this.$('.coi-action-update').click(function(e) {
+				if (e && e.preventDefault) e.preventDefault();
+				if (e && e.stopPropagation) e.stopPropagation();
+				var args = {
+					view : that,
+					model : that.model,
+					collection : that.collection
+				};
+				that.triggerMethod('update', args);
+			}).button();
+			this.$('.coi-action-delete').click(function(e) {
+				if (e && e.preventDefault) e.preventDefault();
+				if (e && e.stopPropagation) e.stopPropagation();
+				var args = {
+					view : that,
+					model : that.model,
+					collection : that.collection
+				};
+				that.triggerMethod('delete', args);
+			}).button();
 		});
 	},
-	tagName: 'tr',
-	ui: {
-		'updateButton': 'button.coi-action-update',
-		'deleteButton': 'button.coi-action-delete'
-	},
-	triggers: {
-		'click .coi-action-update': 'update',
-		'click .coi-action-delete': 'delete'
-	},
-	
+	tagName: 'tr'
 });

@@ -361,10 +361,11 @@
 <td>
 	<button class="coi-action-update">Editar</button>
 	<button class="coi-action-delete">Remover</button>
+	<button class="coi-action-print">Imprimir</button>
 </td>
 	</script>
 	<script type="text/template" id="laudo_template">
-<header>Cheque</header>
+<header>Laudo</header>
 <div data-attribute="data" class="coi-view-text" data-label="Data:" data-required="true"/>
 <div id="medico"/>
 <div id="paciente"/>
@@ -436,6 +437,16 @@
 		<table id="observacoes-list"/>
 	<dd>
 </dl>
+<!-- dl class="coi-form-item">
+	<dt>Comparação com exames anteriores:</dt>
+	<dd>
+		<select id="comparacoes">
+			<option/></option>
+		</select>
+		<button id="adicionar-comparacao" class="coi-action-include">Incluir</button>
+		<table id="comparacoes-list"/>
+	<dd>
+</dl -->
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>

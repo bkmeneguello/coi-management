@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="laudo" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="100" bottomMargin="20" uuid="f750959b-7cdd-48da-a35c-695e87dbfda6">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="paciente" class="java.lang.String"/>
+	<parameter name="medico" class="java.lang.String"/>
+	<parameter name="sexo" class="java.lang.String"/>
+	<parameter name="idade" class="java.lang.Integer"/>
+	<parameter name="status" class="java.lang.String"/>
+	<parameter name="data" class="java.util.Date"/>
+	<detail>
+		<band height="80" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="7ef734c5-69de-4d42-8f22-1c1094829b62" x="0" y="0" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[Paciente:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e936e467-25c7-412b-8b7b-f34a53fe9822" x="0" y="20" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[Mádico Solicitante:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a352b009-8fbe-4622-9b40-63bd8da7fc7f" x="0" y="40" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[Sexo:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e24e1bcc-6cff-4341-ab55-72ef12b7b5ed" x="314" y="40" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[Idade:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f92c8817-61f2-4cb9-9212-d28d42eb594b" x="0" y="60" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[Status Hormonal:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="14860a9c-4e81-4f95-9c08-5b942e571c90" x="314" y="60" width="100" height="20"/>
+				<textElement/>
+				<text><![CDATA[Data:]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="2734f892-3a57-4eba-a5d9-d0d9e4f20b28" x="100" y="0" width="472" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$P{paciente}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="58d87367-eb0f-43b8-a1b0-c9191613d5bc" x="100" y="20" width="472" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$P{medico}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="605efc21-e7ae-4400-95a0-04d1fb157740" x="100" y="40" width="214" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$P{sexo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e3ebf642-b113-4753-8598-6e6565d92e95" x="414" y="40" width="158" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$P{idade}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="a5b28bf6-8175-473a-886f-69fde89d93f8" x="100" y="60" width="214" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$P{status}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement uuid="4b96fb64-11c9-47db-9bb4-6347e093ab35" x="414" y="60" width="158" height="20"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$P{data}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>
