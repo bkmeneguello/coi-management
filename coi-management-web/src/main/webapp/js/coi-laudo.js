@@ -21,6 +21,18 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		model: Observacao
 	});
 	
+	var Comparacao = Backbone.Model.extend({
+		defaults: {
+			codigo: null,
+			descricao: null,
+			extra: null
+		}
+	});
+	
+	var Comparacoes = Backbone.Collection.extend({
+		model: Comparacao
+	});
+	
 	var Laudo = Backbone.Model.extend({
 		urlRoot: '/rest/laudos',
 		defaults: function() {
@@ -50,7 +62,8 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 				corpoInteiroDensidade: null,
 				corpoInteiroZScore: null,
 				conclusao: null,
-				observacoes: new Observacoes()
+				observacoes: new Observacoes(),
+				comparacoes: new Comparacoes()
 			};
 		},
 		parse: function(resp, options) {
@@ -59,12 +72,13 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			resp.medico = new Pessoa(resp.medico, {parse: true});
 			resp.dataNascimento = resp.dataNascimento ? $.datepicker.parseDate('yy-mm-dd', resp.dataNascimento) : null;
 			resp.observacoes = new Observacoes(resp.observacoes, {parse: true});
+			resp.comparacoes = new Comparacoes(resp.comparacoes, {parse: true});
 			return resp;
 		}
 	});
 	
-	var ExamePreMenopausaView = Marionette.ItemView.extend({
-		template: '#exame_pre_menopausa_template',
+	var ExamePosMenopausaView = Marionette.ItemView.extend({
+		template: '#exame_pos_menopausa_template',
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
 		},
@@ -88,8 +102,8 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var ExamePosMenopausaView = Marionette.ItemView.extend({
-		template: '#exame_pos_menopausa_template',
+	var ExamePreMenopausaView = Marionette.ItemView.extend({
+		template: '#exame_pre_menopausa_template',
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
 		},
@@ -133,27 +147,54 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		itemView: ObservacaoView
 	});
 	
+	var ComparacaoView = Backbone.View.extend({
+		tagName: 'tr',
+		className: 'coi-cell-item',
+		render: function() {
+			var that = this;
+			this.$el.append($('<td>' + this.model.get('codigo') + '</td>'));
+			this.$el.append($('<td>' + this.model.get('descricao').replace('{}', '<input type="text" name="extra"/>') + '</td>'));
+			this.$el.append($('<td/>').append($('<button/>', {text: 'Remover'}).click(function(e) {
+				if (e && e.preventDefault){ e.preventDefault(); }
+				if (e && e.stopPropagation){ e.stopPropagation(); }
+				that.model.collection.remove(that.model);
+			}).button()));
+			this.$('input[type=text]').input();
+			
+			new Backbone.ModelBinder().bind(this.model, this.el);
+		}
+	});
+	
+	var ComparacoesView = Marionette.CollectionView.extend({
+		itemView: ComparacaoView
+	});
+	
 	var LaudoView = COI.FormView.extend({
 		template: '#laudo_template',
 		regions: {
 			'paciente': '#paciente',
 			'medico': '#medico',
 			'exame': '#exame',
-			'observacoes': '#observacoes-list'
+			'observacoes': '#observacoes-list',
+			'comparacoes': '#comparacoes-list'
 		},
 		modelEvents: {
 			'change:paciente': 'renderPaciente',
 			'change:medico': 'renderMedico',
 			'change:status': 'updateExame',
-			'change:observacoes': 'renderObservacoes'
+			'change:observacoes': 'renderObservacoes',
+			'change:comparacoes': 'renderComparacoes'
 		},
 		ui: {
 			'conclusao': '[name=conclusao]',
 			'observacoes': '#observacoes',
-			'buttonAdicionarObservacao': '#adicionar-observacao'
+			'comparacoes': '#comparacoes',
+			'buttonAdicionarObservacao': '#adicionar-observacao',
+			'buttonAdicionarComparacao': '#adicionar-comparacao'
 		},
 		triggers: {
-			'click #adicionar-observacao': 'adicionarObservacao'
+			'click #adicionar-observacao': 'adicionarObservacao',
+			'click #adicionar-comparacao': 'adicionarComparacao'
 		},
 		initialize: function() {
 			if (!this.model.isNew()) {
@@ -169,10 +210,13 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			this.ui.conclusao.input();
 			this.ui.observacoes.input();
 			this.ui.buttonAdicionarObservacao.button();
+			this.ui.comparacoes.input();
+			this.ui.buttonAdicionarComparacao.button();
 			
 			this.renderPaciente();
 			this.renderMedico();
 			this.renderObservacoes();
+			this.renderComparacoes();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
@@ -183,14 +227,17 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		renderMedico: function() {
 			this.medico.show(new COI.PessoaView({model: this.model.get('medico'), label: 'Médico:', attribute: 'cliente', required: true}));
 		},
-		renderObservacoes: function() {
-			this.observacoes.show(new ObservacoesView({collection: this.model.get('observacoes')}));
-		},
 		renderExamePreMenopausa: function() {
 			this.exame.show(new ExamePreMenopausaView({model: this.model}));
 		},
 		renderExamePosMenopausa: function() {
 			this.exame.show(new ExamePosMenopausaView({model: this.model}));
+		},
+		renderObservacoes: function() {
+			this.observacoes.show(new ObservacoesView({collection: this.model.get('observacoes')}));
+		},
+		renderComparacoes: function() {
+			this.comparacoes.show(new ComparacoesView({collection: this.model.get('comparacoes')}));
 		},
 		onAdicionarObservacao: function(e) {
 			var data = this.ui.observacoes.children('option:selected').data();
@@ -200,6 +247,15 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			}));
 			
 			this.ui.observacoes.val(null);
+		},
+		onAdicionarComparacao: function(e) {
+			var data = this.ui.comparacoes.children('option:selected').data();
+			this.model.get('comparacoes').add(new Comparacao({
+				codigo: data.code,
+				descricao: data.value
+			}));
+			
+			this.ui.comparacoes.val(null);
 		},
 		updateExame: function() {
 			switch(this.model.get('status')) {

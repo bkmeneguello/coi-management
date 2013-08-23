@@ -1,6 +1,7 @@
 package com.meneguello.coi;
 
 import static com.meneguello.coi.model.tables.Laudo.LAUDO;
+import static com.meneguello.coi.model.tables.LaudoComparacao.LAUDO_COMPARACAO;
 import static com.meneguello.coi.model.tables.LaudoObservacao.LAUDO_OBSERVACAO;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static javax.ws.rs.core.Response.status;
@@ -12,8 +13,10 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
@@ -37,6 +40,7 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
@@ -46,6 +50,7 @@ import org.jooq.Result;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.Keys;
+import com.meneguello.coi.model.tables.records.LaudoComparacaoRecord;
 import com.meneguello.coi.model.tables.records.LaudoObservacaoRecord;
 import com.meneguello.coi.model.tables.records.LaudoRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
@@ -89,19 +94,42 @@ public class LaudoEndpoint {
 				capaParameters.put("data", new Date(DateTime.now().getMillis()));
 				JasperPrint jasperPrintCapa = JasperFillManager.fillReport(jasperReportCapa, capaParameters, new JREmptyDataSource());
 				
+				final Map<String, Object> laudoParameters = new HashMap<>();
+				laudoParameters.put("vertebras", "(L1-L4) - L3");
+				laudoParameters.put("colunaLombarDensidade", laudoRecord.getColunaLombarDensidade());
+				laudoParameters.put("coloFemurDensidade", laudoRecord.getColoFemurDensidade());
+				laudoParameters.put("femurTotalDensidade", laudoRecord.getFemurTotalDensidade());
+				laudoParameters.put("radioTercoDensidade", laudoRecord.getRadioTercoDensidade());
+				laudoParameters.put("colunaLombarZScore", laudoRecord.getColunaLombarZscore());
+				laudoParameters.put("coloFemurZScore", laudoRecord.getColoFemurZscore());
+				laudoParameters.put("femurTotalZScore", laudoRecord.getFemurTotalZscore());
+				laudoParameters.put("radioTercoZScore", laudoRecord.getRadioTercoZscore());
+				laudoParameters.put("conclusao", ConclusaoLaudo.valueOf(laudoRecord.getConclusao()).getValue().toUpperCase());
+				laudoParameters.put("observacoes", observacoes(database, laudoRecord.getId()));
+				laudoParameters.put("comparacoes", comparacoes(database, laudoRecord.getId()));
+				
 				String laudoNome = null;
 				switch (statusHormonal) {
 				case PRE_MENOPAUSAL:
+					laudoParameters.put("corpoInteiroDensidade", laudoRecord.getCorpoInteiroDensidade());
+					laudoParameters.put("corpoInteiroZScore", laudoRecord.getCorpoInteiroZscore());
 					laudoNome = "laudo-pre.jrxml";
 					break;
 				case TRANSICAO_MENOPAUSAL:
 				case POS_MENOPAUSAL:
+					laudoParameters.put("colunaLombarTScore", laudoRecord.getColunaLombarTscore());
+					laudoParameters.put("coloFemurTScore", laudoRecord.getColoFemurTscore());
+					laudoParameters.put("femurTotalTScore", laudoRecord.getFemurTotalTscore());
+					laudoParameters.put("radioTercoTScore", laudoRecord.getRadioTercoTscore());
+					laudoParameters.put("colunaLombarRisco", risco(laudoRecord.getColunaLombarTscore()));
+					laudoParameters.put("femurRisco", risco(laudoRecord.getColoFemurTscore().max(laudoRecord.getFemurTotalTscore())));
+					laudoParameters.put("radioTercoRisco", risco(laudoRecord.getRadioTercoTscore()));
 					laudoNome = "laudo-pos.jrxml";
 					break;
 				}
 				
 				JasperReport jasperReportLaudo = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream(laudoNome));
-				JasperPrint jasperPrintLaudo = JasperFillManager.fillReport(jasperReportLaudo, capaParameters, new JREmptyDataSource());
+				JasperPrint jasperPrintLaudo = JasperFillManager.fillReport(jasperReportLaudo, laudoParameters, new JREmptyDataSource());
 				
 				JRPdfExporter exporter = new JRPdfExporter();
 				exporter.setParameter(JRExporterParameter.JASPER_PRINT_LIST, Arrays.asList(jasperPrintCapa, jasperPrintLaudo));
@@ -109,6 +137,47 @@ public class LaudoEndpoint {
 				exporter.exportReport();
 				
 				return baos;
+			}
+			
+			private BigDecimal risco(BigDecimal tscore) {
+				if (tscore.compareTo(new BigDecimal(-1)) < 0) {
+					return new BigDecimal(String.valueOf(Math.pow(2, tscore.abs().doubleValue())));
+				}
+				return null;
+			}
+
+			private Collection<Map<String, Object>> observacoes(Executor database, Long laudoId) {
+				final Result<LaudoObservacaoRecord> observacoesResult = database
+						.selectFrom(LAUDO_OBSERVACAO)
+						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudoId))
+						.orderBy(LAUDO_OBSERVACAO.CODIGO)
+						.fetch();
+				
+				final List<Map<String, Object>> observacoes = new ArrayList<>();
+				for (LaudoObservacaoRecord observacaoRecord : observacoesResult) {
+					final Map<String, Object> observacao = new HashMap<>();
+					observacao.put("codigo", observacaoRecord.getCodigo());
+					observacao.put("descricao", observacaoRecord.getDescricao().replace("{}", StringUtils.trimToEmpty(observacaoRecord.getExtra())));
+					observacoes.add(observacao);
+				}
+				return observacoes;
+			}
+			
+			private Collection<Map<String, Object>> comparacoes(Executor database, Long laudoId) {
+				final Result<LaudoComparacaoRecord> comparacoesResult = database
+						.selectFrom(LAUDO_COMPARACAO)
+						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudoId))
+						.orderBy(LAUDO_COMPARACAO.CODIGO)
+						.fetch();
+				
+				final List<Map<String, Object>> comparacoes = new ArrayList<>();
+				for (LaudoComparacaoRecord comparacaoRecord : comparacoesResult) {
+					final Map<String, Object> comparacao = new HashMap<>();
+					comparacao.put("codigo", comparacaoRecord.getCodigo());
+					comparacao.put("descricao", comparacaoRecord.getDescricao().replace("{}", StringUtils.trimToEmpty(comparacaoRecord.getExtra())));
+					comparacoes.add(comparacao);
+				}
+				return comparacoes;
 			}
 		}.execute();
 		
@@ -256,6 +325,23 @@ public class LaudoEndpoint {
 						.execute();
 				}
 				
+				for (Comparacao comparacao : laudo.getComparacoes()) {
+					database.insertInto(
+							LAUDO_COMPARACAO, 
+							LAUDO_COMPARACAO.LAUDO_ID,
+							LAUDO_COMPARACAO.CODIGO,
+							LAUDO_COMPARACAO.DESCRICAO,
+							LAUDO_COMPARACAO.EXTRA
+						)
+						.values(
+								laudo.getId(),
+								comparacao.getCodigo(),
+								comparacao.getDescricao(),
+								comparacao.getExtra()
+						)
+						.execute();
+				}
+				
 				return laudo;
 			}
 		}.execute();
@@ -338,6 +424,27 @@ public class LaudoEndpoint {
 						.execute();
 				}
 				
+				database.delete(LAUDO_COMPARACAO)
+						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudo.getId()))
+						.execute();
+				
+				for (Comparacao comparacao : laudo.getComparacoes()) {
+					database.insertInto(
+							LAUDO_COMPARACAO, 
+							LAUDO_COMPARACAO.LAUDO_ID,
+							LAUDO_COMPARACAO.CODIGO,
+							LAUDO_COMPARACAO.DESCRICAO,
+							LAUDO_COMPARACAO.EXTRA
+						)
+						.values(
+								laudo.getId(),
+								comparacao.getCodigo(),
+								comparacao.getDescricao(),
+								comparacao.getExtra()
+						)
+						.execute();
+				}
+				
 				return laudo;
 			}
 		}.execute();
@@ -351,6 +458,10 @@ public class LaudoEndpoint {
 			protected Void execute(Executor database) {
 				database.delete(LAUDO_OBSERVACAO)
 						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(id))
+						.execute();
+				
+				database.delete(LAUDO_COMPARACAO)
+						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(id))
 						.execute();
 				
 				database.delete(LAUDO)
@@ -409,7 +520,8 @@ public class LaudoEndpoint {
 		
 		laudo.setConclusao(ConclusaoLaudo.valueOf(record.getValue(LAUDO.CONCLUSAO)).getValue());
 		
-		final Result<LaudoObservacaoRecord> observacoesRecord = database.selectFrom(LAUDO_OBSERVACAO)
+		final Result<LaudoObservacaoRecord> observacoesRecord = database
+				.selectFrom(LAUDO_OBSERVACAO)
 				.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudo.getId()))
 				.orderBy(LAUDO_OBSERVACAO.CODIGO)
 				.fetch();
@@ -419,6 +531,19 @@ public class LaudoEndpoint {
 			observacao.setDescricao(observacaoRecord.getDescricao());
 			observacao.setExtra(observacaoRecord.getExtra());
 			laudo.getObservacoes().add(observacao);
+		}
+		
+		final Result<LaudoComparacaoRecord> comparacoesRecord = database
+				.selectFrom(LAUDO_COMPARACAO)
+				.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudo.getId()))
+				.orderBy(LAUDO_COMPARACAO.CODIGO)
+				.fetch();
+		for (LaudoComparacaoRecord comparacaoRecord : comparacoesRecord) {
+			final Comparacao comparacao = new Comparacao();
+			comparacao.setCodigo(comparacaoRecord.getCodigo());
+			comparacao.setDescricao(comparacaoRecord.getDescricao());
+			comparacao.setExtra(comparacaoRecord.getExtra());
+			laudo.getComparacoes().add(comparacao);
 		}
 		
 		return laudo;
@@ -504,10 +629,18 @@ public class LaudoEndpoint {
 		private BigDecimal corpoInteiroZScore;
 		private String conclusao;
 		private List<Observacao> observacoes = new ArrayList<>();
+		private List<Comparacao> comparacoes = new ArrayList<>();
 	}
 	
 	@Data
 	private static class Observacao {
+		private Integer codigo;
+		private String descricao;
+		private String extra;
+	}
+	
+	@Data
+	private static class Comparacao {
 		private Integer codigo;
 		private String descricao;
 		private String extra;

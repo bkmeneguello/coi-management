@@ -1,15 +1,338 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="laudo" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c4dcdbd2-0330-4147-a02a-807d6349b399">
-	<property name="ireport.zoom" value="1.0"/>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="laudo" pageWidth="595" pageHeight="850" columnWidth="523" leftMargin="36" rightMargin="36" topMargin="36" bottomMargin="36" uuid="45665aca-12e0-4f2c-9fae-7ca7cac9881d">
+	<property name="ireport.zoom" value="1.6105100000000032"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.y" value="432"/>
+	<subDataset name="observacoesDataSet" uuid="a1b1d00d-5058-4f57-ab0f-85940a55f13d">
+		<field name="codigo" class="java.lang.Integer"/>
+		<field name="descricao" class="java.lang.String"/>
+	</subDataset>
+	<subDataset name="comparacoesDataSet" uuid="c6f79e0b-3a86-4512-b870-9ae8f1a9043b">
+		<field name="codigo" class="java.lang.Integer"/>
+		<field name="descricao" class="java.lang.String"/>
+	</subDataset>
+	<parameter name="vertebras" class="java.lang.String"/>
+	<parameter name="colunaLombarDensidade" class="java.math.BigDecimal"/>
+	<parameter name="coloFemurDensidade" class="java.math.BigDecimal"/>
+	<parameter name="femurTotalDensidade" class="java.math.BigDecimal"/>
+	<parameter name="radioTercoDensidade" class="java.math.BigDecimal"/>
+	<parameter name="colunaLombarZScore" class="java.math.BigDecimal"/>
+	<parameter name="coloFemurZScore" class="java.math.BigDecimal"/>
+	<parameter name="femurTotalZScore" class="java.math.BigDecimal"/>
+	<parameter name="radioTercoZScore" class="java.math.BigDecimal"/>
+	<parameter name="conclusao" class="java.lang.String"/>
+	<parameter name="observacoes" class="java.util.Collection"/>
+	<parameter name="comparacoes" class="java.util.Collection"/>
+	<parameter name="corpoInteiroDensidade" class="java.math.BigDecimal"/>
+	<parameter name="corpoInteiroZScore" class="java.math.BigDecimal"/>
 	<detail>
-		<band height="125" splitType="Stretch">
+		<band height="370" splitType="Stretch">
 			<staticText>
-				<reportElement uuid="84d04fe0-fe57-44a1-8cdf-be73f4c26f67" x="0" y="0" width="100" height="20"/>
+				<reportElement uuid="24ad4533-626c-4b25-b882-b10d0d2496a7" x="0" y="0" width="523" height="40"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[DENSITOMETRIA ÓSSEA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="45e8a857-c60c-461d-bd7d-28ed8dbe8b36" x="0" y="40" width="523" height="20"/>
 				<textElement/>
-				<text><![CDATA[pre ]]></text>
+				<text><![CDATA[*ANÁLISE REALIZADA EM DENSITÔMETRO DA MARCA LUNAR, MODELO PRODIGY]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d96988fd-7b76-4b36-af6f-f77eecdef5ac" x="0" y="60" width="523" height="30"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Os critérios para classificação dos achados densitométricos em crianças, adolescentes, mulheres na pré- menopausa e homens abaixo dos 50 anos são:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="84ecfab6-b4e6-4544-b26e-1cebbb4ccb9f" x="0" y="90" width="523" height="30"/>
+				<textElement/>
+				<text><![CDATA[-Índice Z-score ≥ -2,0 DP = NORMAL
+-Índice Z-score de < -2,0 DP = BAIXA DENSIDADE ÓSSEA PARA IDADE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="4e35c4d6-81da-427a-8948-b897c99d61cc" x="0" y="120" width="523" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[DESCRIÇÃO DO EXAME ATUAL:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b431e149-3336-49eb-9840-74df66cfa46f" x="0" y="140" width="150" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true" isItalic="false" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Local]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6b6aa5b2-609f-468e-9e27-f4fb2cd034d0" x="150" y="140" width="145" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true" isItalic="false" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Densidade Óssea (g/cm²)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="8ad28ef5-2649-4513-8898-238e4d542b60" x="295" y="140" width="50" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true" isItalic="false" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Z-score]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="0c3fe908-f3cb-4e4a-b401-f1df01136404" x="0" y="160" width="150" height="20"/>
+				<box leftPadding="5">
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA["Coluna Lombar " + $P{vertebras}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1681e7d8-433a-43a0-9942-29e5655e6f83" x="0" y="180" width="150" height="20"/>
+				<box leftPadding="5">
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Colo do Fêmur]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="8055d43d-9092-4a9f-a346-5f8a8020f426" x="0" y="200" width="150" height="20"/>
+				<box leftPadding="5">
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Fêmur Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a03287fc-775c-4c71-a7da-34d8d7636e76" x="0" y="220" width="150" height="20"/>
+				<box leftPadding="5">
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Rádio 33%]]></text>
+			</staticText>
+			<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
+				<reportElement uuid="6cdcf895-22bb-4910-b16e-1e746d3354af" x="150" y="160" width="145" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{colunaLombarDensidade}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
+				<reportElement uuid="f1d8ad50-d2e4-45ac-9f42-e131ff7ed58c" x="150" y="180" width="145" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{coloFemurDensidade}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
+				<reportElement uuid="5fa19a57-5bc7-4827-a14f-606f4d603dce" x="150" y="200" width="145" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{femurTotalDensidade}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
+				<reportElement uuid="5f4d9470-3178-45b4-867b-d9cc31e8524e" x="150" y="220" width="145" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{radioTercoDensidade}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
+				<reportElement uuid="41f1d4de-67a8-4b65-820d-2657be71413a" x="295" y="160" width="50" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{colunaLombarZScore}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
+				<reportElement uuid="f68666c7-2e99-43d8-be2c-d884c023adb1" x="295" y="180" width="50" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{coloFemurZScore}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
+				<reportElement uuid="a1b24b08-09a0-4f1c-af37-35489a4e42e9" x="295" y="200" width="50" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{femurTotalZScore}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
+				<reportElement uuid="d8e8ac80-7b7e-4516-807e-e608a975c721" x="295" y="220" width="50" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{radioTercoZScore}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="0ff83d2e-37c7-44ad-bdbd-4b08c9922bce" x="0" y="270" width="75" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[CONCLUSÃO: ]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="cfd6e85a-77f5-4f20-b795-3d1722607afc" x="75" y="270" width="448" height="20"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{conclusao}]]></textFieldExpression>
+			</textField>
+			<elementGroup>
+				<staticText>
+					<reportElement uuid="df2ccff8-89a1-4edc-9c0c-32ba90cfe368" x="0" y="290" width="523" height="20"/>
+					<textElement verticalAlignment="Middle">
+						<font isBold="true" pdfFontName="Helvetica-Bold"/>
+					</textElement>
+					<text><![CDATA[OBSERVAÇÕES:]]></text>
+				</staticText>
+				<componentElement>
+					<reportElement uuid="d987a921-bcc2-4f10-9732-f00b71f9475e" stretchType="RelativeToTallestObject" x="0" y="310" width="523" height="20"/>
+					<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
+						<datasetRun subDataset="observacoesDataSet" uuid="ddd200f7-a14c-45d0-8d8f-c6e2a26be1c8">
+							<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRMapCollectionDataSource($P{observacoes})]]></dataSourceExpression>
+						</datasetRun>
+						<jr:listContents height="20" width="523">
+							<textField isStretchWithOverflow="true">
+								<reportElement uuid="3150904a-0ef8-405e-9831-be5aeb016d85" x="0" y="0" width="523" height="20"/>
+								<box topPadding="2" leftPadding="0" bottomPadding="0"/>
+								<textElement/>
+								<textFieldExpression><![CDATA["- " + $F{descricao}]]></textFieldExpression>
+							</textField>
+						</jr:listContents>
+					</jr:list>
+				</componentElement>
+			</elementGroup>
+			<elementGroup>
+				<staticText>
+					<reportElement uuid="61d90a06-babf-4dba-aab3-e37972b11c38" positionType="Float" x="0" y="330" width="523" height="20"/>
+					<textElement verticalAlignment="Middle">
+						<font isBold="true" pdfFontName="Helvetica-Bold"/>
+					</textElement>
+					<text><![CDATA[COMPARAÇÃO COM EXAMES ANTERIORES:]]></text>
+				</staticText>
+				<componentElement>
+					<reportElement uuid="ad93ec8a-8322-4ed6-b50a-fd533a2f2c83" positionType="Float" stretchType="RelativeToTallestObject" x="0" y="350" width="523" height="20"/>
+					<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
+						<datasetRun subDataset="comparacoesDataSet" uuid="04163fb3-7ed2-4f0c-a582-4ec402fa047a">
+							<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRMapCollectionDataSource($P{comparacoes})]]></dataSourceExpression>
+						</datasetRun>
+						<jr:listContents height="20" width="523">
+							<textField isStretchWithOverflow="true">
+								<reportElement uuid="92b90d98-44bd-4695-88e6-99c2a4d9dabb" x="0" y="0" width="523" height="20"/>
+								<box topPadding="2" bottomPadding="0"/>
+								<textElement/>
+								<textFieldExpression><![CDATA["- " + $F{descricao}]]></textFieldExpression>
+							</textField>
+						</jr:listContents>
+					</jr:list>
+				</componentElement>
+			</elementGroup>
+			<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
+				<reportElement uuid="0ae6c54b-1f15-40b0-af4e-3b8c89bca817" x="150" y="240" width="145" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{corpoInteiroDensidade}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
+				<reportElement uuid="fed1a467-4885-4245-b052-c127a471dd57" x="295" y="240" width="50" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$P{corpoInteiroZScore}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="61f6c325-c58d-48bb-a20f-c88cd3990666" x="0" y="240" width="150" height="20"/>
+				<box leftPadding="5">
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Corpo Inteiro]]></text>
 			</staticText>
 		</band>
 	</detail>
+	<lastPageFooter>
+		<band height="50">
+			<line>
+				<reportElement uuid="0aef577e-cf3e-40b1-9e33-7cac9ca650a2" x="139" y="19" width="245" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="21a4f369-d7fb-44b9-b8bb-fe926c4d542e" x="139" y="22" width="245" height="28"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Dr. Felipe Merchan Ferraz Grizzo
+CRM-PR 25.654]]></text>
+			</staticText>
+		</band>
+	</lastPageFooter>
 </jasperReport>
