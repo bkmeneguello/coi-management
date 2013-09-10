@@ -7,7 +7,8 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			codigo: null,
 			descricao: null,
 			custo: null,
-			preco: null
+			preco: null,
+			estocavel: false,
 		}
 	});
 

@@ -152,7 +152,8 @@ COI.module('Index', function(Module, COI, Backbone, Marionette, $, _) {
 			'click #pessoas': 'pessoas',
 			'click #entradas': 'entradas',
 			'click #cheques': 'cheques',
-			'click #laudos': 'laudos'
+			'click #laudos': 'laudos',
+			'click #estoque': 'estoque'
 		},
 		template: '#index_template',
 		initialize: function() {
@@ -175,6 +176,9 @@ COI.module('Index', function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		laudos: function(e) {
 			Backbone.history.navigate('laudos', true);
+		},
+		estoque: function(e) {
+			Backbone.history.navigate('estoque', true);
 		}
 	});
 	

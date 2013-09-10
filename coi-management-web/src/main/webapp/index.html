@@ -32,6 +32,8 @@
 	<script type="text/javascript" src="/js/coi-cheque.js"></script>
 	<script type="text/javascript" src="/js/coi-laudos.js"></script>
 	<script type="text/javascript" src="/js/coi-laudo.js"></script>
+	<script type="text/javascript" src="/js/coi-estoque.js"></script>
+	<script type="text/javascript" src="/js/coi-movimento.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	
 	<script type="text/template" id="coi_view_text_template">
@@ -102,6 +104,7 @@
 <button id="entradas">Entradas</button>
 <button id="cheques">Cheques</button>
 <button id="laudos">Laudos</button>
+<button id="estoque">Estoque</button>
 	</script>
 	<script type="text/template" id="categoria_row_template">
 <td><%= descricao %></td>
@@ -169,6 +172,12 @@
 <div class="coi-view-text" data-attribute="descricao" data-label="Descrição:" data-required="true"/>
 <div class="coi-view-text" data-attribute="custo" data-label="Custo:" data-required="true"/>
 <div class="coi-view-text" data-attribute="preco" data-label="Preço:" data-required="true"/>
+<dl class="coi-form-item">
+	<dt>Estocável</dt>
+	<dd>
+		<input type="checkbox" name="estocavel" />
+	<dd>
+</dl>
 	</script>
 	<script type="text/template" id="pessoas_import_template">
 <style>
@@ -580,6 +589,59 @@ Fêmur total - é utilizado a DMO
 		</table>
 	<dd>
 </dl>
+	</script>
+	<script type="text/template" id="estoque_row_template">
+<td><%= data %></td>
+<td><%= tipo %></td>
+<td>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="movimento_template">
+<header>Movimento</header>
+<dl class="coi-form-item">
+	<dt>Tipo:</dt>
+	<dd>
+		<select id="tipo" name="tipo">
+			<option/>
+			<option>Entrada</option>
+			<option>Baixa</option>
+		</select>
+	<dd>
+</dl>
+<div class="coi-view-text" data-attribute="data" data-label="Data:" data-required="true"/>
+<div id="produtos"/>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
+	</script>
+	<script type="text/template" id="movimento_produtos_template">
+<dt><%= label %></dt>
+<dd>
+	<input type="text" class="coi-view-produto"/>
+	<button class="coi-action-include">Adicionar</button>
+</dd>
+<table>
+	<thead>
+		<tr>
+			<th>Código</th>
+			<th>Descrição</th>
+			<th>Quantidade</th>
+			<th>Ações</th>
+		</tr>
+	</thead>
+	<tbody/>
+</table>
+	</script>
+	<script type="text/template" id="movimento_produto_template">
+<td class="coi-row-item"><%= codigo %></td>
+<td class="coi-row-item"><%= descricao %></td>
+<td class="coi-row-item"><input type="text" name="quantidade"/></td>
+<td class="coi-row-item">
+	<button class="coi-action-remove">Remover</button>
+</td>
 	</script>
 </head>
 <body>

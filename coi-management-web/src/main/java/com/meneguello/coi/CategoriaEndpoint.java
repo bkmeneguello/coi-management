@@ -77,6 +77,30 @@ public class CategoriaEndpoint {
 		}.execute();
 	}
 	
+	@GET
+	@Path("/produtos/estocaveis")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Produto> listProdutosEstocaveis(final @QueryParam("term") String term) throws Exception {
+		return new Transaction<List<Produto>>() {
+			@Override
+			protected List<Produto> execute(Executor database) {
+				final ArrayList<Produto> produtos = new ArrayList<Produto>();
+				final SelectWhereStep<ProdutoRecord> select = database.selectFrom(PRODUTO);
+				if (StringUtils.isNotBlank(term)) {
+					select.where(PRODUTO.DESCRICAO.likeIgnoreCase("%" + term + "%"))
+						.or(PRODUTO.CODIGO.likeIgnoreCase(term + "%"))
+						.and(PRODUTO.ESTOCAVEL.eq("S"));
+				}
+				final Result<ProdutoRecord> resultRecord = select.fetch();
+				for (ProdutoRecord record : resultRecord) {
+					produtos.add(buildProduto(record));
+				}
+				return produtos;
+			}
+			
+		}.execute();
+	}
+	
 	private Categoria buildCategoria(CategoriaRecord categoriaRecord) {
 		final Categoria categoria = new Categoria();
 		categoria.setId(categoriaRecord.getId());
@@ -134,6 +158,7 @@ public class CategoriaEndpoint {
 		produto.setDescricao(produtoRecord.getDescricao());
 		produto.setCusto(produtoRecord.getCusto());
 		produto.setPreco(produtoRecord.getPreco());
+		produto.setEstocavel("S".equals(produtoRecord.getEstocavel()));
 		return produto;
 	}
 	
@@ -159,14 +184,16 @@ public class CategoriaEndpoint {
 								PRODUTO.CODIGO, 
 								PRODUTO.DESCRICAO, 
 								PRODUTO.CUSTO, 
-								PRODUTO.PRECO
+								PRODUTO.PRECO,
+								PRODUTO.ESTOCAVEL
 							)
 							.values(
 									id, 
 									trimToNull(produto.getCodigo()), 
 									trimToNull(produto.getDescricao()), 
 									produto.getCusto(), 
-									produto.getPreco()
+									produto.getPreco(),
+									produto.isEstocavel() ? "S" : "N"
 							)
 							.execute();
 				}
@@ -217,14 +244,16 @@ public class CategoriaEndpoint {
 									PRODUTO.CODIGO, 
 									PRODUTO.DESCRICAO, 
 									PRODUTO.CUSTO, 
-									PRODUTO.PRECO
+									PRODUTO.PRECO,
+									PRODUTO.ESTOCAVEL
 								)
 								.values(
 										id, 
 										trimToNull(produto.getCodigo()), 
 										trimToNull(produto.getDescricao()), 
 										produto.getCusto(), 
-										produto.getPreco())
+										produto.getPreco(),
+										produto.isEstocavel() ? "S" : "N")
 								.returning(PRODUTO.ID)
 								.fetchOne();
 						produto.setId(produtoRecord.getId());
@@ -235,6 +264,7 @@ public class CategoriaEndpoint {
 							.set(PRODUTO.DESCRICAO, trimToNull(produto.getDescricao()))
 							.set(PRODUTO.CUSTO, produto.getCusto())
 							.set(PRODUTO.PRECO, produto.getPreco())
+							.set(PRODUTO.ESTOCAVEL, produto.isEstocavel() ? "S" : "N")
 							.where(PRODUTO.ID.eq(produto.getId()))
 							.execute();
 					}
@@ -316,6 +346,7 @@ public class CategoriaEndpoint {
 		private String descricao;
 		private BigDecimal custo = BigDecimal.ZERO;
 		private BigDecimal preco = BigDecimal.ZERO;
+		private boolean estocavel;
 	}
 	
 	@Data
