@@ -61,6 +61,10 @@ th.ui-widget-header {
 	width: 100px;
 }
 
+input[type=text].coi-short-text {
+	width: 100px;
+}
+
 .coi-form-item input[type=text].coi-validation-invalid {
 	background: url("images/error-stripe.png") repeat;
 }

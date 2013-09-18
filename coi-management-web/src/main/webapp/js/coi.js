@@ -70,7 +70,7 @@ function decimalConverter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':
 		try {
-			return value ? (value.toFixed(2) + '').replace('.', ',') : value;
+			return value || value == 0 ? (value.toFixed(2) + '').replace('.', ',') : value;
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
@@ -83,7 +83,7 @@ function decimal3Converter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':
 		try {
-			return value ? (value.toFixed(3) + '').replace('.', ',') : value;
+			return value || value == 0 ? (value.toFixed(3) + '').replace('.', ',') : value;
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
@@ -96,7 +96,7 @@ function moneyConverter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':
 		try {
-			return value ? 'R$ ' + (value.toFixed(2) + '').replace('.', ',') : value;
+			return value || value == 0 ? 'R$ ' + (value.toFixed(2) + '').replace('.', ',') : value;
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
@@ -109,7 +109,7 @@ function percentageConverter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':
 		try {
-			return value ? (value.toFixed(2) + '').replace('.', ',') + '%' : value;
+			return value || value == 0 ? (value.toFixed(2) + '').replace('.', ',') + '%' : value;
 		} catch (e) {}
 	case 'ViewToModel':
 		try {

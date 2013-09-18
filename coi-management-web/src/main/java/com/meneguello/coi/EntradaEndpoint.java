@@ -19,6 +19,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -37,10 +38,12 @@ import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
+import org.jooq.impl.Factory;
 
 import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
@@ -69,9 +72,18 @@ public class EntradaEndpoint {
 			@Override
 			protected List<EntradaList> execute(Executor database) {
 				final ArrayList<EntradaList> result = new ArrayList<EntradaList>();
-				final Result<Record> resultRecord = database.selectFrom(ENTRADA
-							.join(PESSOA).onKey()
-						).fetch();
+				final List<Field<?>> fields = new ArrayList<>();
+				fields.addAll(Arrays.asList(ENTRADA.fields()));				
+				fields.addAll(Arrays.asList(PESSOA.fields()));				
+				fields.add(database.select(
+							Factory.sum(ENTRADA_PRODUTO.VALOR.mul(ENTRADA_PRODUTO.QUANTIDADE))
+								.sub(Factory.sum(ENTRADA_PRODUTO.DESCONTO)))
+						.from(ENTRADA_PRODUTO)
+						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(ENTRADA.ID))
+						.asField("VALOR"));
+				final Result<Record> resultRecord = database.select(fields)
+						.from(ENTRADA.join(PESSOA).onKey())
+						.fetch();
 				for (Record record : resultRecord) {
 					result.add(buildEntradaList(database, record));
 				}
@@ -145,13 +157,11 @@ public class EntradaEndpoint {
 				final EntradaRecord record = database.insertInto(
 							ENTRADA, 
 							ENTRADA.DATA,
-							ENTRADA.VALOR,
 							ENTRADA.PACIENTE_ID,
 							ENTRADA.MEIO_PAGAMENTO
 						)
 						.values(
 								new Date(entrada.getData().getTime()),
-								entrada.getValor(),
 								paciente.getId(),
 								meioPagamento.name()
 						)
@@ -217,7 +227,6 @@ public class EntradaEndpoint {
 				
 				database.update(ENTRADA)
 						.set(ENTRADA.DATA, new Date(entrada.getData().getTime()))
-						.set(ENTRADA.VALOR, entrada.getValor())
 						.set(ENTRADA.PACIENTE_ID, paciente.getId())
 						.set(ENTRADA.MEIO_PAGAMENTO, meioPagamento.name())
 						.where(ENTRADA.ID.eq(id))
@@ -294,7 +303,7 @@ public class EntradaEndpoint {
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
 		entrada.setCliente(record.getValue(PESSOA.NOME));
-		entrada.setValor(record.getValue(ENTRADA.VALOR));
+		entrada.setValor((BigDecimal) record.getValue("VALOR"));
 		entrada.setTipo(MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO)).getValue());
 		return entrada;
 	}
@@ -303,7 +312,6 @@ public class EntradaEndpoint {
 		final Entrada entrada = new Entrada();
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
-		entrada.setValor(record.getValue(ENTRADA.VALOR));
 		entrada.setPaciente(getPessoa(database, record.getValue(ENTRADA.PACIENTE_ID)));
 		entrada.setTipo(MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO)).getValue());
 		return entrada;
@@ -433,11 +441,15 @@ public class EntradaEndpoint {
 		database.insertInto(ENTRADA_PRODUTO, 
 					ENTRADA_PRODUTO.ENTRADA_ID, 
 					ENTRADA_PRODUTO.PRODUTO_ID,
+					ENTRADA_PRODUTO.VALOR,
+					ENTRADA_PRODUTO.DESCONTO,
 					ENTRADA_PRODUTO.QUANTIDADE
 				)
 				.values(
 						entrada.getId(), 
 						produto.getId(),
+						produto.getPreco(),
+						produto.getDesconto(),
 						produto.getQuantidade()
 				)
 				.execute();
@@ -469,7 +481,8 @@ public class EntradaEndpoint {
 		produto.setCodigo(recordProduto.getValue(PRODUTO.CODIGO));
 		produto.setDescricao(recordProduto.getValue(PRODUTO.DESCRICAO));
 		produto.setCusto(recordProduto.getValue(PRODUTO.CUSTO));
-		produto.setPreco(recordProduto.getValue(PRODUTO.PRECO));
+		produto.setPreco(recordProduto.getValue(ENTRADA_PRODUTO.VALOR));
+		produto.setDesconto(recordProduto.getValue(ENTRADA_PRODUTO.DESCONTO));
 		produto.setQuantidade(recordProduto.getValue(ENTRADA_PRODUTO.QUANTIDADE));
 		return produto;
 	}
@@ -551,13 +564,14 @@ public class EntradaEndpoint {
 		private String parte;
 	}
 	
-	@Data
+	@Data @JsonIgnoreProperties({"estocavel"})
 	private static class Produto {
 		private Long id;
 		private String codigo;
 		private String descricao;
 		private BigDecimal custo = BigDecimal.ZERO;
 		private BigDecimal preco = BigDecimal.ZERO;
+		private BigDecimal desconto = BigDecimal.ZERO;
 		private Integer quantidade;
 	}
 	

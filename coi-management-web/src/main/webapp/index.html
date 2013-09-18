@@ -244,7 +244,6 @@
 <div id="paciente"/>
 <div id="produtos"/>
 <div id="partes"/>
-<class class="coi-view-text" data-attribute="valor" data-label="Valor:" data-required="true"/>
 <div id="meio-pagamento"/>
 <footer>
 	<button class="coi-action-cancel">Cancelar</button>
@@ -297,6 +296,7 @@
 			<th>Código</th>
 			<th>Descrição</th>
 			<th>Preço</th>
+			<th>Desconto</th>
 			<th>Quantidade</th>
 			<th>Ações</th>
 		</tr>
@@ -308,7 +308,8 @@
 <td class="coi-row-item"><%= codigo %></td>
 <td class="coi-row-item"><%= descricao %></td>
 <td class="coi-row-item"><%= decimalConverter('ModelToView', preco) %></td>
-<td class="coi-row-item"><input type="text" name="quantidade"/></td>
+<td class="coi-row-item"><input class="coi-short-text" type="text" name="desconto"/></td>
+<td class="coi-row-item"><input class="coi-short-text" type="text" name="quantidade"/></td>
 <td class="coi-row-item">
 	<button class="coi-action-remove">Remover</button>
 </td>

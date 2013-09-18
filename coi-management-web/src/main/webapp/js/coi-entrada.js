@@ -68,11 +68,10 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			return {
 				data: new Date(),
 				paciente: new Pessoa(),
-				valor: null,
 				tipo: null,
 				produtos: new Produtos(),
 				partes: new Partes(),
-				cheques: new Cheques(),
+				cheques: new Cheques()
 			};
 		},
 		parse: function(resp, options) {
@@ -95,14 +94,18 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			'click .coi-action-remove': 'remove'
 		},
 		ui: {
-			'quantidade': 'input',
+			'desconto': 'input[name=desconto]',
+			'quantidade': 'input[name=quantidade]',
 			'buttonRemove': 'button.coi-action-remove'
 		},
 		initialize: function() {
 			_.bindAll(this);
 		},
 		onRender: function() {
-			this.modelBinder().bind(this.model, this.$el);
+			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
+			bindings['desconto'].converter = moneyConverter;
+			this.modelBinder().bind(this.model, this.$el, bindings);
+			this.ui.desconto.input();
 			this.ui.quantidade.input();
 			this.ui.buttonRemove.button();
 			//this.ui.quantidade.spinner({min: 1}); //TODO
@@ -348,7 +351,6 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['data'].converter = dateConverter;
-			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.renderPaciente();
