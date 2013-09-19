@@ -1,6 +1,6 @@
 package com.meneguello.coi;
 
-import static com.meneguello.coi.model.tables.Parte.PARTE;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,29 +13,22 @@ import javax.ws.rs.core.MediaType;
 
 import lombok.Data;
 
-import org.apache.commons.lang3.StringUtils;
-import org.jooq.Result;
-import org.jooq.SelectConditionStep;
 import org.jooq.impl.Executor;
-
-import com.meneguello.coi.model.tables.records.ParteRecord;
  
 @Path("/partes")
 public class ParteEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Parte> list() throws Exception {
-		return new Transaction<List<Parte>>() {
+	public List<PessoaParte> list() throws Exception {
+		return new Transaction<List<PessoaParte>>() {
 			@Override
-			protected List<Parte> execute(Executor database) {
-				ArrayList<Parte> partes = new ArrayList<Parte>();
-				Result<ParteRecord> partesRecord = database.selectFrom(PARTE)
-						.fetch();
-				for (ParteRecord parteRecord : partesRecord) {
-					Parte parte = new Parte();
-					parte.setDescricao(parteRecord.getDescricao());
-					partes.add(parte);
+			protected List<PessoaParte> execute(Executor database) {
+				ArrayList<PessoaParte> partes = new ArrayList<PessoaParte>();
+				for (Parte parte : Parte.values()) {
+					final PessoaParte pessoaParte = new PessoaParte();
+					pessoaParte.setDescricao(parte.getValue());
+					partes.add(pessoaParte);
 				}
 				return partes;
 			}
@@ -45,24 +38,18 @@ public class ParteEndpoint {
 	@GET
 	@Path("/comissionadas")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Parte> listComissionadas(final @QueryParam("term") String term) throws Exception {
-		return new Transaction<List<Parte>>() {
+	public List<PessoaParte> listComissionadas(final @QueryParam("term") String term) throws Exception {
+		return new Transaction<List<PessoaParte>>() {
 			@Override
-			protected List<Parte> execute(Executor database) {
-				ArrayList<Parte> partes = new ArrayList<Parte>();
-				SelectConditionStep<ParteRecord> select = database.selectFrom(PARTE)
-				.where(PARTE.COMISSIONADO.eq("S"));
-				
-				if (StringUtils.isNotBlank(term)) {
-					select.and(PARTE.DESCRICAO.likeIgnoreCase(term + "%"));
-				}
-				
-				Result<ParteRecord> partesRecord = select
-						.fetch();
-				for (ParteRecord parteRecord : partesRecord) {
-					Parte parte = new Parte();
-					parte.setDescricao(parteRecord.getDescricao());
-					partes.add(parte);
+			protected List<PessoaParte> execute(Executor database) {
+				ArrayList<PessoaParte> partes = new ArrayList<PessoaParte>();
+				for (Parte parte : Parte.values()) {
+					if (isNotBlank(term) && !parte.getValue().toLowerCase().startsWith(term.toLowerCase())) {
+						continue;
+					}
+					final PessoaParte pessoaParte = new PessoaParte();
+					pessoaParte.setDescricao(parte.getValue());
+					partes.add(pessoaParte);
 				}
 				return partes;
 			}
@@ -70,7 +57,7 @@ public class ParteEndpoint {
 	}
 	
 	@Data
-	private static class Parte {
+	private static class PessoaParte {
 		private String descricao;
 	}
 

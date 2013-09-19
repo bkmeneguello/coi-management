@@ -2,7 +2,6 @@ package com.meneguello.coi;
 
 import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
-import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -31,7 +30,6 @@ import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.CategoriaRecord;
-import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.ProdutoRecord;
  
 @Path("/categorias")
@@ -128,18 +126,17 @@ public class CategoriaEndpoint {
 				}
 				
 				final Result<Record3<String, String, BigDecimal>> recordsComissao = database.select(
-							PARTE.DESCRICAO,
+							COMISSAO.PARTE,
 							COMISSAO.DESCRICAO,
 							COMISSAO.PORCENTAGEM
 						)
 						.from(COMISSAO)
-						.join(PARTE).onKey()
 						.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
 						.fetch();
 				
 				for (Record3<String, String, BigDecimal> recordComissao : recordsComissao) {
 					final Comissao comissao = new Comissao();
-					comissao.setParte(recordComissao.getValue(PARTE.DESCRICAO));
+					comissao.setParte(Parte.valueOf(recordComissao.getValue(COMISSAO.PARTE)).getValue());
 					comissao.setDescricao(recordComissao.getValue(COMISSAO.DESCRICAO));
 					comissao.setPorcentagem(recordComissao.getValue(COMISSAO.PORCENTAGEM));
 					categoria.getComissoes().add(comissao);
@@ -198,19 +195,16 @@ public class CategoriaEndpoint {
 							.execute();
 				}
 				for (Comissao comissao : categoria.getComissoes()) {
-					final ParteRecord parteRecord = database.selectFrom(PARTE)
-							.where(PARTE.DESCRICAO.eq(comissao.getParte()))
-							.fetchOne();
-					
+					final Parte parte = Parte.fromValue(comissao.getParte());
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
-								COMISSAO.PARTE_ID, 
+								COMISSAO.PARTE, 
 								COMISSAO.DESCRICAO, 
 								COMISSAO.PORCENTAGEM
 							)
 							.values(
 									id, 
-									parteRecord.getId(), 
+									parte.name(), 
 									comissao.getDescricao(),
 									comissao.getPorcentagem())
 							.execute();
@@ -283,19 +277,16 @@ public class CategoriaEndpoint {
 						.execute();
 				
 				for (Comissao comissao : categoria.getComissoes()) {
-					final ParteRecord parteRecord = database.selectFrom(PARTE)
-							.where(PARTE.DESCRICAO.eq(comissao.getParte()))
-							.fetchOne();
-					
+					final Parte parte = Parte.fromValue(comissao.getParte());					
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
-								COMISSAO.PARTE_ID, 
+								COMISSAO.PARTE, 
 								COMISSAO.DESCRICAO,
 								COMISSAO.PORCENTAGEM
 							)
 							.values(
 									id, 
-									parteRecord.getId(), 
+									parte.name(), 
 									comissao.getDescricao(),
 									comissao.getPorcentagem())
 							.execute();

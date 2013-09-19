@@ -7,7 +7,6 @@ import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
 import static com.meneguello.coi.model.tables.EntradaCheque.ENTRADA_CHEQUE;
 import static com.meneguello.coi.model.tables.EntradaParte.ENTRADA_PARTE;
 import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
-import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 import static javax.ws.rs.core.Response.status;
@@ -16,11 +15,16 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.join;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
@@ -33,11 +37,22 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import lombok.Data;
+import net.sf.jasperreports.engine.JRExporterParameter;
+import net.sf.jasperreports.engine.JRParameter;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
+import net.sf.jasperreports.engine.export.JRXlsExporter;
 
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.joda.time.DateTime;
+import org.joda.time.DateTime.Property;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
@@ -47,13 +62,20 @@ import org.jooq.impl.Factory;
 
 import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
+import com.meneguello.coi.model.tables.records.ComissaoRecord;
 import com.meneguello.coi.model.tables.records.EntradaRecord;
-import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
 @Path("/entradas")
 public class EntradaEndpoint {
 	
+	private static final BigDecimal ONE_HUNDRED = new BigDecimal(100);
+	
+	private static final Locale LOCALE = new Locale.Builder()
+		.setRegion("BR")
+		.setLanguage("pt")
+		.build();
+
 	@GET
 	@Path("/meios")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -64,6 +86,116 @@ public class EntradaEndpoint {
 		}
 		return result;
 	}
+	
+	@GET
+	@Path("/producao")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response producao() throws Exception {
+		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
+			@Override
+			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				final DateTime now = DateTime.now();
+				
+				final Map<String, Object> parameters = new HashMap<>();
+				parameters.put(JRParameter.REPORT_LOCALE, LOCALE);
+				parameters.put("mesReferencia", now.toString("MMMM", LOCALE).toUpperCase());
+				final JasperReport jasperReport = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream("producao.jrxml"));
+				
+				final Collection<Map<String, ?>> col = new ArrayList<>();
+				
+				final Property dayOfMonth = now.dayOfMonth();
+				final Date firstDayOfMonth = new Date(dayOfMonth.withMinimumValue().getMillis());
+				final Date lastDayOfMonth = new Date(dayOfMonth.withMaximumValue().getMillis());
+				final Result<EntradaRecord> entradaResult = fetchEntradas(database, firstDayOfMonth, lastDayOfMonth);
+				for (EntradaRecord entradaRecord : entradaResult) {
+					final Long entradaId = entradaRecord.getValue(ENTRADA.ID);
+					final MeioPagamento meioPagamento = MeioPagamento.valueOf(entradaRecord.getValue(ENTRADA.MEIO_PAGAMENTO));
+					
+					final Result<Record> entradaProdutoResult = fetchEntradaProdutos(database, entradaId);
+					for (Record entradaProdutoRecord : entradaProdutoResult) {
+						final String categoriaDescricao = entradaProdutoRecord.getValue(CATEGORIA.DESCRICAO);
+						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
+						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
+						final BigDecimal produtoDesconto = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.DESCONTO);
+						
+						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
+						final Result<ComissaoRecord> comissaoResult = fetchComissoes(database, categoriaId);
+						for (Record comissaoRecord : comissaoResult) {
+							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
+							final String comissaoDescricao = comissaoRecord.getValue(COMISSAO.DESCRICAO);
+							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
+							
+							if (!Parte.MEDICO.equals(comissaoParte)) continue; //TODO: remover
+							
+							final Record entradaParteRecord = fetchPessoaParte(database, entradaId, comissaoParte, comissaoDescricao);
+							if (entradaParteRecord != null) {
+								String pessoaNome = entradaParteRecord.getValue(PESSOA.NOME);
+								
+								Map<String, Object> map = new HashMap<>();
+								map.put("pessoa", pessoaNome);
+								map.put("categoria", categoriaDescricao);
+								map.put("valor", produtoValor
+										.multiply(new BigDecimal(produtoQuantidade))
+										.subtract(produtoDesconto)
+										.multiply(ONE_HUNDRED.subtract(meioPagamento.getDesconto()).divide(ONE_HUNDRED))
+										.multiply(comissaoPorcentagem.divide(ONE_HUNDRED)));
+								col.add(map);
+							} else {
+								//TODO: Consultório e outras partes
+								if (!Parte.CONSULTORIO.equals(comissaoParte)) {
+									parameters.put("erro", true);
+								}
+							}
+						}
+					}
+				}
+				
+				final JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(col));
+				
+				final JRXlsExporter exporter = new JRXlsExporter();
+				exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
+				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
+				exporter.exportReport();
+				
+				return baos;
+			}
+
+			private Record fetchPessoaParte(Executor database, final Long entradaId, final Parte comissaoParte,
+					final String comissaoDescricao) {
+				return database.selectFrom(ENTRADA_PARTE
+						.join(PESSOA).onKey())
+					.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
+					.and(ENTRADA_PARTE.PARTE.eq(comissaoParte.name()))
+					.and(comissaoDescricao == null ? ENTRADA_PARTE.DESCRICAO.isNull() : ENTRADA_PARTE.DESCRICAO.eq(comissaoDescricao))
+					.fetchOne();
+			}
+
+			private Result<ComissaoRecord> fetchComissoes(Executor database, Long categoriaId) {
+				return database.selectFrom(COMISSAO)
+					.where(COMISSAO.CATEGORIA_ID.eq(categoriaId))
+					.fetch();
+			}
+
+			private Result<Record> fetchEntradaProdutos(Executor database, Long entradaId) {
+				return database.selectFrom(ENTRADA_PRODUTO
+						.join(PRODUTO).onKey()
+						.join(CATEGORIA).onKey())
+					.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(entradaId))
+					.fetch();
+			}
+
+			private Result<EntradaRecord> fetchEntradas(Executor database, Date firstDayOfMonth, Date lastDayOfMonth) {
+				return database.selectFrom(ENTRADA)
+						.where(ENTRADA.DATA.between(firstDayOfMonth, lastDayOfMonth))
+						.orderBy(ENTRADA.DATA)
+						.fetch();
+			}
+		}.execute();
+		
+		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=producao.xls").build();
+	}
+
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -108,7 +240,6 @@ public class EntradaEndpoint {
 				final Entrada entrada = buildEntrada(database, record);
 				
 				final Result<Record> recordsParte = database.selectFrom(ENTRADA_PARTE
-							.join(PARTE).onKey()
 							.join(PESSOA).onKey()
 						).where(ENTRADA_PARTE.ENTRADA_ID.eq(id))
 						.fetch();
@@ -179,7 +310,7 @@ public class EntradaEndpoint {
 				final List<String> comissoes = loadComissoes(database, produtoIds);
 				
 				final List<String> partes = new ArrayList<>();
-				for (Parte parte : entrada.getPartes()) {
+				for (PessoaParte parte : entrada.getPartes()) {
 					if (StringUtils.isNotBlank(parte.getDescricao())) {
 						partes.add(parte.getDescricao());
 					}
@@ -245,7 +376,7 @@ public class EntradaEndpoint {
 				deletePartes(database, id);
 				
 				final List<String> partes = new ArrayList<>();
-				for (Parte parte : entrada.getPartes()) {
+				for (PessoaParte parte : entrada.getPartes()) {
 					if (StringUtils.isNotBlank(parte.getDescricao())) {
 						partes.add(parte.getDescricao());
 					}
@@ -401,12 +532,9 @@ public class EntradaEndpoint {
 		pessoa.setId(pessoaRecord.getId());
 	}
 	
-	private void createParte(Executor database, Entrada entrada, Parte parte) {
-		final ParteRecord parteRecord = database.selectFrom(PARTE)
-				.where(PARTE.DESCRICAO.eq(parte.getParte()))
-				.fetchOne();
-		
-		final Pessoa pessoa = parte.getPessoa();
+	private void createParte(Executor database, Entrada entrada, PessoaParte pessoaParte) {
+		final Parte parte = Parte.fromValue(pessoaParte.getParte());
+		final Pessoa pessoa = pessoaParte.getPessoa();
 		if (pessoa.getId() == null && pessoa.getCodigo() != null) {
 			createPessoa(database, pessoa);
 		}
@@ -414,13 +542,13 @@ public class EntradaEndpoint {
 		database.insertInto(ENTRADA_PARTE,
 				ENTRADA_PARTE.DESCRICAO,
 				ENTRADA_PARTE.ENTRADA_ID,
-				ENTRADA_PARTE.PARTE_ID,
+				ENTRADA_PARTE.PARTE,
 				ENTRADA_PARTE.PESSOA_ID
 			)
-			.values(parte.getDescricao(),
+			.values(pessoaParte.getDescricao(),
 				entrada.getId(),
-				parteRecord.getId(),
-				parte.getPessoa().getId()
+				parte.name(),
+				pessoaParte.getPessoa().getId()
 			)
 			.execute();
 	}
@@ -487,11 +615,11 @@ public class EntradaEndpoint {
 		return produto;
 	}
 
-	private Parte buildParte(Record recordParte) {
-		final Parte parte = new Parte();
+	private PessoaParte buildParte(Record recordParte) {
+		final PessoaParte parte = new PessoaParte();
 		parte.setPessoa(buildPessoa(recordParte));
 		parte.setDescricao(recordParte.getValue(ENTRADA_PARTE.DESCRICAO));
-		parte.setParte(recordParte.getValue(PARTE.DESCRICAO));
+		parte.setParte(Parte.valueOf(recordParte.getValue(ENTRADA_PARTE.PARTE)).getValue());
 		return parte;
 	}
 
@@ -530,7 +658,7 @@ public class EntradaEndpoint {
 		private BigDecimal valor;
 		private String tipo;
 		private List<Produto> produtos = new ArrayList<>();
-		private List<Parte> partes = new ArrayList<>();
+		private List<PessoaParte> partes = new ArrayList<>();
 		private List<Cheque> cheques = new ArrayList<>();
 	}
 	
@@ -558,7 +686,7 @@ public class EntradaEndpoint {
 	}
 	
 	@Data
-	private static class Parte {
+	private static class PessoaParte {
 		private Pessoa pessoa = new Pessoa();
 		private String descricao;
 		private String parte;

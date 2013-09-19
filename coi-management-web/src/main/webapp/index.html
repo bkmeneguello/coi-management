@@ -210,24 +210,6 @@
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
-	<script type="text/template" id="pessoa_partes_template">
-<dt>Partes:</dt>
-<dd>
-	<select>
-		<% _.each(partes_list, function(parte) { %>
-		<option><%= parte %></option>
-		<%}); %>
-	</select>
-	<button class="coi-action-include">Adicionar</button>
-</dd>
-<table/>
-	</script>
-	<script type="text/template" id="pessoa_parte_template">
-<td class="coi-row-item"><%= descricao %></td>
-<td class="coi-row-item">
-	<button class="coi-action-remove">Remover</button>
-</td>
-	</script>
 	<script type="text/template" id="entrada_row_template">
 <td><%= data %></td>
 <td><%= cliente %></td>

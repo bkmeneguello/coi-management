@@ -1,8 +1,6 @@
 package com.meneguello.coi;
 
-import static com.meneguello.coi.model.tables.Parte.PARTE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
-import static com.meneguello.coi.model.tables.PessoaParte.PESSOA_PARTE;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -42,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import au.com.bytecode.opencsv.CSVReader;
 
-import com.meneguello.coi.model.tables.records.ParteRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
 import com.sun.jersey.multipart.FormDataParam;
  
@@ -111,20 +108,8 @@ public class PessoaEndpoint {
 				final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
 						.where(PESSOA.ID.eq(id))
 						.fetchOne();
-				final Pessoa pessoa = buildPessoa(pessoaRecord);
 				
-				final Result<Record1<String>> recordsParte = database.select(PARTE.DESCRICAO)
-						.from(PARTE)
-						.join(PESSOA_PARTE).onKey()
-						.where(PESSOA_PARTE.PESSOA_ID.eq(pessoaRecord.getId()))
-						.fetch();
-				for (Record1<String> recordParte : recordsParte) {
-					final Parte parte = new Parte();
-					parte.setDescricao(recordParte.getValue(PARTE.DESCRICAO));
-					pessoa.getPartes().add(parte);
-				}
-
-				return pessoa;
+				return buildPessoa(pessoaRecord);
 			}
 		}.execute();
 	}
@@ -150,24 +135,7 @@ public class PessoaEndpoint {
 					.returning(PESSOA.ID)
 					.fetchOne();
 				
-				final Long id = pessoaRecord.getId();
-				for (Parte parte : pessoa.getPartes()) {
-					final ParteRecord parteRecord = database.selectFrom(PARTE)
-							.where(PARTE.DESCRICAO.eq(parte.getDescricao()))
-							.fetchOne();
-					
-					database.insertInto(PESSOA_PARTE, 
-							PESSOA_PARTE.PESSOA_ID, 
-							PESSOA_PARTE.PARTE_ID
-						)
-						.values(
-								id, 
-								parteRecord.getId()
-						)
-						.execute();
-				}
-				
-				return id;
+				return pessoaRecord.getId();
 			}
 		}.execute();
 		
@@ -237,26 +205,6 @@ public class PessoaEndpoint {
 						.where(PESSOA.ID.eq(id))
 						.execute();
 				
-				database.delete(PESSOA_PARTE)
-						.where(PESSOA_PARTE.PESSOA_ID.eq(id))
-						.execute();
-				
-				for (Parte parte : pessoa.getPartes()) {
-					final ParteRecord parteRecord = database.selectFrom(PARTE)
-							.where(PARTE.DESCRICAO.eq(parte.getDescricao()))
-							.fetchOne();
-					
-					database.insertInto(PESSOA_PARTE, 
-							PESSOA_PARTE.PESSOA_ID, 
-							PESSOA_PARTE.PARTE_ID
-						)
-						.values(
-								id, 
-								parteRecord.getId()
-						)
-						.execute();
-				}
-				
 				return null;
 			}
 		}.execute();
@@ -270,10 +218,6 @@ public class PessoaEndpoint {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(Executor database) {
-				database.delete(PESSOA_PARTE)
-						.where(PESSOA_PARTE.PESSOA_ID.eq(id))
-						.execute();
-				
 				database.delete(PESSOA)
 						.where(PESSOA.ID.eq(id))
 						.execute();
@@ -288,7 +232,6 @@ public class PessoaEndpoint {
 		private Long id;
 		private String nome;
 		private String codigo;
-		private List<Parte> partes = new ArrayList<>();
 		public void setCodigo(String codigo) {
 			if (!Pattern.matches("\\p{Upper}-\\d+", codigo)) 
 				throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
@@ -305,11 +248,6 @@ public class PessoaEndpoint {
 		public String getPrefixo() {
 			return getCodigo().substring(0, 1);
 		}
-	}
-	
-	@Data
-	private static class Parte {
-		private String descricao;
 	}
 	
 }

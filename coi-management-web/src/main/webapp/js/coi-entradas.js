@@ -51,6 +51,12 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 				tipo: 'Tipo'
 			}
 		},
+		extras: {
+			'producao': {
+				text: 'Produção',
+				trigger: 'producao'
+			}
+		},
 		initialize: function() {
 			this.collection.fetch();
 		},
@@ -59,6 +65,9 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onCreate: function(e) {
 			Backbone.history.navigate('entrada', true);
+		},
+		onProducao: function(e) {
+			this.$el.append($('<iframe/>', {'src': '/rest/entradas/producao'}).hide());
 		}
 	});
 	

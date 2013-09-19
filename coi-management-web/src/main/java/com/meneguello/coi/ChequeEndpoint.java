@@ -256,7 +256,6 @@ public class ChequeEndpoint {
 		private Long id;
 		private String nome;
 		private String codigo;
-		private List<Parte> partes = new ArrayList<>();
 		public void setCodigo(String codigo) {
 			if (!Pattern.matches("\\p{Upper}-\\d+", codigo)) 
 				throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
@@ -273,11 +272,6 @@ public class ChequeEndpoint {
 		public String getPrefixo() {
 			return getCodigo().substring(0, 1);
 		}
-	}
-	
-	@Data
-	private static class Parte {
-		private String descricao;
 	}
 	
 }
