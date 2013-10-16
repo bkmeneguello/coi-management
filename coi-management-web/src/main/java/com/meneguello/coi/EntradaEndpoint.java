@@ -12,7 +12,6 @@ import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.join;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.io.ByteArrayOutputStream;
@@ -48,14 +47,13 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
 import net.sf.jasperreports.engine.export.JRXlsExporter;
+import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
 
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.joda.time.DateTime;
 import org.joda.time.DateTime.Property;
 import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.impl.Executor;
 import org.jooq.impl.Factory;
@@ -95,14 +93,15 @@ public class EntradaEndpoint {
 			@Override
 			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
 				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				final DateTime now = DateTime.now();
+				final DateTime now = DateTime.now().minusMonths(1);
 				
 				final Map<String, Object> parameters = new HashMap<>();
 				parameters.put(JRParameter.REPORT_LOCALE, LOCALE);
 				parameters.put("mesReferencia", now.toString("MMMM", LOCALE).toUpperCase());
 				final JasperReport jasperReport = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream("producao.jrxml"));
 				
-				final Collection<Map<String, ?>> col = new ArrayList<>();
+				final Collection<Map<String, ?>> producaoData = new ArrayList<>();
+				final Collection<Map<String, ?>> pessoasData = new ArrayList<>();
 				
 				final Property dayOfMonth = now.dayOfMonth();
 				final Date firstDayOfMonth = new Date(dayOfMonth.withMinimumValue().getMillis());
@@ -111,6 +110,7 @@ public class EntradaEndpoint {
 				for (EntradaRecord entradaRecord : entradaResult) {
 					final Long entradaId = entradaRecord.getValue(ENTRADA.ID);
 					final MeioPagamento meioPagamento = MeioPagamento.valueOf(entradaRecord.getValue(ENTRADA.MEIO_PAGAMENTO));
+					final BigDecimal meioPagamentoDesconto = meioPagamento.getDesconto();
 					
 					final Result<Record> entradaProdutoResult = fetchEntradaProdutos(database, entradaId);
 					for (Record entradaProdutoRecord : entradaProdutoResult) {
@@ -123,52 +123,56 @@ public class EntradaEndpoint {
 						final Result<ComissaoRecord> comissaoResult = fetchComissoes(database, categoriaId);
 						for (Record comissaoRecord : comissaoResult) {
 							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
-							final String comissaoDescricao = comissaoRecord.getValue(COMISSAO.DESCRICAO);
 							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
+							final BigDecimal valor = calculaValor(produtoValor, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
 							
-							if (!Parte.MEDICO.equals(comissaoParte)) continue; //TODO: remover
-							
-							final Record entradaParteRecord = fetchPessoaParte(database, entradaId, comissaoParte, comissaoDescricao);
-							if (entradaParteRecord != null) {
-								String pessoaNome = entradaParteRecord.getValue(PESSOA.NOME);
-								
-								Map<String, Object> map = new HashMap<>();
-								map.put("pessoa", pessoaNome);
-								map.put("categoria", categoriaDescricao);
-								map.put("valor", produtoValor
-										.multiply(new BigDecimal(produtoQuantidade))
-										.subtract(produtoDesconto)
-										.multiply(ONE_HUNDRED.subtract(meioPagamento.getDesconto()).divide(ONE_HUNDRED))
-										.multiply(comissaoPorcentagem.divide(ONE_HUNDRED)));
-								col.add(map);
+							if (Parte.CONSULTORIO.equals(comissaoParte)) {
+								final String pessoaNome = fetchPessoaParteNome(database, entradaId, Parte.MEDICO);
+								producaoData.add(buildRecord(pessoaNome, categoriaDescricao, valor));
 							} else {
-								//TODO: Consultório e outras partes
-								if (!Parte.CONSULTORIO.equals(comissaoParte)) {
-									parameters.put("erro", true);
-								}
+								final String pessoaNome = fetchPessoaParteNome(database, entradaId, comissaoParte);
+								pessoasData.add(buildRecord(pessoaNome, categoriaDescricao, valor));
 							}
 						}
 					}
 				}
 				
-				final JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(col));
+				final List<JasperPrint> jasperPrint = new ArrayList<>();
+				jasperPrint.add(JasperFillManager.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(producaoData)));
+				jasperPrint.add(JasperFillManager.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(pessoasData)));
 				
 				final JRXlsExporter exporter = new JRXlsExporter();
-				exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
+				exporter.setParameter(JRExporterParameter.JASPER_PRINT_LIST, jasperPrint);
+				exporter.setParameter(JRXlsExporterParameter.IS_ONE_PAGE_PER_SHEET, true);
+				exporter.setParameter(JRXlsExporterParameter.SHEET_NAMES, new String[]{"Produção", "Comissões"});
 				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
 				exporter.exportReport();
 				
 				return baos;
 			}
 
-			private Record fetchPessoaParte(Executor database, final Long entradaId, final Parte comissaoParte,
-					final String comissaoDescricao) {
-				return database.selectFrom(ENTRADA_PARTE
-						.join(PESSOA).onKey())
+			private Map<String, Object> buildRecord(final String fetchPessoaParteNome, final String categoriaDescricao, final BigDecimal valor) {
+				final Map<String, Object> map = new HashMap<>();
+				map.put("pessoa", fetchPessoaParteNome);
+				map.put("categoria", categoriaDescricao);
+				map.put("valor", valor);
+				return map;
+			}
+
+			private BigDecimal calculaValor(final BigDecimal produtoValor, final Integer produtoQuantidade, final BigDecimal produtoDesconto, final BigDecimal meioPagamentoDesconto, final BigDecimal comissaoPorcentagem) {
+				return produtoValor
+						.multiply(new BigDecimal(produtoQuantidade))
+						.subtract(produtoDesconto)
+						.multiply(ONE_HUNDRED.subtract(meioPagamentoDesconto).divide(ONE_HUNDRED))
+						.multiply(comissaoPorcentagem.divide(ONE_HUNDRED));
+			}
+
+			private String fetchPessoaParteNome(Executor database, final Long entradaId, final Parte comissaoParte) {
+				return database.select(PESSOA.NOME)
+					.from(ENTRADA_PARTE.join(PESSOA).onKey())
 					.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
 					.and(ENTRADA_PARTE.PARTE.eq(comissaoParte.name()))
-					.and(comissaoDescricao == null ? ENTRADA_PARTE.DESCRICAO.isNull() : ENTRADA_PARTE.DESCRICAO.eq(comissaoDescricao))
-					.fetchOne();
+					.fetchOne(PESSOA.NOME);
 			}
 
 			private Result<ComissaoRecord> fetchComissoes(Executor database, Long categoriaId) {
@@ -307,21 +311,8 @@ public class EntradaEndpoint {
 					createProduto(database, entrada, produto);
 				}
 				
-				final List<String> comissoes = loadComissoes(database, produtoIds);
-				
-				final List<String> partes = new ArrayList<>();
 				for (PessoaParte parte : entrada.getPartes()) {
-					if (StringUtils.isNotBlank(parte.getDescricao())) {
-						partes.add(parte.getDescricao());
-					}
 					createParte(database, entrada, parte);
-				}
-				
-				comissoes.removeAll(partes);
-				if (!comissoes.isEmpty()) {
-					throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
-							.entity("Comissões ("+ join(comissoes.toArray(), ", ") +") não cadastradas!")
-							.build());
 				}
 				
 				if (MeioPagamento.CHEQUE.equals(meioPagamento)) {
@@ -371,23 +362,10 @@ public class EntradaEndpoint {
 					createProduto(database, entrada, produto);
 				}
 				
-				final List<String> comissoes = loadComissoes(database, produtoIds);
-				
 				deletePartes(database, id);
 				
-				final List<String> partes = new ArrayList<>();
 				for (PessoaParte parte : entrada.getPartes()) {
-					if (StringUtils.isNotBlank(parte.getDescricao())) {
-						partes.add(parte.getDescricao());
-					}
 					createParte(database, entrada, parte);
-				}
-				
-				comissoes.removeAll(partes);
-				if (!comissoes.isEmpty()) {
-					throw new WebApplicationException(status(INTERNAL_SERVER_ERROR)
-							.entity("Comissões ("+ StringUtils.join(comissoes.toArray(), ", ") +") não cadastradas!")
-							.build());
 				}
 				
 				deleteEntradaCheque(database, entrada.getId());
@@ -540,13 +518,11 @@ public class EntradaEndpoint {
 		}
 		
 		database.insertInto(ENTRADA_PARTE,
-				ENTRADA_PARTE.DESCRICAO,
 				ENTRADA_PARTE.ENTRADA_ID,
 				ENTRADA_PARTE.PARTE,
 				ENTRADA_PARTE.PESSOA_ID
 			)
-			.values(pessoaParte.getDescricao(),
-				entrada.getId(),
+			.values(entrada.getId(),
 				parte.name(),
 				pessoaParte.getPessoa().getId()
 			)
@@ -583,26 +559,6 @@ public class EntradaEndpoint {
 				.execute();
 	}
 
-	private List<String> loadComissoes(Executor database, List<Long> produtoIds) {
-		final List<String> comissoes = new ArrayList<>();
-		if (!produtoIds.isEmpty()) {
-			final Result<Record1<String>> comissaoRecords = database.select(COMISSAO.DESCRICAO)
-				.from(PRODUTO
-					.join(CATEGORIA).onKey()
-					.join(COMISSAO).onKey(Keys.COMISSAO_FK_CATEGORIA)
-				)
-				.where(PRODUTO.ID.in(produtoIds))
-				.fetch();
-			for (Record1<String> comissaoRecord : comissaoRecords) {
-				final String descricao = comissaoRecord.getValue(COMISSAO.DESCRICAO);
-				if (StringUtils.isNotBlank(descricao)) {
-					comissoes.add(descricao);
-				}
-			}
-		}
-		return comissoes;
-	}
-
 	private Produto buildProduto(Record recordProduto) {
 		final Produto produto = new Produto();
 		produto.setId(recordProduto.getValue(PRODUTO.ID));
@@ -618,7 +574,6 @@ public class EntradaEndpoint {
 	private PessoaParte buildParte(Record recordParte) {
 		final PessoaParte parte = new PessoaParte();
 		parte.setPessoa(buildPessoa(recordParte));
-		parte.setDescricao(recordParte.getValue(ENTRADA_PARTE.DESCRICAO));
 		parte.setParte(Parte.valueOf(recordParte.getValue(ENTRADA_PARTE.PARTE)).getValue());
 		return parte;
 	}
@@ -688,7 +643,6 @@ public class EntradaEndpoint {
 	@Data
 	private static class PessoaParte {
 		private Pessoa pessoa = new Pessoa();
-		private String descricao;
 		private String parte;
 	}
 	

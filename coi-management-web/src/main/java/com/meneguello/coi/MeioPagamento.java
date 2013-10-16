@@ -5,10 +5,10 @@ import java.math.BigDecimal;
 public enum MeioPagamento {
 	
 	DINHEIRO("Dinheiro", BigDecimal.ZERO),
-	CARTAO_CREDITO("Cartão de Crédito (venc)", new BigDecimal("3")),
-	CARTAO_CREDITO_2X("Cartão de Crédito (2x)", new BigDecimal("3")),
-	CARTAO_CREDITO_3X("Cartão de Crédito (3x)", new BigDecimal("3")),
-	CARTAO_DEBITO("Cartão de Débito", new BigDecimal("1.5")),
+	CARTAO_CREDITO("Cartão de Crédito (venc)", new BigDecimal("3.5")),
+	CARTAO_CREDITO_2X("Cartão de Crédito (2x)", new BigDecimal("4.5")),
+	CARTAO_CREDITO_3X("Cartão de Crédito (3x)", new BigDecimal("4.5")),
+	CARTAO_DEBITO("Cartão de Débito", new BigDecimal("2.5")),
 	CHEQUE("Cheque", BigDecimal.ZERO);
 	
 	private String value;

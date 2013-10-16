@@ -4,6 +4,7 @@ public enum Parte {
 	
 	CONSULTORIO("Consultório", true),
 	MEDICO("Médico", true),
+	MEDICO_REALIZADOR("Médico Realizador", true),
 	FISIOTERAPEUTA("Fisioterapeuta", true),
 	PACIENTE("Paciente", false),
 	CLIENTE("Cliente", false);

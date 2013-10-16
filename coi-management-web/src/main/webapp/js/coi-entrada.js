@@ -48,7 +48,6 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		defaults: function() {
 			return {
 				pessoa: new Pessoa(),
-				descricao: null,
 				parte: null
 			};
 		},
@@ -284,7 +283,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			this.modelBinder().bind(this.model, this.$el);
 			this.ui.input.input();
-			new COI.PessoaView({el: this.ui.pessoa, model: this.model.get('pessoa'), attribute: 'pessoa', required: true}).render();
+			new COI.PessoaView({el: this.ui.pessoa, model: this.model.get('pessoa'), label: this.model.get('parte') + ':', attribute: 'pessoa', required: true}).render();
 			this.ui.buttonRemove.button();
 		},
 		onRemove: function(e) {

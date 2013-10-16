@@ -24,12 +24,12 @@ import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.DeleteConditionStep;
-import org.jooq.Record3;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
 import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.CategoriaRecord;
+import com.meneguello.coi.model.tables.records.ComissaoRecord;
 import com.meneguello.coi.model.tables.records.ProdutoRecord;
  
 @Path("/categorias")
@@ -125,19 +125,14 @@ public class CategoriaEndpoint {
 					categoria.getProdutos().add(buildProduto(produtoRecord));
 				}
 				
-				final Result<Record3<String, String, BigDecimal>> recordsComissao = database.select(
-							COMISSAO.PARTE,
-							COMISSAO.DESCRICAO,
-							COMISSAO.PORCENTAGEM
-						)
-						.from(COMISSAO)
+				final Result<ComissaoRecord> recordsComissao = database
+						.selectFrom(COMISSAO)
 						.where(COMISSAO.CATEGORIA_ID.eq(categoriaRecord.getId()))
 						.fetch();
 				
-				for (Record3<String, String, BigDecimal> recordComissao : recordsComissao) {
+				for (ComissaoRecord recordComissao : recordsComissao) {
 					final Comissao comissao = new Comissao();
 					comissao.setParte(Parte.valueOf(recordComissao.getValue(COMISSAO.PARTE)).getValue());
-					comissao.setDescricao(recordComissao.getValue(COMISSAO.DESCRICAO));
 					comissao.setPorcentagem(recordComissao.getValue(COMISSAO.PORCENTAGEM));
 					categoria.getComissoes().add(comissao);
 				}
@@ -199,13 +194,11 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE, 
-								COMISSAO.DESCRICAO, 
 								COMISSAO.PORCENTAGEM
 							)
 							.values(
 									id, 
 									parte.name(), 
-									comissao.getDescricao(),
 									comissao.getPorcentagem())
 							.execute();
 				}
@@ -281,13 +274,11 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE, 
-								COMISSAO.DESCRICAO,
 								COMISSAO.PORCENTAGEM
 							)
 							.values(
 									id, 
 									parte.name(), 
-									comissao.getDescricao(),
 									comissao.getPorcentagem())
 							.execute();
 				}
@@ -343,7 +334,6 @@ public class CategoriaEndpoint {
 	@Data
 	private static class Comissao {
 		private String parte;
-		private String descricao;
 		private BigDecimal porcentagem = BigDecimal.ZERO;
 	}
 

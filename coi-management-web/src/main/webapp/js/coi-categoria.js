@@ -19,7 +19,6 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	var Comissao = Backbone.Model.extend({
 		defaults: {
 			parte: null,
-			descricao: null,
 			porcentagem: null
 		}
 	});
