@@ -1,8 +1,6 @@
 package com.meneguello.coi;
 
-import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
-import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
 import static com.meneguello.coi.model.tables.EntradaCheque.ENTRADA_CHEQUE;
 import static com.meneguello.coi.model.tables.EntradaParte.ENTRADA_PARTE;
@@ -14,16 +12,11 @@ import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
@@ -36,22 +29,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import lombok.Data;
-import net.sf.jasperreports.engine.JRExporterParameter;
-import net.sf.jasperreports.engine.JRParameter;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
-import net.sf.jasperreports.engine.export.JRXlsExporter;
-import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.joda.time.DateTime;
-import org.joda.time.DateTime.Property;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -60,20 +41,12 @@ import org.jooq.impl.Factory;
 
 import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
-import com.meneguello.coi.model.tables.records.ComissaoRecord;
 import com.meneguello.coi.model.tables.records.EntradaRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
 @Path("/entradas")
 public class EntradaEndpoint {
 	
-	private static final BigDecimal ONE_HUNDRED = new BigDecimal(100);
-	
-	private static final Locale LOCALE = new Locale.Builder()
-		.setRegion("BR")
-		.setLanguage("pt")
-		.build();
-
 	@GET
 	@Path("/meios")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -84,122 +57,6 @@ public class EntradaEndpoint {
 		}
 		return result;
 	}
-	
-	@GET
-	@Path("/producao")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response producao() throws Exception {
-		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
-			@Override
-			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
-				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				final DateTime now = DateTime.now().minusMonths(1);
-				
-				final Map<String, Object> parameters = new HashMap<>();
-				parameters.put(JRParameter.REPORT_LOCALE, LOCALE);
-				parameters.put("mesReferencia", now.toString("MMMM", LOCALE).toUpperCase());
-				final JasperReport jasperReport = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream("producao.jrxml"));
-				
-				final Collection<Map<String, ?>> producaoData = new ArrayList<>();
-				final Collection<Map<String, ?>> pessoasData = new ArrayList<>();
-				
-				final Property dayOfMonth = now.dayOfMonth();
-				final Date firstDayOfMonth = new Date(dayOfMonth.withMinimumValue().getMillis());
-				final Date lastDayOfMonth = new Date(dayOfMonth.withMaximumValue().getMillis());
-				final Result<EntradaRecord> entradaResult = fetchEntradas(database, firstDayOfMonth, lastDayOfMonth);
-				for (EntradaRecord entradaRecord : entradaResult) {
-					final Long entradaId = entradaRecord.getValue(ENTRADA.ID);
-					final MeioPagamento meioPagamento = MeioPagamento.valueOf(entradaRecord.getValue(ENTRADA.MEIO_PAGAMENTO));
-					final BigDecimal meioPagamentoDesconto = meioPagamento.getDesconto();
-					
-					final Result<Record> entradaProdutoResult = fetchEntradaProdutos(database, entradaId);
-					for (Record entradaProdutoRecord : entradaProdutoResult) {
-						final String categoriaDescricao = entradaProdutoRecord.getValue(CATEGORIA.DESCRICAO);
-						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
-						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
-						final BigDecimal produtoDesconto = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.DESCONTO);
-						
-						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
-						final Result<ComissaoRecord> comissaoResult = fetchComissoes(database, categoriaId);
-						for (Record comissaoRecord : comissaoResult) {
-							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
-							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
-							final BigDecimal valor = calculaValor(produtoValor, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
-							
-							if (Parte.CONSULTORIO.equals(comissaoParte)) {
-								final String pessoaNome = fetchPessoaParteNome(database, entradaId, Parte.MEDICO);
-								producaoData.add(buildRecord(pessoaNome, categoriaDescricao, valor));
-							} else {
-								final String pessoaNome = fetchPessoaParteNome(database, entradaId, comissaoParte);
-								pessoasData.add(buildRecord(pessoaNome, categoriaDescricao, valor));
-							}
-						}
-					}
-				}
-				
-				final List<JasperPrint> jasperPrint = new ArrayList<>();
-				jasperPrint.add(JasperFillManager.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(producaoData)));
-				jasperPrint.add(JasperFillManager.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(pessoasData)));
-				
-				final JRXlsExporter exporter = new JRXlsExporter();
-				exporter.setParameter(JRExporterParameter.JASPER_PRINT_LIST, jasperPrint);
-				exporter.setParameter(JRXlsExporterParameter.IS_ONE_PAGE_PER_SHEET, true);
-				exporter.setParameter(JRXlsExporterParameter.SHEET_NAMES, new String[]{"Produção", "Comissões"});
-				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
-				exporter.exportReport();
-				
-				return baos;
-			}
-
-			private Map<String, Object> buildRecord(final String fetchPessoaParteNome, final String categoriaDescricao, final BigDecimal valor) {
-				final Map<String, Object> map = new HashMap<>();
-				map.put("pessoa", fetchPessoaParteNome);
-				map.put("categoria", categoriaDescricao);
-				map.put("valor", valor);
-				return map;
-			}
-
-			private BigDecimal calculaValor(final BigDecimal produtoValor, final Integer produtoQuantidade, final BigDecimal produtoDesconto, final BigDecimal meioPagamentoDesconto, final BigDecimal comissaoPorcentagem) {
-				return produtoValor
-						.multiply(new BigDecimal(produtoQuantidade))
-						.subtract(produtoDesconto)
-						.multiply(ONE_HUNDRED.subtract(meioPagamentoDesconto).divide(ONE_HUNDRED))
-						.multiply(comissaoPorcentagem.divide(ONE_HUNDRED));
-			}
-
-			private String fetchPessoaParteNome(Executor database, final Long entradaId, final Parte comissaoParte) {
-				return database.select(PESSOA.NOME)
-					.from(ENTRADA_PARTE.join(PESSOA).onKey())
-					.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
-					.and(ENTRADA_PARTE.PARTE.eq(comissaoParte.name()))
-					.fetchOne(PESSOA.NOME);
-			}
-
-			private Result<ComissaoRecord> fetchComissoes(Executor database, Long categoriaId) {
-				return database.selectFrom(COMISSAO)
-					.where(COMISSAO.CATEGORIA_ID.eq(categoriaId))
-					.fetch();
-			}
-
-			private Result<Record> fetchEntradaProdutos(Executor database, Long entradaId) {
-				return database.selectFrom(ENTRADA_PRODUTO
-						.join(PRODUTO).onKey()
-						.join(CATEGORIA).onKey())
-					.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(entradaId))
-					.fetch();
-			}
-
-			private Result<EntradaRecord> fetchEntradas(Executor database, Date firstDayOfMonth, Date lastDayOfMonth) {
-				return database.selectFrom(ENTRADA)
-						.where(ENTRADA.DATA.between(firstDayOfMonth, lastDayOfMonth))
-						.orderBy(ENTRADA.DATA)
-						.fetch();
-			}
-		}.execute();
-		
-		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=producao.xls").build();
-	}
-
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

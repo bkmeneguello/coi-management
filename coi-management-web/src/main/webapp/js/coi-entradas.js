@@ -55,6 +55,10 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			'producao': {
 				text: 'Produção',
 				trigger: 'producao'
+			},
+			'analitico': {
+				text: 'Analítico',
+				trigger: 'analitico'
 			}
 		},
 		initialize: function() {
@@ -67,7 +71,10 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			Backbone.history.navigate('entrada', true);
 		},
 		onProducao: function(e) {
-			this.$el.append($('<iframe/>', {'src': '/rest/entradas/producao'}).hide());
+			this.$el.append($('<iframe/>', {'src': '/rest/producao/sintetico'}).hide());
+		},
+		onAnalitico: function(e) {
+			this.$el.append($('<iframe/>', {'src': '/rest/producao/analitico'}).hide());
 		}
 	});
 	
