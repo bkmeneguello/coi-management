@@ -34,6 +34,8 @@
 	<script type="text/javascript" src="/js/coi-laudo.js"></script>
 	<script type="text/javascript" src="/js/coi-estoque.js"></script>
 	<script type="text/javascript" src="/js/coi-movimento.js"></script>
+	<script type="text/javascript" src="/js/coi-pagamentos.js"></script>
+	<script type="text/javascript" src="/js/coi-pagamento.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	
 	<script type="text/template" id="coi_view_text_template">
@@ -105,6 +107,7 @@
 <button id="cheques">Cheques</button>
 <button id="laudos">Laudos</button>
 <button id="estoque">Estoque</button>
+<button id="pagamentos">Pagamentos</button>
 	</script>
 	<script type="text/template" id="categoria_row_template">
 <td><%= descricao %></td>
@@ -616,6 +619,71 @@ Fêmur total - é utilizado a DMO
 <td class="coi-row-item">
 	<button class="coi-action-remove">Remover</button>
 </td>
+	</script>
+	<script type="text/template" id="pagamento_row_template">
+<td><%= vencimento %></td>
+<td><%= descricao %></td>
+<td><%= decimalConverter('ModelToView', valor) %></td>
+<td>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="pagamento_template">
+<header>Pagamento</header>
+<div id="region-categoria"/>
+<div data-attribute="vencimento" class="coi-view-text" data-label="Data de Vencimento:" data-required="true"/>
+<div data-attribute="descricao" class="coi-view-text" data-label="Descrição:" data-required="true"/>
+<div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
+<dl class="coi-form-item">
+	<dt>Situação:</dt>
+	<dd>
+		<select id="situacao" name="situacao">
+			<option>Pendente</option>
+			<option>Pago</option>
+		</select>
+	<dd>
+</dl>
+<div id="pagamento">
+	<div data-attribute="pagamento" class="coi-view-text" data-label="Data de Pagamento:"/>
+	<dl class="coi-form-item">
+		<dt>Forma de Pagamento:</dt>
+		<dd>
+			<select id="formaPagamento" name="formaPagamento">
+				<option/>
+				<option>Dinheiro</option>
+				<option>Parcelado</option>
+				<option>Cheque</option>
+				<option>Crédito</option>
+				<option>Débito</option>
+				<option>Débito Automático</option>
+			</select>
+		<dd>
+	</dl>
+	<div id="cheque">
+		<div data-attribute="banco" class="coi-view-text" data-label="Banco:"/>
+		<div data-attribute="agencia" class="coi-view-text" data-label="Agência:"/>
+		<div data-attribute="conta" class="coi-view-text" data-label="Conta:"/>
+		<div data-attribute="cheque" class="coi-view-text" data-label="Cheque:"/>
+	</div>
+</div>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
+	</script>
+	<script type="text/template" id="pagamento_categoria_template">
+<dl class="coi-form-item">
+	<dt><%= label %></dt>
+	<dd>
+		<select name="<%= name %>">
+			<option/>
+			<% _.each(elementos, function(elemento) { %>
+			<option><%= elemento %></option>
+			<%}); %>
+		</select>
+	<dd>
+</dl>
 	</script>
 </head>
 <body>

@@ -47,48 +47,6 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<!-- see https://groups.google.com/forum/?fromgroups=#!topic/pyx4me-users/NUZi1oySvQE -->
-				<!-- download from http://sourceforge.net/projects/proguard/files/proguard/4.8/ -->
-				<!-- install with mvn install:install-file -Dfile=proguard4.8/lib/proguard.jar -DgroupId=net.sf.proguard -DartifactId=proguard -Dversion=4.8 -Dpackaging=jar -DgeneratePom=true -->
-				<groupId>com.pyx4me</groupId>
-				<artifactId>proguard-maven-plugin</artifactId>
-				<version>2.0.4</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>proguard</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<proguardVersion>4.8</proguardVersion> 
-					<appendClassifier>false</appendClassifier>
-					<options>
-						<option>-keep public class com.meneguello.coi.ProducaoMensal
-							{public static void main (java.lang.String[]);}</option>
-						<option>-dontskipnonpubliclibraryclasses</option>
-						<option>-optimizationpasses 3</option>
-						<option>-overloadaggressively</option>
-						<option>-repackageclasses ''</option>
-						<option>-allowaccessmodification</option>
-						<option>-printmapping proguard.map</option>
-						<option>-renamesourcefileattribute ProGuard</option>
-						<option>-keepattributes SourceFile,LineNumberTable</option>
-					</options>
-					<libs>
-						<lib>${java.home}/lib/rt.jar</lib>
-					</libs>
-				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>net.sf.proguard</groupId>
-						<artifactId>proguard</artifactId>
-						<version>4.8</version>
-					</dependency> 
-				</dependencies>
-			</plugin>
-			<plugin>
 				<groupId>com.akathist.maven.plugins.launch4j</groupId>
 				<artifactId>launch4j-maven-plugin</artifactId>
 				<version>1.5.2</version>
@@ -140,18 +98,4 @@
 			<version>2.3</version>
 		</dependency>
 	</dependencies>
-	<repositories>
-		<repository>
-			<id>akathist-repository</id>
-			<name>Akathist Repository</name>
-			<url>http://www.9stmaryrd.com/maven</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>akathist-repository</id>
-			<name>Akathist Repository</name>
-			<url>http://www.9stmaryrd.com/maven</url>
-		</pluginRepository>
-	</pluginRepositories>
 </project>

@@ -126,7 +126,7 @@ function dateConverter(direction, value) {
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
-			return $.datepicker.parseDate('dd/mm/yy', value);
+			return $.datepicker.parseDate('ddmmyy', value.replace(/\//g, ''));
 		} catch (e) {}
 	}
 };
@@ -153,7 +153,8 @@ COI.module('Index', function(Module, COI, Backbone, Marionette, $, _) {
 			'click #entradas': 'entradas',
 			'click #cheques': 'cheques',
 			'click #laudos': 'laudos',
-			'click #estoque': 'estoque'
+			'click #estoque': 'estoque',
+			'click #pagamentos': 'pagamentos'
 		},
 		template: '#index_template',
 		initialize: function() {
@@ -179,6 +180,9 @@ COI.module('Index', function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		estoque: function(e) {
 			Backbone.history.navigate('estoque', true);
+		},
+		pagamentos: function(e) {
+			Backbone.history.navigate('pagamentos', true);
 		}
 	});
 	
