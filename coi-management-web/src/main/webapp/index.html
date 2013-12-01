@@ -672,7 +672,7 @@ Fêmur total - é utilizado a DMO
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
-	<script type="text/template" id="pagamento_categoria_template">
+	<script type="text/template" id="pagamento_categoria_item_template">
 <dl class="coi-form-item">
 	<dt><%= label %></dt>
 	<dd>
@@ -684,6 +684,21 @@ Fêmur total - é utilizado a DMO
 		</select>
 	<dd>
 </dl>
+	</script>
+	<script type="text/template" id="pagamento_categoria_row_template">
+<td><%= descricao %></td>
+<td>
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="pagamento_categoria_template">
+<header>Categoria de Pagamento</header>
+<div data-attribute="descricao" class="coi-view-text" data-label="Descrição:" data-required="true"/>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
 	</script>
 </head>
 <body>

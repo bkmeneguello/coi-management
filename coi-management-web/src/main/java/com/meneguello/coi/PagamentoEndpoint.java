@@ -1,6 +1,5 @@
 package com.meneguello.coi;
 
-import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
 import static com.meneguello.coi.model.tables.Pagamento.PAGAMENTO;
 import static com.meneguello.coi.model.tables.PagamentoCategoria.PAGAMENTO_CATEGORIA;
 
@@ -55,28 +54,6 @@ public class PagamentoEndpoint {
 	}
 	
 	@GET
-	@Path("categorias")
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<Categoria> categorias() throws Exception {
-		return new Transaction<List<Categoria>>() {
-			@Override
-			protected List<Categoria> execute(Executor database) {
-				final ArrayList<Categoria> result = new ArrayList<Categoria>();
-				final Result<PagamentoCategoriaRecord> resultRecord = database
-						.selectFrom(PAGAMENTO_CATEGORIA)
-						.fetch();
-				for (Record record : resultRecord) {
-					final Categoria element = new Categoria();
-					element.setId(record.getValue(PAGAMENTO_CATEGORIA.ID));
-					element.setDescricao(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
-					result.add(element);
-				}
-				return result;
-			}
-		}.execute();
-	}
-	
-	@GET
 	@Path("{id}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Pagamento read(final @PathParam("id") Long id) throws Exception {
@@ -110,17 +87,17 @@ public class PagamentoEndpoint {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Pagamento create(final Pagamento entrada) throws Exception {
+	public Pagamento create(final Pagamento registro) throws Exception {
 		return new Transaction<Pagamento>(true) {
 			@Override
 			public Pagamento execute(Executor database) {
 				final PagamentoCategoriaRecord categoria = database
 						.selectFrom(PAGAMENTO_CATEGORIA)
-						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(entrada.getCategoria()))
+						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(registro.getCategoria()))
 						.fetchOne();
 				
-				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(entrada.getSituacao());
-				final FormaPagamento formaPagamento = FormaPagamento.fromValue(entrada.getFormaPagamento());
+				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(registro.getSituacao());
+				final FormaPagamento formaPagamento = FormaPagamento.fromValue(registro.getFormaPagamento());
 				
 				final PagamentoRecord record = database.insertInto(
 							PAGAMENTO,
@@ -138,23 +115,23 @@ public class PagamentoEndpoint {
 						)
 						.values(
 								categoria.getValue(PAGAMENTO_CATEGORIA.ID),
-								new Date(entrada.getVencimento().getTime()),
-								entrada.getDescricao(),
-								entrada.getValor(),
+								new Date(registro.getVencimento().getTime()),
+								registro.getDescricao(),
+								registro.getValor(),
 								situacaoPagamento.name(),
-								entrada.getPagamento() != null ? new Date(entrada.getPagamento().getTime()) : null,
+								registro.getPagamento() != null ? new Date(registro.getPagamento().getTime()) : null,
 								formaPagamento != null ? formaPagamento.name() : null,
-								entrada.getBanco(),
-								entrada.getAgencia(),
-								entrada.getConta(),
-								entrada.getCheque()
+								registro.getBanco(),
+								registro.getAgencia(),
+								registro.getConta(),
+								registro.getCheque()
 						)
-						.returning(ENTRADA.ID)
+						.returning(PAGAMENTO.ID)
 						.fetchOne();
 				
-				entrada.setId(record.getId());
+				registro.setId(record.getId());
 				
-				return entrada;
+				return registro;
 			}
 		}.execute();
 	}
@@ -163,34 +140,34 @@ public class PagamentoEndpoint {
 	@Path("{id}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Pagamento update(final @PathParam("id") Long id, final Pagamento entrada) throws Exception {
+	public Pagamento update(final @PathParam("id") Long id, final Pagamento registro) throws Exception {
 		return new Transaction<Pagamento>(true) {
 			@Override
 			public Pagamento execute(Executor database) {
 				final PagamentoCategoriaRecord categoria = database
 						.selectFrom(PAGAMENTO_CATEGORIA)
-						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(entrada.getCategoria()))
+						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(registro.getCategoria()))
 						.fetchOne();
 				
-				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(entrada.getSituacao());
-				final FormaPagamento formaPagamento = FormaPagamento.fromValue(entrada.getFormaPagamento());
+				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(registro.getSituacao());
+				final FormaPagamento formaPagamento = FormaPagamento.fromValue(registro.getFormaPagamento());
 				
 				database.update(PAGAMENTO)
 						.set(PAGAMENTO.CATEGORIA_ID, categoria.getValue(PAGAMENTO_CATEGORIA.ID))
-						.set(PAGAMENTO.VENCIMENTO, new Date(entrada.getVencimento().getTime()))
-						.set(PAGAMENTO.DESCRICAO, entrada.getDescricao())
-						.set(PAGAMENTO.VALOR, entrada.getValor())
+						.set(PAGAMENTO.VENCIMENTO, new Date(registro.getVencimento().getTime()))
+						.set(PAGAMENTO.DESCRICAO, registro.getDescricao())
+						.set(PAGAMENTO.VALOR, registro.getValor())
 						.set(PAGAMENTO.SITUACAO, situacaoPagamento.name())
-						.set(PAGAMENTO.PAGAMENTO_, entrada.getPagamento())
+						.set(PAGAMENTO.PAGAMENTO_, registro.getPagamento())
 						.set(PAGAMENTO.FORMA_PAGAMENTO, formaPagamento != null ? formaPagamento.name() : null)
-						.set(PAGAMENTO.BANCO, entrada.getBanco())
-						.set(PAGAMENTO.AGENCIA, entrada.getAgencia())
-						.set(PAGAMENTO.CONTA, entrada.getConta())
-						.set(PAGAMENTO.CHEQUE, entrada.getCheque())
+						.set(PAGAMENTO.BANCO, registro.getBanco())
+						.set(PAGAMENTO.AGENCIA, registro.getAgencia())
+						.set(PAGAMENTO.CONTA, registro.getConta())
+						.set(PAGAMENTO.CHEQUE, registro.getCheque())
 						.where(PAGAMENTO.ID.eq(id))
 						.execute();
 				
-				return entrada;
+				return registro;
 			}
 		}.execute();
 	}
@@ -203,6 +180,104 @@ public class PagamentoEndpoint {
 			protected Void execute(Executor database) {
 				database.delete(PAGAMENTO)
 						.where(PAGAMENTO.ID.eq(id))
+						.execute();
+				
+				return null;
+			}
+		}.execute();
+	}
+	
+	@GET
+	@Path("categorias")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Categoria> categorias() throws Exception {
+		return new Transaction<List<Categoria>>() {
+			@Override
+			protected List<Categoria> execute(Executor database) {
+				final ArrayList<Categoria> result = new ArrayList<Categoria>();
+				final Result<PagamentoCategoriaRecord> resultRecord = database
+						.selectFrom(PAGAMENTO_CATEGORIA)
+						.fetch();
+				for (Record record : resultRecord) {
+					final Categoria element = new Categoria();
+					element.setId(record.getValue(PAGAMENTO_CATEGORIA.ID));
+					element.setDescricao(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
+					result.add(element);
+				}
+				return result;
+			}
+		}.execute();
+	}
+	
+	@GET
+	@Path("categorias/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Categoria readCategoria(final @PathParam("id") Long id) throws Exception {
+		return new Transaction<Categoria>() {
+			@Override
+			protected Categoria execute(Executor database) {
+				final Record record = database
+						.selectFrom(PAGAMENTO_CATEGORIA)
+						.where(PAGAMENTO_CATEGORIA.ID.eq(id))
+						.fetchOne();
+				
+				final Categoria entidade = new Categoria();
+				entidade.setId(record.getValue(PAGAMENTO_CATEGORIA.ID));
+				entidade.setDescricao(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
+				return entidade;
+			}
+		}.execute();
+	}
+
+	@POST
+	@Path("categorias")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Categoria createCategoria(final Categoria registro) throws Exception {
+		return new Transaction<Categoria>(true) {
+			@Override
+			public Categoria execute(Executor database) {
+				final PagamentoCategoriaRecord record = database.insertInto(
+							PAGAMENTO_CATEGORIA,
+							PAGAMENTO_CATEGORIA.DESCRICAO
+						)
+						.values(registro.getDescricao())
+						.returning(PAGAMENTO_CATEGORIA.ID)
+						.fetchOne();
+				
+				registro.setId(record.getId());
+				
+				return registro;
+			}
+		}.execute();
+	}
+
+	@PUT
+	@Path("categorias/{id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Categoria updateCategoria(final @PathParam("id") Long id, final Categoria registro) throws Exception {
+		return new Transaction<Categoria>(true) {
+			@Override
+			public Categoria execute(Executor database) {
+				database.update(PAGAMENTO_CATEGORIA)
+						.set(PAGAMENTO_CATEGORIA.DESCRICAO, registro.getDescricao())
+						.where(PAGAMENTO_CATEGORIA.ID.eq(id))
+						.execute();
+				
+				return registro;
+			}
+		}.execute();
+	}
+
+	@DELETE
+	@Path("categorias/{id}")
+	public void deleteCategoria(final @PathParam("id") Long id) throws Exception {
+		new Transaction<Void>(true) {
+			@Override
+			protected Void execute(Executor database) {
+				database.delete(PAGAMENTO_CATEGORIA)
+						.where(PAGAMENTO_CATEGORIA.ID.eq(id))
 						.execute();
 				
 				return null;

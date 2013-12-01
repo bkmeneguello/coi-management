@@ -50,6 +50,10 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 			}
 		},
 		extras: {
+			'categorias': {
+				text: 'Categorias',
+				trigger: 'categorias'
+			},
 			'pagar': {
 				text: 'À Pagar',
 				trigger: 'pagar'
@@ -67,6 +71,9 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onCreate: function(e) {
 			Backbone.history.navigate('pagamento', true);
+		},
+		onCategorias: function(e) {
+			Backbone.history.navigate('pagamento-categorias', true);
 		},
 		onPagar: function(e) {
 			this.$el.append($('<iframe/>', {'src': '/rest/pagamentos/pagar'}).hide());
