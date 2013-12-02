@@ -487,22 +487,57 @@ COI.PopupFormView = COI.Window.extend({
 	}
 });
 
+COI.SimpleFilterView = Backbone.View.extend({
+	initialize: function() {
+		_.bindAll(this);
+	},
+	render: function() {
+		this.searchInput = $('<input/>' , {type: 'text', 'class': 'coi-input-search'});
+		this.$el.append(this.searchInput);
+		this.searchInput.input();
+		this.$el
+			.append($('<button/>' , {text: 'Pesquisar', 'class': 'coi-action-search', click: this.search}).button())
+			.append($('<button/>' , {text: 'Limpar', 'class': 'coi-action-clear', click: this.clear}).button())
+			.append($('<button/>' , {text: 'Anterior', 'class': 'coi-action-prev', click: this.prev}).button())
+			.append($('<button/>' , {text: 'Próxima', 'class': 'coi-action-prox', click: this.next}).button());
+	},
+	search: function(e) {
+		if (e && e.preventDefault){ e.preventDefault(); }
+        if (e && e.stopPropagation){ e.stopPropagation(); }
+		this.collection.fetch({data: {term: this.searchInput.val()}});
+	},
+	clear: function(e) {
+		if (e && e.preventDefault){ e.preventDefault(); }
+        if (e && e.stopPropagation){ e.stopPropagation(); }
+		this.searchInput.val(null);
+		this.collection.fetch();
+	},
+	prev: function(e) {
+		if (e && e.preventDefault){ e.preventDefault(); }
+        if (e && e.stopPropagation){ e.stopPropagation(); }
+		this.collection.prevPage({data: {term: this.searchInput.val()}});
+	},
+	next: function(e) {
+		if (e && e.preventDefault){ e.preventDefault(); }
+        if (e && e.stopPropagation){ e.stopPropagation(); }
+		this.collection.nextPage({data: {term: this.searchInput.val()}});
+	}
+});
+
 COI.GridView = Marionette.CompositeView.extend({
-	search: false,
+	searchView: null,
 	constructor: function() {
 		Marionette.CompositeView.prototype.constructor.apply(this, Array.prototype.slice.apply(arguments));
 		this.listenTo(this, 'render', function() {
-			if (!this.search) {
-				this.ui.searchBar.hide();
+			if (this.searchView) {
+				var paginator = this.$('.coi-paginator').show();
+				this._search = new this.searchView({el: paginator, collection: this.collection});
+				this._search.render();
 			}
 			this.$el.form();
 			this.ui.table.table().css('width', '100%');
 			this.ui.cancelButton.button();
 			this.ui.createButton.button();
-			this.ui.searchButton.button();
-			this.ui.clearButton.button();
-			this.ui.nextButton.button();
-			this.ui.prevButton.button();
 			
 			var that = this;
 			_.each(this.extras, function(extra) {
@@ -526,36 +561,13 @@ COI.GridView = Marionette.CompositeView.extend({
 	itemViewContainer: 'tbody',
 	triggers: {
 		'click .coi-action-cancel': 'cancel',
-		'click .coi-action-create': 'create',
-		'click .coi-action-search': 'search',
-		'click .coi-action-clear': 'clear',
-		'click .coi-action-prev': 'prev',
-		'click .coi-action-prox': 'next'
+		'click .coi-action-create': 'create'
 	},
 	ui: {
 		'table': 'table',
 		'footer': 'footer',
 		'cancelButton': 'footer button.coi-action-cancel',
-		'createButton': 'footer button.coi-action-create',
-		'searchBar': '.coi-paginator',
-		'search': '.coi-paginator input.coi-input-search',
-		'searchButton': '.coi-paginator button.coi-action-search',
-		'clearButton': '.coi-paginator button.coi-action-clear',
-		'prevButton': '.coi-paginator button.coi-action-prev',
-		'nextButton': '.coi-paginator button.coi-action-prox'
-	},
-	onSearch: function(e) {
-		this.collection.fetch({data: {term: this.ui.search.val()}});
-	},
-	onClear: function(e) {
-		this.ui.search.val(null);
-		this.collection.fetch();
-	},
-	onPrev: function(e) {
-		this.collection.prevPage({data: {term: this.ui.search.val()}});
-	},
-	onNext: function(e) {
-		this.collection.nextPage({data: {term: this.ui.search.val()}});
+		'createButton': 'footer button.coi-action-create'
 	}
 });
 

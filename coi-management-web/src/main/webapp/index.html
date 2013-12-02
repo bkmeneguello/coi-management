@@ -48,13 +48,14 @@
 	</script>
 	<script type="text/template" id="coi_grid_view_template">
 <header><%= header %></header>
-<div class="coi-paginator">
+<div style="display: none" class="coi-paginator"/>
+<!-- div class="coi-paginator">
 	<input type="text" class="coi-input-search"/>
 	<button class="coi-action-search">Pesquisar</button>
 	<button class="coi-action-clear">Limpar</button>
 	<button class="coi-action-prev">Anterior</button>
 	<button class="coi-action-prox">Próxima</button>
-</div>
+</div -->
 <table>
 	<thead>
 		<tr>
@@ -622,6 +623,7 @@ Fêmur total - é utilizado a DMO
 	</script>
 	<script type="text/template" id="pagamento_row_template">
 <td><%= vencimento %></td>
+<td><%= categoria %></td>
 <td><%= descricao %></td>
 <td><%= decimalConverter('ModelToView', valor) %></td>
 <td>
@@ -635,6 +637,7 @@ Fêmur total - é utilizado a DMO
 <div data-attribute="vencimento" class="coi-view-text" data-label="Data de Vencimento:" data-required="true"/>
 <div data-attribute="descricao" class="coi-view-text" data-label="Descrição:" data-required="true"/>
 <div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
+<div data-attribute="projecao" class="coi-view-text" data-label="Projeção:" data-required="true"/>
 <dl class="coi-form-item">
 	<dt>Situação:</dt>
 	<dd>

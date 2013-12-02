@@ -3,10 +3,15 @@ package com.meneguello.coi;
 import static com.meneguello.coi.model.tables.Pagamento.PAGAMENTO;
 import static com.meneguello.coi.model.tables.PagamentoCategoria.PAGAMENTO_CATEGORIA;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -16,9 +21,18 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import lombok.Data;
+import net.sf.jasperreports.engine.JRExporterParameter;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
+import net.sf.jasperreports.engine.export.JRXlsExporter;
 
 import org.jooq.Record;
 import org.jooq.Result;
@@ -32,18 +46,27 @@ public class PagamentoEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<PagamentoList> list() throws Exception {
+	public List<PagamentoList> list(final @QueryParam("situacao") String situacao, 
+			final @QueryParam("start") Date start, 
+			final @QueryParam("end") Date end, 
+			final @QueryParam("page") Integer page) throws Exception {
+		
 		return new Transaction<List<PagamentoList>>() {
 			@Override
 			protected List<PagamentoList> execute(Executor database) {
 				final ArrayList<PagamentoList> result = new ArrayList<PagamentoList>();
-				final Result<PagamentoRecord> resultRecord = database
-						.selectFrom(PAGAMENTO)
+				final Result<Record> resultRecord = database
+						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
+						.where(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
+						.and(PAGAMENTO.VENCIMENTO.between(start, end))
+						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO.asc(), PAGAMENTO.VENCIMENTO.desc(), PAGAMENTO.DESCRICAO.asc())
+						.limit(10).offset(10 * page)
 						.fetch();
 				for (Record record : resultRecord) {
 					final PagamentoList element = new PagamentoList();
 					element.setId(record.getValue(PAGAMENTO.ID));
 					element.setVencimento(record.getValue(PAGAMENTO.VENCIMENTO));
+					element.setCategoria(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
 					element.setDescricao(record.getValue(PAGAMENTO.DESCRICAO));
 					element.setValor(record.getValue(PAGAMENTO.VALOR));
 					result.add(element);
@@ -65,21 +88,7 @@ public class PagamentoEndpoint {
 						.where(PAGAMENTO.ID.eq(id))
 						.fetchOne();
 				
-				final Pagamento entidade = new Pagamento();
-				entidade.setId(record.getValue(PAGAMENTO.ID));
-				entidade.setCategoria(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
-				entidade.setVencimento(record.getValue(PAGAMENTO.VENCIMENTO));
-				entidade.setDescricao(record.getValue(PAGAMENTO.DESCRICAO));
-				entidade.setValor(record.getValue(PAGAMENTO.VALOR));
-				entidade.setSituacao(SituacaoPagamento.valueOf(record.getValue(PAGAMENTO.SITUACAO)).getValue());
-				entidade.setPagamento(record.getValue(PAGAMENTO.PAGAMENTO_));
-				final String formaPagamento = record.getValue(PAGAMENTO.FORMA_PAGAMENTO);
-				entidade.setFormaPagamento(formaPagamento != null ? FormaPagamento.valueOf(formaPagamento).getValue() : null);
-				entidade.setBanco(record.getValue(PAGAMENTO.BANCO));
-				entidade.setAgencia(record.getValue(PAGAMENTO.AGENCIA));
-				entidade.setConta(record.getValue(PAGAMENTO.CONTA));
-				entidade.setCheque(record.getValue(PAGAMENTO.CHEQUE));
-				return entidade;
+				return buildEntidade(record);
 			}
 		}.execute();
 	}
@@ -99,37 +108,47 @@ public class PagamentoEndpoint {
 				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(registro.getSituacao());
 				final FormaPagamento formaPagamento = FormaPagamento.fromValue(registro.getFormaPagamento());
 				
-				final PagamentoRecord record = database.insertInto(
-							PAGAMENTO,
-							PAGAMENTO.CATEGORIA_ID,
-							PAGAMENTO.VENCIMENTO,
-							PAGAMENTO.DESCRICAO,
-							PAGAMENTO.VALOR,
-							PAGAMENTO.SITUACAO,
-							PAGAMENTO.PAGAMENTO_,
-							PAGAMENTO.FORMA_PAGAMENTO,
-							PAGAMENTO.BANCO,
-							PAGAMENTO.AGENCIA,
-							PAGAMENTO.CONTA,
-							PAGAMENTO.CHEQUE
-						)
-						.values(
-								categoria.getValue(PAGAMENTO_CATEGORIA.ID),
-								new Date(registro.getVencimento().getTime()),
-								registro.getDescricao(),
-								registro.getValor(),
-								situacaoPagamento.name(),
-								registro.getPagamento() != null ? new Date(registro.getPagamento().getTime()) : null,
-								formaPagamento != null ? formaPagamento.name() : null,
-								registro.getBanco(),
-								registro.getAgencia(),
-								registro.getConta(),
-								registro.getCheque()
-						)
-						.returning(PAGAMENTO.ID)
-						.fetchOne();
 				
-				registro.setId(record.getId());
+				for (int i = 0; i < registro.getProjecao(); i++) {
+					final Calendar calendar = Calendar.getInstance();
+					calendar.setTimeInMillis(registro.getVencimento().getTime());
+					calendar.add(Calendar.MONTH, i);
+					final Date vencimento = new Date(calendar.getTimeInMillis());
+					
+					final PagamentoRecord record = database.insertInto(
+								PAGAMENTO,
+								PAGAMENTO.CATEGORIA_ID,
+								PAGAMENTO.VENCIMENTO,
+								PAGAMENTO.DESCRICAO,
+								PAGAMENTO.VALOR,
+								PAGAMENTO.SITUACAO,
+								PAGAMENTO.PAGAMENTO_,
+								PAGAMENTO.FORMA_PAGAMENTO,
+								PAGAMENTO.BANCO,
+								PAGAMENTO.AGENCIA,
+								PAGAMENTO.CONTA,
+								PAGAMENTO.CHEQUE
+							)
+							.values(
+									categoria.getValue(PAGAMENTO_CATEGORIA.ID),
+									vencimento,
+									registro.getDescricao(),
+									registro.getValor(),
+									situacaoPagamento.name(),
+									registro.getPagamento() != null ? new Date(registro.getPagamento().getTime()) : null,
+									formaPagamento != null ? formaPagamento.name() : null,
+									registro.getBanco(),
+									registro.getAgencia(),
+									registro.getConta(),
+									registro.getCheque()
+							)
+							.returning(PAGAMENTO.ID)
+							.fetchOne();
+					
+					if (registro.getId() == null) {
+						registro.setId(record.getId());
+					}
+				}
 				
 				return registro;
 			}
@@ -197,6 +216,7 @@ public class PagamentoEndpoint {
 				final ArrayList<Categoria> result = new ArrayList<Categoria>();
 				final Result<PagamentoCategoriaRecord> resultRecord = database
 						.selectFrom(PAGAMENTO_CATEGORIA)
+						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO)
 						.fetch();
 				for (Record record : resultRecord) {
 					final Categoria element = new Categoria();
@@ -284,11 +304,101 @@ public class PagamentoEndpoint {
 			}
 		}.execute();
 	}
+	
+	@GET
+	@Path("imprimir")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response print(final @QueryParam("situacao") String situacao, 
+			final @QueryParam("start") Date start, 
+			final @QueryParam("end") Date end) throws Exception {
+		
+		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
+			@Override
+			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				
+				final Result<Record> pagamentoResult = database
+						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
+						.where(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
+						.and(PAGAMENTO.VENCIMENTO.between(start, end))
+						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO.asc(), PAGAMENTO.VENCIMENTO.desc(), PAGAMENTO.DESCRICAO.asc())
+						.fetch();
+				
+				final Collection<Map<String, ?>> pagamentos = new ArrayList<>(pagamentoResult.size());
+				for (Record pagamentoRecord : pagamentoResult) {
+					final Map<String, Object> pagamento = new HashMap<>();
+					pagamento.put("categoria", pagamentoRecord.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
+					pagamento.put("descricao", pagamentoRecord.getValue(PAGAMENTO.DESCRICAO));
+					pagamento.put("vencimento", pagamentoRecord.getValue(PAGAMENTO.VENCIMENTO));
+					pagamento.put("valor", pagamentoRecord.getValue(PAGAMENTO.VALOR));
+					pagamento.put("situacao", SituacaoPagamento.valueOf(pagamentoRecord.getValue(PAGAMENTO.SITUACAO)).getValue());
+					pagamento.put("pagamento", pagamentoRecord.getValue(PAGAMENTO.PAGAMENTO_));
+					final String formaPagamento = pagamentoRecord.getValue(PAGAMENTO.FORMA_PAGAMENTO);
+					pagamento.put("formaPagamento", formaPagamento != null ? FormaPagamento.valueOf(formaPagamento).getValue() : null);
+					pagamento.put("banco", pagamentoRecord.getValue(PAGAMENTO.BANCO));
+					pagamento.put("agencia", pagamentoRecord.getValue(PAGAMENTO.AGENCIA));
+					pagamento.put("conta", pagamentoRecord.getValue(PAGAMENTO.CONTA));
+					pagamento.put("cheque", pagamentoRecord.getValue(PAGAMENTO.CHEQUE));
+					
+					pagamentos.add(pagamento);
+				}
+				
+				final String tipo;
+				switch (SituacaoPagamento.fromValue(situacao)) {
+				case PENDENTE:
+					tipo = "À PAGAR";
+					break;
+				case PAGO:
+					tipo = "PAGAS";
+					break;
+				default:
+					throw new IllegalArgumentException("Situação inválida");
+				}
+				
+				final Map<String, Object> parameters = new HashMap<>();
+				parameters.put("tipo", tipo);
+				parameters.put("inicio", start);
+				parameters.put("fim", end);
+				final JasperReport jasperReport = JasperCompileManager
+						.compileReport(getClass().getClassLoader().getResourceAsStream("pagamentos.jrxml"));
+				final JasperPrint jasperPrint = JasperFillManager
+						.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(pagamentos));
+				
+				final JRXlsExporter exporter = new JRXlsExporter();
+				exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
+				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
+				exporter.exportReport();
+				
+				return baos;
+			}
+		}.execute();
+		
+		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=pagamentos.xls").build();
+	}
+
+	private Pagamento buildEntidade(final Record record) {
+		final Pagamento entidade = new Pagamento();
+		entidade.setId(record.getValue(PAGAMENTO.ID));
+		entidade.setCategoria(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
+		entidade.setVencimento(record.getValue(PAGAMENTO.VENCIMENTO));
+		entidade.setDescricao(record.getValue(PAGAMENTO.DESCRICAO));
+		entidade.setValor(record.getValue(PAGAMENTO.VALOR));
+		entidade.setSituacao(SituacaoPagamento.valueOf(record.getValue(PAGAMENTO.SITUACAO)).getValue());
+		entidade.setPagamento(record.getValue(PAGAMENTO.PAGAMENTO_));
+		final String formaPagamento = record.getValue(PAGAMENTO.FORMA_PAGAMENTO);
+		entidade.setFormaPagamento(formaPagamento != null ? FormaPagamento.valueOf(formaPagamento).getValue() : null);
+		entidade.setBanco(record.getValue(PAGAMENTO.BANCO));
+		entidade.setAgencia(record.getValue(PAGAMENTO.AGENCIA));
+		entidade.setConta(record.getValue(PAGAMENTO.CONTA));
+		entidade.setCheque(record.getValue(PAGAMENTO.CHEQUE));
+		return entidade;
+	}
 
 	@Data
 	private static class PagamentoList {
 		private Long id;
 		private Date vencimento;
+		private String categoria;
 		private String descricao;
 		private BigDecimal valor;
 	}
@@ -313,6 +423,7 @@ public class PagamentoEndpoint {
 		private String agencia;
 		private String conta;
 		private String cheque;
+		private Integer projecao;
 	}
 	
 }

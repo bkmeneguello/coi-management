@@ -15,7 +15,8 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			banco: null,
 			agencia: null,
 			conta: null,
-			cheque: null
+			cheque: null,
+			projecao: 1
 		},
 		parse: function(resp, options) {
 			resp.vencimento = $.datepicker.parseDate('yy-mm-dd', resp.vencimento);

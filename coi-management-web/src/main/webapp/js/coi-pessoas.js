@@ -88,7 +88,7 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var PessoasView = COI.GridView.extend({
-		search: true,
+		searchView: COI.SimpleFilterView,
 		itemView: PessoaRowView,
 		templateHelpers: {
 			header: 'Pessoas',
