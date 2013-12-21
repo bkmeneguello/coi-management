@@ -6,6 +6,7 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 		urlRoot: '/rest/pagamentos',
 		defaults: {
 			categoria: null,
+			tipo: 'Saída',
 			vencimento: null,
 			descricao: null,
 			valor: null,
@@ -80,7 +81,8 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			'pagamento': '#pagamento',
 			'cheque': '#cheque',
 			'situacao': '#situacao',
-			'formaPagamento': '#formaPagamento'
+			'formaPagamento': '#formaPagamento',
+			'projecao': '#projecao'
 		},
 		triggers: {
 			'change #categoria': 'changeCategoria'
@@ -101,6 +103,10 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['pagamento'].converter = dateConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 
+			if (!this.model.isNew()) {
+				this.ui.projecao.hide();
+			}
+			
 			this.updateSituacao(this.model, this.ui.situacao.val());
 			this.updateFormaPagamento(this.model, this.ui.formaPagamento.val());
 			this.renderCategoria();

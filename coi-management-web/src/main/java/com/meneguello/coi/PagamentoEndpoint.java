@@ -46,7 +46,8 @@ public class PagamentoEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<PagamentoList> list(final @QueryParam("situacao") String situacao, 
+	public List<PagamentoList> list(final @QueryParam("tipo") String tipo, 
+			final @QueryParam("situacao") String situacao, 
 			final @QueryParam("start") Date start, 
 			final @QueryParam("end") Date end, 
 			final @QueryParam("page") Integer page) throws Exception {
@@ -57,9 +58,10 @@ public class PagamentoEndpoint {
 				final ArrayList<PagamentoList> result = new ArrayList<PagamentoList>();
 				final Result<Record> resultRecord = database
 						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
-						.where(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
+						.where(PAGAMENTO.TIPO.eq(TipoPagamento.fromValue(tipo).name()))
+						.and(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
 						.and(PAGAMENTO.VENCIMENTO.between(start, end))
-						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO.asc(), PAGAMENTO.VENCIMENTO.desc(), PAGAMENTO.DESCRICAO.asc())
+						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO, PAGAMENTO.VENCIMENTO, PAGAMENTO.DESCRICAO)
 						.limit(10).offset(10 * page)
 						.fetch();
 				for (Record record : resultRecord) {
@@ -105,6 +107,7 @@ public class PagamentoEndpoint {
 						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(registro.getCategoria()))
 						.fetchOne();
 				
+				final TipoPagamento tipoPagamento = TipoPagamento.fromValue(registro.getTipo());
 				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(registro.getSituacao());
 				final FormaPagamento formaPagamento = FormaPagamento.fromValue(registro.getFormaPagamento());
 				
@@ -118,6 +121,7 @@ public class PagamentoEndpoint {
 					final PagamentoRecord record = database.insertInto(
 								PAGAMENTO,
 								PAGAMENTO.CATEGORIA_ID,
+								PAGAMENTO.TIPO,
 								PAGAMENTO.VENCIMENTO,
 								PAGAMENTO.DESCRICAO,
 								PAGAMENTO.VALOR,
@@ -131,6 +135,7 @@ public class PagamentoEndpoint {
 							)
 							.values(
 									categoria.getValue(PAGAMENTO_CATEGORIA.ID),
+									tipoPagamento.name(),
 									vencimento,
 									registro.getDescricao(),
 									registro.getValor(),
@@ -168,11 +173,13 @@ public class PagamentoEndpoint {
 						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(registro.getCategoria()))
 						.fetchOne();
 				
+				final TipoPagamento tipoPagamento = TipoPagamento.fromValue(registro.getTipo());
 				final SituacaoPagamento situacaoPagamento = SituacaoPagamento.fromValue(registro.getSituacao());
 				final FormaPagamento formaPagamento = FormaPagamento.fromValue(registro.getFormaPagamento());
 				
 				database.update(PAGAMENTO)
 						.set(PAGAMENTO.CATEGORIA_ID, categoria.getValue(PAGAMENTO_CATEGORIA.ID))
+						.set(PAGAMENTO.TIPO, tipoPagamento.name())
 						.set(PAGAMENTO.VENCIMENTO, new Date(registro.getVencimento().getTime()))
 						.set(PAGAMENTO.DESCRICAO, registro.getDescricao())
 						.set(PAGAMENTO.VALOR, registro.getValor())
@@ -308,7 +315,8 @@ public class PagamentoEndpoint {
 	@GET
 	@Path("imprimir")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response print(final @QueryParam("situacao") String situacao, 
+	public Response print(final @QueryParam("tipo") String tipo, 
+			final @QueryParam("situacao") String situacao, 
 			final @QueryParam("start") Date start, 
 			final @QueryParam("end") Date end) throws Exception {
 		
@@ -319,9 +327,10 @@ public class PagamentoEndpoint {
 				
 				final Result<Record> pagamentoResult = database
 						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
-						.where(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
+						.where(PAGAMENTO.TIPO.eq(TipoPagamento.fromValue(tipo).name()))
+						.and(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
 						.and(PAGAMENTO.VENCIMENTO.between(start, end))
-						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO.asc(), PAGAMENTO.VENCIMENTO.desc(), PAGAMENTO.DESCRICAO.asc())
+						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO, PAGAMENTO.VENCIMENTO, PAGAMENTO.DESCRICAO)
 						.fetch();
 				
 				final Collection<Map<String, ?>> pagamentos = new ArrayList<>(pagamentoResult.size());
@@ -343,20 +352,36 @@ public class PagamentoEndpoint {
 					pagamentos.add(pagamento);
 				}
 				
-				final String tipo;
-				switch (SituacaoPagamento.fromValue(situacao)) {
-				case PENDENTE:
-					tipo = "À PAGAR";
-					break;
-				case PAGO:
-					tipo = "PAGAS";
-					break;
+				final String tipoPagamento;
+				x: switch (TipoPagamento.fromValue(tipo)) {
+				case SAIDA:
+					switch (SituacaoPagamento.fromValue(situacao)) {
+					case PENDENTE:
+						tipoPagamento = "À PAGAR";
+						break x;
+					case PAGO:
+						tipoPagamento = "PAGAS";
+						break x;
+					default:
+						throw new IllegalArgumentException("Situação inválida");
+					}
+				case ENTRADA:
+					switch (SituacaoPagamento.fromValue(situacao)) {
+					case PENDENTE:
+						tipoPagamento = "À RECEBER";
+						break x;
+					case PAGO:
+						tipoPagamento = "RECEBIDAS";
+						break x;
+					default:
+						throw new IllegalArgumentException("Situação inválida");
+					}
 				default:
 					throw new IllegalArgumentException("Situação inválida");
 				}
 				
 				final Map<String, Object> parameters = new HashMap<>();
-				parameters.put("tipo", tipo);
+				parameters.put("tipo", tipoPagamento);
 				parameters.put("inicio", start);
 				parameters.put("fim", end);
 				final JasperReport jasperReport = JasperCompileManager
@@ -380,6 +405,7 @@ public class PagamentoEndpoint {
 		final Pagamento entidade = new Pagamento();
 		entidade.setId(record.getValue(PAGAMENTO.ID));
 		entidade.setCategoria(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
+		entidade.setTipo(record.getValue(PAGAMENTO.TIPO));
 		entidade.setVencimento(record.getValue(PAGAMENTO.VENCIMENTO));
 		entidade.setDescricao(record.getValue(PAGAMENTO.DESCRICAO));
 		entidade.setValor(record.getValue(PAGAMENTO.VALOR));
@@ -413,6 +439,7 @@ public class PagamentoEndpoint {
 	private static class Pagamento {
 		private Long id;
 		private String categoria;
+		private String tipo;
 		private Date vencimento;
 		private String descricao;
 		private BigDecimal valor;

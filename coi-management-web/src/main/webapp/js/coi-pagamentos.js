@@ -65,6 +65,21 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 				var div = $('<dl/>', {'class': 'coi-form-item'});
 				this.$el.append(div);
 				
+				div.append($('<dt/>', {text: 'Tipo:', 'for': 'tipo'}));
+				this.tipo = $('<select/>' , {
+					id: 'tipo',
+					change: this.search
+				})
+				.append($('<option/>', {text: 'Saída', selected: 'selected'}))
+				.append($('<option/>', {text: 'Entrada'}));
+				div.append($('<dd/>').append(this.tipo));
+				this.tipo.input();
+			}
+			
+			{
+				var div = $('<dl/>', {'class': 'coi-form-item'});
+				this.$el.append(div);
+				
 				div.append($('<dt/>', {text: 'Situação:', 'for': 'situacao'}));
 				this.situacao = $('<select/>' , {
 					id: 'situacao',
@@ -130,17 +145,17 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 			return $.datepicker.formatDate('yy-mm-dd', this._parse($input));
 		},
 		search: function() {
-			this.collection.fetch({data: {situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
+			this.collection.fetch({data: {tipo: this.tipo.val(), situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
 		},
 		prev: function(e) {
 			if (e && e.preventDefault){ e.preventDefault(); }
 	        if (e && e.stopPropagation){ e.stopPropagation(); }
-			this.collection.prevPage({data: {situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
+			this.collection.prevPage({data: {tipo: this.tipo.val(), situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
 		},
 		next: function(e) {
 			if (e && e.preventDefault){ e.preventDefault(); }
 	        if (e && e.stopPropagation){ e.stopPropagation(); }
-			this.collection.nextPage({data: {situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
+			this.collection.nextPage({data: {tipo: this.tipo.val(), situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
 		}
 	});
 	
@@ -181,7 +196,7 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 		onImpressao: function(e) {
 			var startDate = this._search._send(this._search.startDate);
 			var endDate = this._search._send(this._search.endDate);
-			this.$el.append($('<iframe/>', {'src': '/rest/pagamentos/imprimir?situacao=' + this._search.situacao.val() + '&start=' + startDate + '&end=' + endDate}).hide());
+			this.$el.append($('<iframe/>', {'src': '/rest/pagamentos/imprimir?tipo=' + this._search.tipo.val() + '&situacao=' + this._search.situacao.val() + '&start=' + startDate + '&end=' + endDate}).hide());
 		}
 	});
 	

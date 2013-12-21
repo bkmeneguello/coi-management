@@ -637,7 +637,18 @@ Fêmur total - é utilizado a DMO
 <div data-attribute="vencimento" class="coi-view-text" data-label="Data de Vencimento:" data-required="true"/>
 <div data-attribute="descricao" class="coi-view-text" data-label="Descrição:" data-required="true"/>
 <div data-attribute="valor" class="coi-view-text" data-label="Valor:" data-required="true"/>
-<div data-attribute="projecao" class="coi-view-text" data-label="Projeção:" data-required="true"/>
+<div id="projecao">
+	<div data-attribute="projecao" class="coi-view-text" data-label="Projeção:" data-required="true"/>
+</div>
+<dl class="coi-form-item">
+	<dt>Tipo:</dt>
+	<dd>
+		<select id="tipo" name="tipo">
+			<option>Saída</option>
+			<option>Entrada</option>
+		</select>
+	<dd>
+</dl>
 <dl class="coi-form-item">
 	<dt>Situação:</dt>
 	<dd>
