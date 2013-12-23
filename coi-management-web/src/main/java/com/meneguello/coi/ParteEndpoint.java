@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 
 import lombok.Data;
 
-import org.jooq.impl.Executor;
+import org.jooq.DSLContext;
  
 @Path("/partes")
 public class ParteEndpoint {
@@ -23,7 +23,7 @@ public class ParteEndpoint {
 	public List<PessoaParte> list() throws Exception {
 		return new Transaction<List<PessoaParte>>() {
 			@Override
-			protected List<PessoaParte> execute(Executor database) {
+			protected List<PessoaParte> execute(DSLContext database) {
 				ArrayList<PessoaParte> partes = new ArrayList<PessoaParte>();
 				for (Parte parte : Parte.values()) {
 					final PessoaParte pessoaParte = new PessoaParte();
@@ -41,7 +41,7 @@ public class ParteEndpoint {
 	public List<PessoaParte> listComissionadas(final @QueryParam("term") String term) throws Exception {
 		return new Transaction<List<PessoaParte>>() {
 			@Override
-			protected List<PessoaParte> execute(Executor database) {
+			protected List<PessoaParte> execute(DSLContext database) {
 				ArrayList<PessoaParte> partes = new ArrayList<PessoaParte>();
 				for (Parte parte : Parte.values()) {
 					if (isNotBlank(term) && !parte.getValue().toLowerCase().startsWith(term.toLowerCase())) {

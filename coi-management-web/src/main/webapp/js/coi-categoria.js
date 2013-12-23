@@ -140,7 +140,11 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		template: '#categoria_comissao_template',
 		tagName: 'tr',
 		ui: {
-			'input': 'input[type=text]'
+			'input': 'input[type=text]',
+			'actionRemove': 'button'
+		},
+		triggers: {
+			'click .coi-action-remove': 'remove'
 		},
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
@@ -154,6 +158,10 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			this.modelBinder().bind(this.model, this.$el, bindings);
 			
 			this.ui.input.input();
+			this.ui.actionRemove.button();
+		},
+		onRemove: function(e) {
+			this.model.collection.remove(this.model);
 		}
 	});
 	

@@ -26,7 +26,6 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.dataDeposito = $.datepicker.parseDate('yy-mm-dd', resp.dataDeposito);
 			resp.cliente = new Pessoa(resp.cliente, {parse: true});
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			return resp;

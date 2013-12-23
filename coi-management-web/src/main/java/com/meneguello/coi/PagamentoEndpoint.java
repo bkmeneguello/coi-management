@@ -1,14 +1,15 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Pagamento.PAGAMENTO;
 import static com.meneguello.coi.model.tables.PagamentoCategoria.PAGAMENTO_CATEGORIA;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +35,9 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
 import net.sf.jasperreports.engine.export.JRXlsExporter;
 
+import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.PagamentoCategoriaRecord;
 import com.meneguello.coi.model.tables.records.PagamentoRecord;
@@ -48,19 +49,19 @@ public class PagamentoEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<PagamentoList> list(final @QueryParam("tipo") String tipo, 
 			final @QueryParam("situacao") String situacao, 
-			final @QueryParam("start") Date start, 
-			final @QueryParam("end") Date end, 
+			final @QueryParam("start") Long start, 
+			final @QueryParam("end") Long end, 
 			final @QueryParam("page") Integer page) throws Exception {
 		
 		return new Transaction<List<PagamentoList>>() {
 			@Override
-			protected List<PagamentoList> execute(Executor database) {
+			protected List<PagamentoList> execute(DSLContext database) {
 				final ArrayList<PagamentoList> result = new ArrayList<PagamentoList>();
 				final Result<Record> resultRecord = database
 						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
 						.where(PAGAMENTO.TIPO.eq(TipoPagamento.fromValue(tipo).name()))
 						.and(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
-						.and(PAGAMENTO.VENCIMENTO.between(start, end))
+						.and(PAGAMENTO.VENCIMENTO.between(asSQLDate(new Date(start)), asSQLDate(new Date(end))))
 						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO, PAGAMENTO.VENCIMENTO, PAGAMENTO.DESCRICAO)
 						.limit(10).offset(10 * page)
 						.fetch();
@@ -84,7 +85,7 @@ public class PagamentoEndpoint {
 	public Pagamento read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Pagamento>() {
 			@Override
-			protected Pagamento execute(Executor database) {
+			protected Pagamento execute(DSLContext database) {
 				final Record record = database
 						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
 						.where(PAGAMENTO.ID.eq(id))
@@ -101,7 +102,7 @@ public class PagamentoEndpoint {
 	public Pagamento create(final Pagamento registro) throws Exception {
 		return new Transaction<Pagamento>(true) {
 			@Override
-			public Pagamento execute(Executor database) {
+			public Pagamento execute(DSLContext database) {
 				final PagamentoCategoriaRecord categoria = database
 						.selectFrom(PAGAMENTO_CATEGORIA)
 						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(registro.getCategoria()))
@@ -136,11 +137,11 @@ public class PagamentoEndpoint {
 							.values(
 									categoria.getValue(PAGAMENTO_CATEGORIA.ID),
 									tipoPagamento.name(),
-									vencimento,
+									asSQLDate(vencimento),
 									registro.getDescricao(),
 									registro.getValor(),
 									situacaoPagamento.name(),
-									registro.getPagamento() != null ? new Date(registro.getPagamento().getTime()) : null,
+									asSQLDate(registro.getPagamento()),
 									formaPagamento != null ? formaPagamento.name() : null,
 									registro.getBanco(),
 									registro.getAgencia(),
@@ -167,7 +168,7 @@ public class PagamentoEndpoint {
 	public Pagamento update(final @PathParam("id") Long id, final Pagamento registro) throws Exception {
 		return new Transaction<Pagamento>(true) {
 			@Override
-			public Pagamento execute(Executor database) {
+			public Pagamento execute(DSLContext database) {
 				final PagamentoCategoriaRecord categoria = database
 						.selectFrom(PAGAMENTO_CATEGORIA)
 						.where(PAGAMENTO_CATEGORIA.DESCRICAO.eq(registro.getCategoria()))
@@ -180,11 +181,11 @@ public class PagamentoEndpoint {
 				database.update(PAGAMENTO)
 						.set(PAGAMENTO.CATEGORIA_ID, categoria.getValue(PAGAMENTO_CATEGORIA.ID))
 						.set(PAGAMENTO.TIPO, tipoPagamento.name())
-						.set(PAGAMENTO.VENCIMENTO, new Date(registro.getVencimento().getTime()))
+						.set(PAGAMENTO.VENCIMENTO, asSQLDate(registro.getVencimento()))
 						.set(PAGAMENTO.DESCRICAO, registro.getDescricao())
 						.set(PAGAMENTO.VALOR, registro.getValor())
 						.set(PAGAMENTO.SITUACAO, situacaoPagamento.name())
-						.set(PAGAMENTO.PAGAMENTO_, registro.getPagamento())
+						.set(PAGAMENTO.PAGAMENTO_, asSQLDate(registro.getPagamento()))
 						.set(PAGAMENTO.FORMA_PAGAMENTO, formaPagamento != null ? formaPagamento.name() : null)
 						.set(PAGAMENTO.BANCO, registro.getBanco())
 						.set(PAGAMENTO.AGENCIA, registro.getAgencia())
@@ -203,108 +204,9 @@ public class PagamentoEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				database.delete(PAGAMENTO)
 						.where(PAGAMENTO.ID.eq(id))
-						.execute();
-				
-				return null;
-			}
-		}.execute();
-	}
-	
-	@GET
-	@Path("categorias")
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<Categoria> categorias() throws Exception {
-		return new Transaction<List<Categoria>>() {
-			@Override
-			protected List<Categoria> execute(Executor database) {
-				final ArrayList<Categoria> result = new ArrayList<Categoria>();
-				final Result<PagamentoCategoriaRecord> resultRecord = database
-						.selectFrom(PAGAMENTO_CATEGORIA)
-						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO)
-						.fetch();
-				for (Record record : resultRecord) {
-					final Categoria element = new Categoria();
-					element.setId(record.getValue(PAGAMENTO_CATEGORIA.ID));
-					element.setDescricao(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
-					result.add(element);
-				}
-				return result;
-			}
-		}.execute();
-	}
-	
-	@GET
-	@Path("categorias/{id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Categoria readCategoria(final @PathParam("id") Long id) throws Exception {
-		return new Transaction<Categoria>() {
-			@Override
-			protected Categoria execute(Executor database) {
-				final Record record = database
-						.selectFrom(PAGAMENTO_CATEGORIA)
-						.where(PAGAMENTO_CATEGORIA.ID.eq(id))
-						.fetchOne();
-				
-				final Categoria entidade = new Categoria();
-				entidade.setId(record.getValue(PAGAMENTO_CATEGORIA.ID));
-				entidade.setDescricao(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
-				return entidade;
-			}
-		}.execute();
-	}
-
-	@POST
-	@Path("categorias")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Categoria createCategoria(final Categoria registro) throws Exception {
-		return new Transaction<Categoria>(true) {
-			@Override
-			public Categoria execute(Executor database) {
-				final PagamentoCategoriaRecord record = database.insertInto(
-							PAGAMENTO_CATEGORIA,
-							PAGAMENTO_CATEGORIA.DESCRICAO
-						)
-						.values(registro.getDescricao())
-						.returning(PAGAMENTO_CATEGORIA.ID)
-						.fetchOne();
-				
-				registro.setId(record.getId());
-				
-				return registro;
-			}
-		}.execute();
-	}
-
-	@PUT
-	@Path("categorias/{id}")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Categoria updateCategoria(final @PathParam("id") Long id, final Categoria registro) throws Exception {
-		return new Transaction<Categoria>(true) {
-			@Override
-			public Categoria execute(Executor database) {
-				database.update(PAGAMENTO_CATEGORIA)
-						.set(PAGAMENTO_CATEGORIA.DESCRICAO, registro.getDescricao())
-						.where(PAGAMENTO_CATEGORIA.ID.eq(id))
-						.execute();
-				
-				return registro;
-			}
-		}.execute();
-	}
-
-	@DELETE
-	@Path("categorias/{id}")
-	public void deleteCategoria(final @PathParam("id") Long id) throws Exception {
-		new Transaction<Void>(true) {
-			@Override
-			protected Void execute(Executor database) {
-				database.delete(PAGAMENTO_CATEGORIA)
-						.where(PAGAMENTO_CATEGORIA.ID.eq(id))
 						.execute();
 				
 				return null;
@@ -317,19 +219,19 @@ public class PagamentoEndpoint {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response print(final @QueryParam("tipo") String tipo, 
 			final @QueryParam("situacao") String situacao, 
-			final @QueryParam("start") Date start, 
-			final @QueryParam("end") Date end) throws Exception {
+			final @QueryParam("start") Long start, 
+			final @QueryParam("end") Long end) throws Exception {
 		
 		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
 			@Override
-			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+			protected ByteArrayOutputStream executeFallible(DSLContext database) throws Exception {
 				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				
 				final Result<Record> pagamentoResult = database
 						.selectFrom(PAGAMENTO.join(PAGAMENTO_CATEGORIA).onKey())
 						.where(PAGAMENTO.TIPO.eq(TipoPagamento.fromValue(tipo).name()))
 						.and(PAGAMENTO.SITUACAO.eq(SituacaoPagamento.fromValue(situacao).name()))
-						.and(PAGAMENTO.VENCIMENTO.between(start, end))
+						.and(PAGAMENTO.VENCIMENTO.between(asSQLDate(new Date(start)), asSQLDate(new Date(end))))
 						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO, PAGAMENTO.VENCIMENTO, PAGAMENTO.DESCRICAO)
 						.fetch();
 				
@@ -382,8 +284,8 @@ public class PagamentoEndpoint {
 				
 				final Map<String, Object> parameters = new HashMap<>();
 				parameters.put("tipo", tipoPagamento);
-				parameters.put("inicio", start);
-				parameters.put("fim", end);
+				parameters.put("inicio", new Date(start));
+				parameters.put("fim", new Date(end));
 				final JasperReport jasperReport = JasperCompileManager
 						.compileReport(getClass().getClassLoader().getResourceAsStream("pagamentos.jrxml"));
 				final JasperPrint jasperPrint = JasperFillManager
@@ -399,6 +301,16 @@ public class PagamentoEndpoint {
 		}.execute();
 		
 		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=pagamentos.xls").build();
+	}
+	
+	@Path("categorias")
+	public Class<PagamentoCategoriaEndpoint> categorias() {
+		return PagamentoCategoriaEndpoint.class;
+	}
+	
+	@Path("fechamentos")
+	public Class<PagamentoFechamentoEndpoint> fechamentos() {
+		return PagamentoFechamentoEndpoint.class;
 	}
 
 	private Pagamento buildEntidade(final Record record) {

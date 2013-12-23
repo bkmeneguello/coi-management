@@ -1,5 +1,6 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asTimestamp;
 import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
@@ -11,10 +12,10 @@ import static java.util.Collections.sort;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,9 +39,9 @@ import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTime.Property;
+import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.ComissaoRecord;
 import com.meneguello.coi.model.tables.records.EntradaRecord;
@@ -69,7 +70,7 @@ public class ProducaoEndpoint {
 	public Response producao() throws Exception {
 		final ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
 			@Override
-			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+			protected ByteArrayOutputStream executeFallible(DSLContext database) throws Exception {
 				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				final DateTime now = DateTime.now().minusMonths(1);
 				
@@ -139,7 +140,7 @@ public class ProducaoEndpoint {
 	public Response analitico() throws Exception {
 		final ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
 			@Override
-			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+			protected ByteArrayOutputStream executeFallible(DSLContext database) throws Exception {
 				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				final DateTime now = DateTime.now().minusMonths(1);
 				
@@ -240,7 +241,7 @@ public class ProducaoEndpoint {
 				.multiply(comissaoPorcentagem.divide(ONE_HUNDRED));
 	}
 
-	private String fetchPessoaParteNome(Executor database, final Long entradaId, final Parte comissaoParte) {
+	private String fetchPessoaParteNome(DSLContext database, final Long entradaId, final Parte comissaoParte) {
 		return database.select(PESSOA.NOME)
 			.from(ENTRADA_PARTE.join(PESSOA).onKey())
 			.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
@@ -248,13 +249,13 @@ public class ProducaoEndpoint {
 			.fetchOne(PESSOA.NOME);
 	}
 
-	private Result<ComissaoRecord> fetchComissoes(Executor database, Long categoriaId) {
+	private Result<ComissaoRecord> fetchComissoes(DSLContext database, Long categoriaId) {
 		return database.selectFrom(COMISSAO)
 			.where(COMISSAO.CATEGORIA_ID.eq(categoriaId))
 			.fetch();
 	}
 
-	private Result<Record> fetchEntradaProdutos(Executor database, Long entradaId) {
+	private Result<Record> fetchEntradaProdutos(DSLContext database, Long entradaId) {
 		return database.selectFrom(ENTRADA_PRODUTO
 				.join(PRODUTO).onKey()
 				.join(CATEGORIA).onKey())
@@ -262,9 +263,9 @@ public class ProducaoEndpoint {
 			.fetch();
 	}
 
-	private Result<EntradaRecord> fetchEntradas(Executor database, Date firstDayOfMonth, Date lastDayOfMonth) {
+	private Result<EntradaRecord> fetchEntradas(DSLContext database, Date firstDayOfMonth, Date lastDayOfMonth) {
 		return database.selectFrom(ENTRADA)
-				.where(ENTRADA.DATA.between(firstDayOfMonth, lastDayOfMonth))
+				.where(ENTRADA.DATA.between(asTimestamp(firstDayOfMonth), asTimestamp(lastDayOfMonth)))
 				.orderBy(ENTRADA.DATA)
 				.fetch();
 	}

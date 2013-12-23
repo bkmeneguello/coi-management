@@ -8,10 +8,6 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 			categoria: null,
 			descricao: null,
 			valor: null
-		},
-		parse: function(resp, options) {
-			resp.vencimento = $.datepicker.formatDate('dd/mm/yy', $.datepicker.parseDate('yy-mm-dd', resp.vencimento));
-			return resp;
 		}
 	});
 
@@ -105,7 +101,8 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 						that.search();
 					}
 				});
-				this.startDate.val($.datepicker.formatDate('dd/mm/yy', new Date(new Date().setDate(1))));
+				var firstDayOfCurrentMonth = new Date(new Date().setDate(1));
+				this.startDate.val(formatDateStr(firstDayOfCurrentMonth));
 				div.append($('<dd/>').append(this.startDate));
 				this.startDate.input();
 			}
@@ -124,7 +121,8 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 						that.search();
 					}
 				});
-				this.endDate.val($.datepicker.formatDate('dd/mm/yy', new Date(new Date(new Date().setMonth(new Date().getMonth() + 1)).setDate(0))));
+				var lastDayOfCurrentMonth = new Date(new Date(new Date().setMonth(new Date().getMonth() + 1)).setDate(0));
+				this.endDate.val(formatDateStr(lastDayOfCurrentMonth));
 				div.append($('<dt/>').append(this.endDate));
 				this.endDate.input();
 			}
@@ -136,13 +134,14 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 			this.search();
 		},
 		_format: function($input) {
-			$input.val($.datepicker.formatDate('dd/mm/yy', this._parse($input)));
+			$input.val(formatDateStr(this._parse($input)));
 		},
 		_parse: function($input) {
-			return $.datepicker.parseDate('ddmmyy', $input.val().replace(/\//g, ''));
+			var date = parseDateStr($input.val());
+			return new Date(date[2], date[1] - 1, date[0], 0, 0, 0, 0);
 		},
 		_send: function($input) {
-			return $.datepicker.formatDate('yy-mm-dd', this._parse($input));
+			return this._parse($input).getTime();
 		},
 		search: function() {
 			this.collection.fetch({data: {tipo: this.tipo.val(), situacao: this.situacao.val(), start: this._send(this.startDate), end: this._send(this.endDate)}});
@@ -176,6 +175,10 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 				text: 'Categorias',
 				trigger: 'categorias'
 			},
+			'fechamentos': {
+				text: 'Fechamentos',
+				trigger: 'fechamentos'
+			},
 			'impressao': {
 				text: 'Impressão',
 				trigger: 'impressao'
@@ -192,6 +195,9 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onCategorias: function(e) {
 			Backbone.history.navigate('pagamento-categorias', true);
+		},
+		onFechamentos: function(e) {
+			Backbone.history.navigate('pagamento-fechamentos', true);
 		},
 		onImpressao: function(e) {
 			var startDate = this._search._send(this._search.startDate);

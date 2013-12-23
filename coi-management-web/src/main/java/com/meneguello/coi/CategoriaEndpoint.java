@@ -23,10 +23,10 @@ import javax.ws.rs.core.MediaType;
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jooq.DSLContext;
 import org.jooq.DeleteConditionStep;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
-import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.CategoriaRecord;
 import com.meneguello.coi.model.tables.records.ComissaoRecord;
@@ -40,7 +40,7 @@ public class CategoriaEndpoint {
 	public List<Categoria> list() throws Exception {
 		return new Transaction<List<Categoria>>() {
 			@Override
-			protected List<Categoria> execute(Executor database) {
+			protected List<Categoria> execute(DSLContext database) {
 				ArrayList<Categoria> categorias = new ArrayList<Categoria>();
 				Result<CategoriaRecord> resultCategoriaRecord = database.fetch(CATEGORIA);
 				for (CategoriaRecord categoriaRecord : resultCategoriaRecord) {
@@ -58,7 +58,7 @@ public class CategoriaEndpoint {
 	public List<Produto> listProdutos(final @QueryParam("term") String term) throws Exception {
 		return new Transaction<List<Produto>>() {
 			@Override
-			protected List<Produto> execute(Executor database) {
+			protected List<Produto> execute(DSLContext database) {
 				final ArrayList<Produto> produtos = new ArrayList<Produto>();
 				final SelectWhereStep<ProdutoRecord> select = database.selectFrom(PRODUTO);
 				if (StringUtils.isNotBlank(term)) {
@@ -81,7 +81,7 @@ public class CategoriaEndpoint {
 	public List<Produto> listProdutosEstocaveis(final @QueryParam("term") String term) throws Exception {
 		return new Transaction<List<Produto>>() {
 			@Override
-			protected List<Produto> execute(Executor database) {
+			protected List<Produto> execute(DSLContext database) {
 				final ArrayList<Produto> produtos = new ArrayList<Produto>();
 				final SelectWhereStep<ProdutoRecord> select = database.selectFrom(PRODUTO);
 				if (StringUtils.isNotBlank(term)) {
@@ -112,7 +112,7 @@ public class CategoriaEndpoint {
 	public Categoria read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Categoria>() {
 			@Override
-			protected Categoria execute(Executor database) {
+			protected Categoria execute(DSLContext database) {
 				final CategoriaRecord categoriaRecord = database.selectFrom(CATEGORIA)
 						.where(CATEGORIA.ID.eq(id))
 						.fetchOne();
@@ -160,7 +160,7 @@ public class CategoriaEndpoint {
 	public Categoria create(final Categoria categoria) throws Exception {
 		final Long categoriaId = new Transaction<Long>(true) {
 			@Override
-			public Long execute(Executor database) {
+			public Long execute(DSLContext database) {
 				final CategoriaRecord categoriaRecord = database.insertInto(
 							CATEGORIA, 
 							CATEGORIA.DESCRICAO
@@ -217,7 +217,7 @@ public class CategoriaEndpoint {
 	public Categoria update(final @PathParam("id") Long id, final Categoria categoria) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			public Void execute(Executor database) {
+			public Void execute(DSLContext database) {
 				database.update(CATEGORIA)
 						.set(CATEGORIA.DESCRICAO, trimToNull(categoria.getDescricao()))
 						.where(CATEGORIA.ID.eq(id))
@@ -258,8 +258,8 @@ public class CategoriaEndpoint {
 					produtoIds.add(produto.getId());
 				}
 				
-				DeleteConditionStep<ProdutoRecord> delete = database.delete(PRODUTO)
-					.where(PRODUTO.CATEGORIA_ID.eq(id));
+				final DeleteConditionStep<ProdutoRecord> delete = database.delete(PRODUTO)
+						.where(PRODUTO.CATEGORIA_ID.eq(id));
 				if (!produtoIds.isEmpty()) {
 					delete.and(PRODUTO.ID.notIn(produtoIds));
 				}
@@ -295,7 +295,7 @@ public class CategoriaEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				database.delete(PRODUTO)
 						.where(PRODUTO.CATEGORIA_ID.eq(id))
 						.execute();

@@ -34,7 +34,6 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.dataDeposito = resp.dataDeposito ? $.datepicker.parseDate('yy-mm-dd', resp.dataDeposito) : null;
 			resp.cliente = new Pessoa(resp.cliente, {parse: true});
 			return resp;
 		}
@@ -74,7 +73,6 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			resp.produtos = new Produtos(resp.produtos, {parse: true});
 			resp.partes = new Partes(resp.partes, {parse: true});
@@ -349,7 +347,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
-			bindings['data'].converter = dateConverter;
+			bindings['data'].converter = timestampConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.renderPaciente();

@@ -1,5 +1,6 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Laudo.LAUDO;
 import static com.meneguello.coi.model.tables.LaudoComparacao.LAUDO_COMPARACAO;
 import static com.meneguello.coi.model.tables.LaudoObservacao.LAUDO_OBSERVACAO;
@@ -10,10 +11,10 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +45,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
+import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.LaudoComparacaoRecord;
@@ -75,7 +76,7 @@ public class LaudoEndpoint {
 	public Response print(final @PathParam("id") Long id) throws Exception {
 		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
 			@Override
-			protected ByteArrayOutputStream executeFallible(Executor database) throws Exception {
+			protected ByteArrayOutputStream executeFallible(DSLContext database) throws Exception {
 				final LaudoRecord laudoRecord = database.fetchOne(LAUDO, LAUDO.ID.eq(id));
 				final PessoaRecord pacienteRecord = database.fetchOne(PESSOA, PESSOA.ID.eq(laudoRecord.getPacienteId()));
 				final PessoaRecord medicoRecord = database.fetchOne(PESSOA, PESSOA.ID.eq(laudoRecord.getMedicoId()));
@@ -146,7 +147,7 @@ public class LaudoEndpoint {
 				return null;
 			}
 
-			private Collection<Map<String, Object>> observacoes(Executor database, Long laudoId) {
+			private Collection<Map<String, Object>> observacoes(DSLContext database, Long laudoId) {
 				final Result<LaudoObservacaoRecord> observacoesResult = database
 						.selectFrom(LAUDO_OBSERVACAO)
 						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudoId))
@@ -163,7 +164,7 @@ public class LaudoEndpoint {
 				return observacoes;
 			}
 			
-			private Collection<Map<String, Object>> comparacoes(Executor database, Long laudoId) {
+			private Collection<Map<String, Object>> comparacoes(DSLContext database, Long laudoId) {
 				final Result<LaudoComparacaoRecord> comparacoesResult = database
 						.selectFrom(LAUDO_COMPARACAO)
 						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudoId))
@@ -189,7 +190,7 @@ public class LaudoEndpoint {
 	public List<LaudoList> list() throws Exception {
 		return new Transaction<List<LaudoList>>() {
 			@Override
-			protected List<LaudoList> execute(Executor database) {
+			protected List<LaudoList> execute(DSLContext database) {
 				final ArrayList<LaudoList> result = new ArrayList<LaudoList>();
 				final Result<Record> resultRecord = database.selectFrom(LAUDO
 							.join(PESSOA).onKey(Keys.LAUDO_FK_PACIENTE)
@@ -208,7 +209,7 @@ public class LaudoEndpoint {
 	public Laudo read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Laudo>() {
 			@Override
-			protected Laudo execute(Executor database) {
+			protected Laudo execute(DSLContext database) {
 				List<Field<?>> fields = new ArrayList<>(Arrays.asList(LAUDO.fields()));;
 				fields.add(PESSOA.DATA_NASCIMENTO);
 				fields.add(PESSOA.SEXO);
@@ -230,7 +231,7 @@ public class LaudoEndpoint {
 	public Laudo create(final Laudo laudo) throws Exception {
 		return new Transaction<Laudo>(true) {
 			@Override
-			public Laudo execute(Executor database) {
+			public Laudo execute(DSLContext database) {
 				final Pessoa paciente = laudo.getPaciente();
 				if (paciente.getId() == null) {
 					createPessoa(database, 
@@ -354,7 +355,7 @@ public class LaudoEndpoint {
 	public Laudo update(final @PathParam("id") Long id, final Laudo laudo) throws Exception {
 		return new Transaction<Laudo>(true) {
 			@Override
-			public Laudo execute(Executor database) {
+			public Laudo execute(DSLContext database) {
 				final Pessoa paciente = laudo.getPaciente();
 				if (paciente.getId() == null) {
 					createPessoa(database, 
@@ -455,7 +456,7 @@ public class LaudoEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				database.delete(LAUDO_OBSERVACAO)
 						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(id))
 						.execute();
@@ -473,7 +474,7 @@ public class LaudoEndpoint {
 		}.execute();
 	}
 
-	private LaudoList buildLaudoList(Executor database, Record record) {
+	private LaudoList buildLaudoList(DSLContext database, Record record) {
 		final LaudoList laudo = new LaudoList();
 		laudo.setId(record.getValue(LAUDO.ID));
 		laudo.setData(record.getValue(LAUDO.DATA));
@@ -482,7 +483,7 @@ public class LaudoEndpoint {
 		return laudo;
 	}
 	
-	private Laudo buildLaudo(Executor database, Record record) {
+	private Laudo buildLaudo(DSLContext database, Record record) {
 		final Laudo laudo = new Laudo();
 		laudo.setId(record.getValue(LAUDO.ID));
 		laudo.setData(record.getValue(LAUDO.DATA));
@@ -549,7 +550,7 @@ public class LaudoEndpoint {
 		return laudo;
 	}
 	
-	private Pessoa getPessoa(Executor database, final Long id) {
+	private Pessoa getPessoa(DSLContext database, final Long id) {
 		final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
 				.where(PESSOA.ID.eq(id))
 				.fetchOne();
@@ -562,7 +563,7 @@ public class LaudoEndpoint {
 		return pessoa;
 	}
 	
-	private void createPessoa(Executor database, Pessoa pessoa, Date dataNascimento, Sexo sexo) {
+	private void createPessoa(DSLContext database, Pessoa pessoa, Date dataNascimento, Sexo sexo) {
 		final PessoaRecord pessoaRecord = database.insertInto(
 				PESSOA, 
 				PESSOA.NOME,
@@ -575,7 +576,7 @@ public class LaudoEndpoint {
 					trimToNull(pessoa.getNome()),
 					pessoa.getPrefixo(),
 					pessoa.getCodigoNumerico(),
-					dataNascimento != null ? new Date(dataNascimento.getTime()) : null,
+					asSQLDate(dataNascimento),
 					sexo != null ? sexo.name() : null
 				)
 				.returning(PESSOA.ID)
@@ -584,9 +585,9 @@ public class LaudoEndpoint {
 		pessoa.setId(pessoaRecord.getId());
 	}
 	
-	private void updatePessoa(Executor database, Pessoa pessoa, Date dataNascimento, Sexo sexo) {
+	private void updatePessoa(DSLContext database, Pessoa pessoa, Date dataNascimento, Sexo sexo) {
 		database.update(PESSOA)
-				.set(PESSOA.DATA_NASCIMENTO, dataNascimento)
+				.set(PESSOA.DATA_NASCIMENTO, asSQLDate(dataNascimento))
 				.set(PESSOA.SEXO, sexo.name())
 				.where(PESSOA.ID.eq(pessoa.getId()))
 				.execute();

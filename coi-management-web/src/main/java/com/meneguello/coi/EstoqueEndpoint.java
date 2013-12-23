@@ -1,11 +1,12 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Movimento.MOVIMENTO;
 import static com.meneguello.coi.model.tables.MovimentoProduto.MOVIMENTO_PRODUTO;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
 
-import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -21,9 +22,9 @@ import javax.ws.rs.core.MediaType;
 import lombok.Data;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.tables.records.MovimentoRecord;
  
@@ -35,7 +36,7 @@ public class EstoqueEndpoint {
 	public List<EstoqueList> list() throws Exception {
 		return new Transaction<List<EstoqueList>>() {
 			@Override
-			protected List<EstoqueList> execute(Executor database) {
+			protected List<EstoqueList> execute(DSLContext database) {
 				final ArrayList<EstoqueList> result = new ArrayList<EstoqueList>();
 				final Result<MovimentoRecord> resultRecord = database.selectFrom(MOVIMENTO)
 						.orderBy(MOVIMENTO.DATA)
@@ -54,7 +55,7 @@ public class EstoqueEndpoint {
 	public Movimento read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Movimento>() {
 			@Override
-			protected Movimento execute(Executor database) {
+			protected Movimento execute(DSLContext database) {
 				final Record record = database.fetchOne(MOVIMENTO, MOVIMENTO.ID.eq(id));
 				return buildMovimento(database, record);
 			}
@@ -67,7 +68,7 @@ public class EstoqueEndpoint {
 	public Movimento create(final Movimento movimento) throws Exception {
 		return new Transaction<Movimento>(true) {
 			@Override
-			public Movimento execute(Executor database) {
+			public Movimento execute(DSLContext database) {
 				final TipoMovimento tipoMovimento = TipoMovimento.fromValue(movimento.getTipo());
 				
 				final MovimentoRecord record = database.insertInto(
@@ -76,7 +77,7 @@ public class EstoqueEndpoint {
 							MOVIMENTO.TIPO
 						)
 						.values(
-								new Date(movimento.getData().getTime()),
+								asSQLDate(movimento.getData()),
 								tipoMovimento.name()
 						)
 						.returning(MOVIMENTO.ID)
@@ -111,11 +112,11 @@ public class EstoqueEndpoint {
 	public Movimento update(final @PathParam("id") Long id, final Movimento movimento) throws Exception {
 		return new Transaction<Movimento>(true) {
 			@Override
-			public Movimento execute(Executor database) {
+			public Movimento execute(DSLContext database) {
 				final TipoMovimento tipoMovimento = TipoMovimento.fromValue(movimento.getTipo());
 				
 				database.update(MOVIMENTO)
-						.set(MOVIMENTO.DATA, new java.sql.Date(movimento.getData().getTime()))
+						.set(MOVIMENTO.DATA, asSQLDate(movimento.getData()))
 						.set(MOVIMENTO.TIPO, tipoMovimento.name())
 						.where(MOVIMENTO.ID.eq(id))
 						.execute();
@@ -149,7 +150,7 @@ public class EstoqueEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				database.delete(MOVIMENTO_PRODUTO)
 						.where(MOVIMENTO_PRODUTO.MOVIMENTO_ID.eq(id))
 						.execute();
@@ -163,7 +164,7 @@ public class EstoqueEndpoint {
 		}.execute();
 	}
 
-	private EstoqueList buildEstoqueList(Executor database, Record record) {
+	private EstoqueList buildEstoqueList(DSLContext database, Record record) {
 		final EstoqueList laudo = new EstoqueList();
 		laudo.setId(record.getValue(MOVIMENTO.ID));
 		laudo.setData(record.getValue(MOVIMENTO.DATA));
@@ -171,7 +172,7 @@ public class EstoqueEndpoint {
 		return laudo;
 	}
 	
-	private Movimento buildMovimento(Executor database, Record record) {
+	private Movimento buildMovimento(DSLContext database, Record record) {
 		final Movimento movimento = new Movimento();
 		movimento.setId(record.getValue(MOVIMENTO.ID));
 		movimento.setData(record.getValue(MOVIMENTO.DATA));

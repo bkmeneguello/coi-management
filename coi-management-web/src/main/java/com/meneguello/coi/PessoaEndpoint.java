@@ -30,11 +30,11 @@ import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.SelectWhereStep;
 import org.jooq.exception.DataAccessException;
-import org.jooq.impl.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +54,7 @@ public class PessoaEndpoint {
 	public Integer next(final @QueryParam("prefix") String prefix) throws Exception {
 		return new Transaction<Integer>() {
 			@Override
-			protected Integer execute(Executor database) {
+			protected Integer execute(DSLContext database) {
 				Record1<Integer> codigoRecord = database.select(PESSOA.CODIGO.max())
 						.from(PESSOA)
 						.where(PESSOA.PREFIXO.eq(prefix))
@@ -69,7 +69,7 @@ public class PessoaEndpoint {
 	public List<Pessoa> list(final @QueryParam("term") String term, final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<Pessoa>>() {
 			@Override
-			protected List<Pessoa> execute(Executor database) {
+			protected List<Pessoa> execute(DSLContext database) {
 				final ArrayList<Pessoa> pessoas = new ArrayList<Pessoa>();
 				final SelectWhereStep<PessoaRecord> select = database.selectFrom(PESSOA);
 				if (StringUtils.isNotBlank(term)) {
@@ -104,7 +104,7 @@ public class PessoaEndpoint {
 	public Pessoa read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Pessoa>() {
 			@Override
-			protected Pessoa execute(Executor database) {
+			protected Pessoa execute(DSLContext database) {
 				final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
 						.where(PESSOA.ID.eq(id))
 						.fetchOne();
@@ -120,7 +120,7 @@ public class PessoaEndpoint {
 	public Pessoa create(final Pessoa pessoa) throws Exception {
 		final Long id = new Transaction<Long>(true) {
 			@Override
-			public Long execute(Executor database) {
+			public Long execute(DSLContext database) {
 				final PessoaRecord pessoaRecord = database.insertInto(
 						PESSOA, 
 						PESSOA.NOME,
@@ -148,7 +148,7 @@ public class PessoaEndpoint {
 	public void fileImport(final @FormDataParam("file") InputStream dados) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			public Void execute(Executor database) {
+			public Void execute(DSLContext database) {
 			try (final CSVReader csvReader = new CSVReader(new InputStreamReader(dados, "ISO-8859-1"))) {
 					String[] columns = null;
 					do {
@@ -197,7 +197,7 @@ public class PessoaEndpoint {
 	public Pessoa update(final @PathParam("id") Long id, final Pessoa pessoa) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			public Void execute(Executor database) {
+			public Void execute(DSLContext database) {
 				database.update(PESSOA)
 						.set(PESSOA.NOME, trimToNull(pessoa.getNome()))
 						.set(PESSOA.PREFIXO, pessoa.getPrefixo())
@@ -217,7 +217,7 @@ public class PessoaEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				database.delete(PESSOA)
 						.where(PESSOA.ID.eq(id))
 						.execute();

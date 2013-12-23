@@ -36,6 +36,10 @@
 	<script type="text/javascript" src="/js/coi-movimento.js"></script>
 	<script type="text/javascript" src="/js/coi-pagamentos.js"></script>
 	<script type="text/javascript" src="/js/coi-pagamento.js"></script>
+	<script type="text/javascript" src="/js/coi-pagamentos-categorias.js"></script>
+	<script type="text/javascript" src="/js/coi-pagamentos-categoria.js"></script>
+	<script type="text/javascript" src="/js/coi-pagamentos-fechamentos.js"></script>
+	<script type="text/javascript" src="/js/coi-pagamentos-fechamento.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	
 	<script type="text/template" id="coi_view_text_template">
@@ -157,6 +161,9 @@
 <td class="coi-row-item">
 	<input type="text" name="porcentagem" placeholder=" porcentagem"/>
 </td>
+<td class="coi-row-item">
+	<button class="coi-action-remove">Remover</button>
+</td>
 	</script>
 	<script type="text/template" id="categoria_produtos_row_template">
 <td><%= codigo %></td>
@@ -212,7 +219,7 @@
 </footer>
 	</script>
 	<script type="text/template" id="entrada_row_template">
-<td><%= data %></td>
+<td><%= timestampConverter('ModelToView', data) %></td>
 <td><%= cliente %></td>
 <td><%= decimalConverter('ModelToView', valor) %></td>
 <td><%= tipo %></td>
@@ -317,7 +324,7 @@
 	</script>
 	<script type="text/template" id="cheque_row_template">
 <td><%= paciente %></td>
-<td><%= data %></td>
+<td><%= dateConverter('ModelToView', data) %></td>
 <td><%= decimalConverter('ModelToView', valor) %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
@@ -343,7 +350,7 @@
 	</script>
 	<script type="text/template" id="laudo_row_template">
 <td><%= paciente %></td>
-<td><%= data %></td>
+<td><%= dateConverter('ModelToView', data) %></td>
 <td><%= status %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
@@ -569,7 +576,7 @@ Fêmur total - é utilizado a DMO
 </dl>
 	</script>
 	<script type="text/template" id="estoque_row_template">
-<td><%= data %></td>
+<td><%= dateConverter('ModelToView', data) %></td>
 <td><%= tipo %></td>
 <td>
 	<button class="coi-action-update">Editar</button>
@@ -622,7 +629,7 @@ Fêmur total - é utilizado a DMO
 </td>
 	</script>
 	<script type="text/template" id="pagamento_row_template">
-<td><%= vencimento %></td>
+<td><%= dateConverter('ModelToView', vencimento) %></td>
 <td><%= categoria %></td>
 <td><%= descricao %></td>
 <td><%= decimalConverter('ModelToView', valor) %></td>
@@ -713,6 +720,44 @@ Fêmur total - é utilizado a DMO
 	<button class="coi-action-cancel">Cancelar</button>
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
+	</script>
+	<script type="text/template" id="pagamento_fechamento_row_template">
+<td style="text-align: center"><%= timestampConverter('ModelToView', data) %></td>
+<td style="text-align: center"><%= moneyConverter('ModelToView', total) %></td>
+<td style="text-align: center">
+	<button class="coi-action-update">Editar</button>
+	<button class="coi-action-delete">Remover</button>
+</td>
+	</script>
+	<script type="text/template" id="pagamento_fechamento_template">
+<header>Fechamento de Caixa</header>
+<div data-attribute="data" class="coi-view-text" data-label="Data:" data-required="true"/>
+<div data-attribute="valorDinheiro" class="coi-view-text" data-label="Dinheiro:" data-required="true"/>
+<div data-attribute="valorCartao" class="coi-view-text" data-label="Cartão:" data-required="true"/>
+<div data-attribute="valorCheque" class="coi-view-text" data-label="Cheque:" data-required="true"/>
+<div id="saidas"/>
+<footer>
+	<button class="coi-action-cancel">Cancelar</button>
+	<button class="coi-action-confirm">Confirmar</button>
+</footer>
+	</script>
+	<script type="text/template" id="fechamento_saidas_template">
+<dt>Saídas:</dt>
+<dd>
+	<button class="coi-action-include">Adicionar</button>
+	<table/>
+</dd>
+	</script>
+	<script type="text/template" id="fechamento_saidas_row_template">
+<td class="coi-row-item">
+	<input type="text" name="descricao" placeholder=" descrição"/>
+</td>
+<td class="coi-row-item">
+	<input type="text" name="valor" placeholder=" valor"/>
+</td>
+<td class="coi-row-item">
+	<button class="coi-action-remove">Remover</button>
+</td>
 	</script>
 </head>
 <body>

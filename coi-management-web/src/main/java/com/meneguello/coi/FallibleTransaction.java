@@ -1,6 +1,6 @@
 package com.meneguello.coi;
 
-import org.jooq.impl.Executor;
+import org.jooq.DSLContext;
 
 public abstract class FallibleTransaction<T> extends Transaction<T> {
 	
@@ -13,7 +13,7 @@ public abstract class FallibleTransaction<T> extends Transaction<T> {
 	}
 
 	@Override
-	protected T execute(Executor database) {
+	protected T execute(DSLContext database) {
 		try {
 			return executeFallible(database);
 		} catch(Exception e) {
@@ -21,6 +21,6 @@ public abstract class FallibleTransaction<T> extends Transaction<T> {
 		}
 	}
 	
-	protected abstract T executeFallible(Executor database) throws Exception;
+	protected abstract T executeFallible(DSLContext database) throws Exception;
 
 }

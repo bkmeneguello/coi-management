@@ -7,10 +7,6 @@ COI.module("Estoque", function(Module, COI, Backbone, Marionette, $, _) {
 			data: null,
 			produto: null,
 			quantidade: null
-		},
-		parse: function(resp, options) {
-			resp.data = $.datepicker.formatDate('dd/mm/yy', $.datepicker.parseDate('yy-mm-dd', resp.data));
-			return resp;
 		}
 	});
 

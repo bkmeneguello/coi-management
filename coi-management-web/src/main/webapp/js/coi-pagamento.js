@@ -18,24 +18,7 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			conta: null,
 			cheque: null,
 			projecao: 1
-		},
-		parse: function(resp, options) {
-			resp.vencimento = $.datepicker.parseDate('yy-mm-dd', resp.vencimento);
-			resp.pagamento = resp.pagamento ? $.datepicker.parseDate('yy-mm-dd', resp.pagamento) : null;
-			return resp;
 		}
-	});
-	
-	var Categoria = Backbone.Model.extend({
-		urlRoot: '/rest/pagamentos/categorias',
-		defaults: {
-			descricao: null
-		}
-	});
-	
-	var Categorias = Backbone.Collection.extend({
-		url: '/rest/pagamentos/categorias',
-		model: Categoria
 	});
 	
 	var CategoriaView = Marionette.Layout.extend({
@@ -148,90 +131,12 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var PagamentoCategoriasRowView = COI.ActionRowView.extend({
-		template: '#pagamento_categoria_row_template',
-		onUpdate: function(e) {
-			Backbone.history.navigate('pagamento-categoria/' + this.model.get('id'), true);
-		},
-		onDelete: function(e) {
-			_promptDelete(function() {
-				e.model.destroy({
-					wait: true,
-					success: function(model, response, options) {
-						_notifyDelete();
-					},
-					error: function(model, xhr, options) {
-						_notifyDeleteFailure();
-					}
-				});
-			});
-		}
-	});
-	
-	var PagamentoCategoriasView = COI.GridView.extend({
-		itemView: PagamentoCategoriasRowView,
-		templateHelpers: {
-			header: 'Categorias',
-			columns: {
-				descricao: 'Descrição'
-			}
-		},
-		initialize: function() {
-			this.collection.fetch();
-		},
-		onCancel: function(e) {
-			Backbone.history.navigate('pagamentos', true);
-		},
-		onCreate: function(e) {
-			Backbone.history.navigate('pagamento-categoria', true);
-		}
-	});
-	
-	var PagamentoCategoriaView = COI.FormView.extend({
-		template: '#pagamento_categoria_template',
-		initialize: function() {
-			if (!this.model.isNew()) {
-				this.model.fetch();
-			}
-		},
-		onRender: function() {
-			this.modelBinder().bind(this.model, this.el);
-		},
-		onShow: function() {
-			this.$el.find('input').first().focus();
-		},
-		onCancel: function(e) {
-			Backbone.history.navigate('pagamento-categorias', true);
-		},
-		onConfirm: function(e) {
-			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: this.onComplete, error: this.onError});
-			}
-		},
-		onComplete: function(e) {
-			Backbone.history.navigate('pagamento-categorias', true);
-			_notifySuccess();
-		},
-		onError: function(model, resp, options) {
-			_notifyError(resp.responseText);
-		}
-	});
-	
 	Module.on('start', function(options) {
 		COI.router.route('pagamento', function() {
 			COI.body.show(new View({model: new Pagamento()}));
 		});
 		COI.router.route('pagamento(/:id)', function(id) {
 			COI.body.show(new View({model: new Pagamento({id: id})}));
-		});
-		COI.router.route('pagamento-categorias', function() {
-			COI.body.show(new PagamentoCategoriasView({collection: new Categorias()}));
-		});
-		COI.router.route('pagamento-categoria', function() {
-			COI.body.show(new PagamentoCategoriaView({model: new Categoria()}));
-		});
-		COI.router.route('pagamento-categoria(/:id)', function(id) {
-			COI.body.show(new PagamentoCategoriaView({model: new Categoria({id: id})}));
 		});
 	});
 });

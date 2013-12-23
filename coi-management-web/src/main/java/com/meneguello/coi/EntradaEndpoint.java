@@ -1,5 +1,7 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asSQLDate;
+import static com.meneguello.coi.Utils.asTimestamp;
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
 import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
 import static com.meneguello.coi.model.tables.EntradaCheque.ENTRADA_CHEQUE;
@@ -11,11 +13,12 @@ import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.jooq.impl.DSL.sum;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -33,11 +36,10 @@ import javax.ws.rs.core.MediaType;
 import lombok.Data;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.Executor;
-import org.jooq.impl.Factory;
 
 import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
@@ -63,14 +65,14 @@ public class EntradaEndpoint {
 	public List<EntradaList> list() throws Exception {
 		return new Transaction<List<EntradaList>>() {
 			@Override
-			protected List<EntradaList> execute(Executor database) {
+			protected List<EntradaList> execute(DSLContext database) {
 				final ArrayList<EntradaList> result = new ArrayList<EntradaList>();
 				final List<Field<?>> fields = new ArrayList<>();
 				fields.addAll(Arrays.asList(ENTRADA.fields()));				
 				fields.addAll(Arrays.asList(PESSOA.fields()));				
 				fields.add(database.select(
-							Factory.sum(ENTRADA_PRODUTO.VALOR.mul(ENTRADA_PRODUTO.QUANTIDADE))
-								.sub(Factory.sum(ENTRADA_PRODUTO.DESCONTO)))
+							sum(ENTRADA_PRODUTO.VALOR.mul(ENTRADA_PRODUTO.QUANTIDADE))
+								.sub(sum(ENTRADA_PRODUTO.DESCONTO)))
 						.from(ENTRADA_PRODUTO)
 						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(ENTRADA.ID))
 						.asField("VALOR"));
@@ -91,7 +93,7 @@ public class EntradaEndpoint {
 	public Entrada read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Entrada>() {
 			@Override
-			protected Entrada execute(Executor database) {
+			protected Entrada execute(DSLContext database) {
 				final Record record = database.selectFrom(ENTRADA
 							.join(PESSOA).onKey()
 						)
@@ -138,7 +140,7 @@ public class EntradaEndpoint {
 	public Entrada create(final Entrada entrada) throws Exception {
 		return new Transaction<Entrada>(true) {
 			@Override
-			public Entrada execute(Executor database) {
+			public Entrada execute(DSLContext database) {
 				final Pessoa paciente = entrada.getPaciente();
 				if (paciente.getId() == null) {
 					createPessoa(database, paciente);
@@ -153,7 +155,7 @@ public class EntradaEndpoint {
 							ENTRADA.MEIO_PAGAMENTO
 						)
 						.values(
-								new Date(entrada.getData().getTime()),
+								asTimestamp(entrada.getData()),
 								paciente.getId(),
 								meioPagamento.name()
 						)
@@ -196,7 +198,7 @@ public class EntradaEndpoint {
 	public Entrada update(final @PathParam("id") Long id, final Entrada entrada) throws Exception {
 		return new Transaction<Entrada>(true) {
 			@Override
-			public Entrada execute(Executor database) {
+			public Entrada execute(DSLContext database) {
 				final Pessoa paciente = entrada.getPaciente();
 				if (paciente.getId() == null && paciente.getCodigo() != null) {
 					createPessoa(database, paciente);
@@ -205,7 +207,7 @@ public class EntradaEndpoint {
 				final MeioPagamento meioPagamento = MeioPagamento.fromValue(entrada.getTipo());
 				
 				database.update(ENTRADA)
-						.set(ENTRADA.DATA, new Date(entrada.getData().getTime()))
+						.set(ENTRADA.DATA, asTimestamp(entrada.getData()))
 						.set(ENTRADA.PACIENTE_ID, paciente.getId())
 						.set(ENTRADA.MEIO_PAGAMENTO, meioPagamento.name())
 						.where(ENTRADA.ID.eq(id))
@@ -251,7 +253,7 @@ public class EntradaEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				deleteProdutos(database, id);
 				deletePartes(database, id);
 				deleteEntradaCheque(database, id);
@@ -264,17 +266,17 @@ public class EntradaEndpoint {
 		}.execute();
 	}
 
-	private EntradaList buildEntradaList(Executor database, Record record) {
+	private EntradaList buildEntradaList(DSLContext database, Record record) {
 		final EntradaList entrada = new EntradaList();
 		entrada.setId(record.getValue(ENTRADA.ID));
-		entrada.setData(record.getValue(ENTRADA.DATA));
+		entrada.setData(new java.util.Date(record.getValue(ENTRADA.DATA).getTime()));
 		entrada.setCliente(record.getValue(PESSOA.NOME));
 		entrada.setValor((BigDecimal) record.getValue("VALOR"));
 		entrada.setTipo(MeioPagamento.valueOf(record.getValue(ENTRADA.MEIO_PAGAMENTO)).getValue());
 		return entrada;
 	}
 	
-	private Entrada buildEntrada(Executor database, Record record) {
+	private Entrada buildEntrada(DSLContext database, Record record) {
 		final Entrada entrada = new Entrada();
 		entrada.setId(record.getValue(ENTRADA.ID));
 		entrada.setData(record.getValue(ENTRADA.DATA));
@@ -283,7 +285,7 @@ public class EntradaEndpoint {
 		return entrada;
 	}
 	
-	private Pessoa getPessoa(Executor database, final Long id) {
+	private Pessoa getPessoa(DSLContext database, final Long id) {
 		final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
 				.where(PESSOA.ID.eq(id))
 				.fetchOne();
@@ -318,7 +320,7 @@ public class EntradaEndpoint {
 		return cheque;
 	}
 
-	private void createCheque(Executor database, Cheque cheque, Pessoa emissor, Pessoa beneficiario) {
+	private void createCheque(DSLContext database, Cheque cheque, Pessoa emissor, Pessoa beneficiario) {
 		final ChequeRecord record = database.insertInto(
 				CHEQUE, 
 				CHEQUE.NUMERO,
@@ -339,7 +341,7 @@ public class EntradaEndpoint {
 					trimToNull(cheque.getBanco()),
 					trimToNull(cheque.getDocumento()),
 					cheque.getValor(),
-					new Date(cheque.getDataDeposito().getTime()),
+					asSQLDate(cheque.getDataDeposito()),
 					trimToNull(cheque.getObservacao()),
 					emissor.getId(),
 					beneficiario.getId()
@@ -349,7 +351,7 @@ public class EntradaEndpoint {
 		cheque.setId(record.getId());
 	}
 	
-	private void createPessoa(Executor database, Pessoa pessoa) {
+	private void createPessoa(DSLContext database, Pessoa pessoa) {
 		final PessoaRecord pessoaRecord = database.insertInto(
 				PESSOA, 
 				PESSOA.NOME,
@@ -367,7 +369,7 @@ public class EntradaEndpoint {
 		pessoa.setId(pessoaRecord.getId());
 	}
 	
-	private void createParte(Executor database, Entrada entrada, PessoaParte pessoaParte) {
+	private void createParte(DSLContext database, Entrada entrada, PessoaParte pessoaParte) {
 		final Parte parte = Parte.fromValue(pessoaParte.getParte());
 		final Pessoa pessoa = pessoaParte.getPessoa();
 		if (pessoa.getId() == null && pessoa.getCodigo() != null) {
@@ -386,19 +388,19 @@ public class EntradaEndpoint {
 			.execute();
 	}
 	
-	private void deleteProdutos(Executor database, Long entradaId) {
+	private void deleteProdutos(DSLContext database, Long entradaId) {
 		database.delete(ENTRADA_PRODUTO)
 				.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(entradaId))
 				.execute();
 	}
 
-	private void deletePartes(Executor database, Long entradaId) {
+	private void deletePartes(DSLContext database, Long entradaId) {
 		database.delete(ENTRADA_PARTE)
 			.where(ENTRADA_PARTE.ENTRADA_ID.eq(entradaId))
 			.execute();
 	}
 
-	private void createProduto(Executor database, Entrada entrada, Produto produto) {
+	private void createProduto(DSLContext database, Entrada entrada, Produto produto) {
 		database.insertInto(ENTRADA_PRODUTO, 
 					ENTRADA_PRODUTO.ENTRADA_ID, 
 					ENTRADA_PRODUTO.PRODUTO_ID,
@@ -435,7 +437,7 @@ public class EntradaEndpoint {
 		return parte;
 	}
 
-	private void createEntradaCheque(Executor database, final Entrada entrada, Cheque cheque) {
+	private void createEntradaCheque(DSLContext database, final Entrada entrada, Cheque cheque) {
 		database.insertInto(ENTRADA_CHEQUE,
 				ENTRADA_CHEQUE.ENTRADA_ID,
 				ENTRADA_CHEQUE.CHEQUE_ID
@@ -447,7 +449,7 @@ public class EntradaEndpoint {
 			.execute();
 	}
 
-	private void deleteEntradaCheque(Executor database, Long entradaId) {
+	private void deleteEntradaCheque(DSLContext database, Long entradaId) {
 		database.delete(ENTRADA_CHEQUE)
 			.where(ENTRADA_CHEQUE.ENTRADA_ID.eq(entradaId))
 			.execute();
@@ -456,7 +458,7 @@ public class EntradaEndpoint {
 	@Data
 	private static class EntradaList {
 		private Long id;
-		private Date data;
+		private java.util.Date data;
 		private String cliente;
 		private BigDecimal valor;
 		private String tipo;

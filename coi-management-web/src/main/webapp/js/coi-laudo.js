@@ -67,10 +67,8 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			resp.medico = new Pessoa(resp.medico, {parse: true});
-			resp.dataNascimento = resp.dataNascimento ? $.datepicker.parseDate('yy-mm-dd', resp.dataNascimento) : null;
 			resp.observacoes = new Observacoes(resp.observacoes, {parse: true});
 			resp.comparacoes = new Comparacoes(resp.comparacoes, {parse: true});
 			return resp;

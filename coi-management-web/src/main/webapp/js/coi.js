@@ -122,14 +122,72 @@ function dateConverter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':
 		try {
-			return $.datepicker.formatDate('dd/mm/yy', value);
+			if (!value) return value;
+			return formatDateStr(new Date(value));
 		} catch (e) {}
 	case 'ViewToModel':
 		try {
-			return $.datepicker.parseDate('ddmmyy', value.replace(/\//g, ''));
+			var date = parseDateStr(value);
+			return new Date(date[2], date[1] - 1, date[0], 0, 0, 0, 0).getTime();
 		} catch (e) {}
 	}
 };
+
+function timestampConverter(direction, value) {
+	switch(direction) {
+	case 'ModelToView':
+		try {
+			if (!value) return value;
+			var date = new Date(value);
+			return formatDateStr(date) + ' ' + formatTimeStr(date);
+		} catch (e) {}
+	case 'ViewToModel':
+		try {
+			var date_time = value.split(' ');
+			var date = parseDateStr(date_time[0]);
+			var time = date_time.length > 1 ? date_time[1].split(':') : [0, 0];
+			time[0] = parseIntSafe(time[0]);
+			time[1] = parseIntSafe(time[1]);
+			return new Date(date[2], date[1] - 1, date[0], time[0], time[1], 0, 0).getTime();
+		} catch (e) {}
+	}
+}
+
+function formatDateStr(date) {
+	return pad(date.getDate(), 2) + '/' + pad(date.getMonth() + 1, 2) + '/' + date.getFullYear();
+}
+
+function formatTimeStr(date) {
+	return pad(date.getHours(), 2) + ":" + pad(date.getMinutes(), 2);
+}
+
+function parseDateStr(value) {
+	var date = value.split('/');
+	if (date.length < 3) {
+		var d = value.replace('/', '');
+		date = [d.substr(0,2), d.substr(2,2), d.substr(4)];
+	}
+	date[2] = parseIntSafe(date[2]);
+	if (date[2] < 30) {
+		date[2] += 2000;
+	} else if (date[2] < 100) {
+		date[2] += 1900;
+	}
+	date[1] = parseIntSafe(date[1]);
+	date[0] = parseIntSafe(date[0]);
+	return date;
+};
+
+function parseIntSafe(value) {
+	if (!value) return 0;
+	return parseInt(value);
+};
+
+function pad(n, width, z) {
+	z = z || '0';
+	n = n + '';
+	return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+}
 
 var COI = new Backbone.Marionette.Application();
 

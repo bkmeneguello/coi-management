@@ -25,7 +25,6 @@ COI.module("Movimento", function(Module, COI, Backbone, Marionette, $, _) {
 			};
 		},
 		parse: function(resp, options) {
-			resp.data = $.datepicker.parseDate('yy-mm-dd', resp.data);
 			resp.produtos = new Produtos(resp.produtos, {parse: true});
 			return resp;
 		},

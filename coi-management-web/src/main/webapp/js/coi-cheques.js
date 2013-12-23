@@ -7,10 +7,6 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 			valor: null,
 			data: null,
 			paciente: null
-		},
-		parse: function(resp, options) {
-			resp.data = $.datepicker.formatDate('dd/mm/yy', $.datepicker.parseDate('yy-mm-dd', resp.data));
-			return resp;
 		}
 	});
 

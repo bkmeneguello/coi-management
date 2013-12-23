@@ -1,5 +1,7 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asDate;
+import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static javax.ws.rs.core.Response.status;
@@ -7,9 +9,10 @@ import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;
@@ -26,9 +29,9 @@ import javax.ws.rs.core.MediaType;
 import lombok.Data;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.Executor;
 
 import com.meneguello.coi.model.Keys;
 import com.meneguello.coi.model.tables.records.ChequeRecord;
@@ -42,7 +45,7 @@ public class ChequeEndpoint {
 	public List<ChequeList> list() throws Exception {
 		return new Transaction<List<ChequeList>>() {
 			@Override
-			protected List<ChequeList> execute(Executor database) {
+			protected List<ChequeList> execute(DSLContext database) {
 				final ArrayList<ChequeList> result = new ArrayList<>();
 				final Result<Record> resultRecord = database.selectFrom(CHEQUE
 						.join(PESSOA).onKey(Keys.CHEQUE_FK_PACIENTE))
@@ -59,12 +62,12 @@ public class ChequeEndpoint {
 		final ChequeList cheque = new ChequeList();
 		cheque.setId(record.getValue(CHEQUE.ID));
 		cheque.setValor(record.getValue(CHEQUE.VALOR));
-		cheque.setData(new java.sql.Date(record.getValue(CHEQUE.DATA_DEPOSITO).getTime()));
+		cheque.setData(record.getValue(CHEQUE.DATA_DEPOSITO));
 		cheque.setPaciente(record.getValue(PESSOA.NOME));
 		return cheque;
 	}
 	
-	private Cheque buildCheque(Executor database, ChequeRecord record) {
+	private Cheque buildCheque(DSLContext database, ChequeRecord record) {
 		final Cheque cheque = new Cheque();
 		cheque.setId(record.getId());
 		cheque.setNumero(record.getNumero());
@@ -80,7 +83,7 @@ public class ChequeEndpoint {
 		return cheque;
 	}
 	
-	private Pessoa getPessoa(Executor database, final Long id) {
+	private Pessoa getPessoa(DSLContext database, final Long id) {
 		final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
 				.where(PESSOA.ID.eq(id))
 				.fetchOne();
@@ -98,7 +101,7 @@ public class ChequeEndpoint {
 	public Cheque read(final @PathParam("id") Long id) throws Exception {
 		return new Transaction<Cheque>() {
 			@Override
-			protected Cheque execute(Executor database) {
+			protected Cheque execute(DSLContext database) {
 				final ChequeRecord record = database.selectFrom(CHEQUE)
 						.where(CHEQUE.ID.eq(id))
 						.fetchOne();
@@ -113,7 +116,7 @@ public class ChequeEndpoint {
 	public Cheque create(final Cheque cheque) throws Exception {
 		return new Transaction<Cheque>(true) {
 			@Override
-			public Cheque execute(Executor database) {
+			public Cheque execute(DSLContext database) {
 				
 				final Pessoa cliente = cheque.getCliente();
 				if (cliente.getId() == null) {
@@ -145,7 +148,7 @@ public class ChequeEndpoint {
 							trimToNull(cheque.getBanco()),
 							trimToNull(cheque.getDocumento()),
 							cheque.getValor(),
-							new java.sql.Date(cheque.getDataDeposito().getTime()),
+							asSQLDate(cheque.getDataDeposito()),
 							trimToNull(cheque.getObservacao()),
 							cliente.getId(),
 							paciente.getId()
@@ -159,7 +162,7 @@ public class ChequeEndpoint {
 		}.execute();
 	}
 	
-	private void createPessoa(Executor database, final Pessoa pessoa) {
+	private void createPessoa(DSLContext database, final Pessoa pessoa) {
 		final PessoaRecord pessoaRecord = database.insertInto(
 				PESSOA, 
 				PESSOA.NOME,
@@ -184,7 +187,7 @@ public class ChequeEndpoint {
 	public Cheque update(final @PathParam("id") Long id, final Cheque cheque) throws Exception {
 		return new Transaction<Cheque>(true) {
 			@Override
-			public Cheque execute(Executor database) {
+			public Cheque execute(DSLContext database) {
 				final Pessoa cliente = cheque.getCliente();
 				if (cliente.getId() == null) {
 					createPessoa(database, cliente);
@@ -202,7 +205,7 @@ public class ChequeEndpoint {
 						.set(CHEQUE.BANCO, trimToNull(cheque.getBanco()))
 						.set(CHEQUE.DOCUMENTO, trimToNull(cheque.getDocumento()))
 						.set(CHEQUE.VALOR, cheque.getValor())
-						.set(CHEQUE.DATA_DEPOSITO, new java.sql.Date(cheque.getDataDeposito().getTime()))
+						.set(CHEQUE.DATA_DEPOSITO, asSQLDate(cheque.getDataDeposito()))
 						.set(CHEQUE.OBSERVACAO, trimToNull(cheque.getObservacao()))
 						.set(CHEQUE.CLIENTE_ID, cheque.getCliente().getId())
 						.set(CHEQUE.PACIENTE_ID, cheque.getPaciente().getId())
@@ -218,7 +221,7 @@ public class ChequeEndpoint {
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
-			protected Void execute(Executor database) {
+			protected Void execute(DSLContext database) {
 				database.delete(CHEQUE)
 						.where(CHEQUE.ID.eq(id))
 						.execute();

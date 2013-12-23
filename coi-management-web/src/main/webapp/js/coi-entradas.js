@@ -8,10 +8,6 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			paciente: null,
 			valor: null,
 			tipo: null
-		},
-		parse: function(resp, options) {
-			resp.data = $.datepicker.formatDate('dd/mm/yy', $.datepicker.parseDate('yy-mm-dd', resp.data));
-			return resp;
 		}
 	});
 

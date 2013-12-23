@@ -7,9 +7,10 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
-import org.jooq.impl.Executor;
+import org.jooq.impl.DSL;
 
 
 public abstract class Transaction<T> {
@@ -24,13 +25,13 @@ public abstract class Transaction<T> {
 		this.atomic = atomic;
 	}
 	
-	protected abstract T execute(Executor database);
+	protected abstract T execute(DSLContext database);
 	
 	public T execute() throws DataAccessException {
 		try(Connection connection = openConnection()) {
 			try {
 				connection.setAutoCommit(!atomic);
-				final T result = execute(new Executor(connection, SQLDialect.HSQLDB));
+				final T result = execute(DSL.using(connection, SQLDialect.HSQLDB));
 				connection.setAutoCommit(true);
 				return result;
 			} catch(Exception e) {
