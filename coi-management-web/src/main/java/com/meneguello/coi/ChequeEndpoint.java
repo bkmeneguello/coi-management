@@ -1,6 +1,5 @@
 package com.meneguello.coi;
 
-import static com.meneguello.coi.Utils.asDate;
 import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Cheque.CHEQUE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
@@ -12,7 +11,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.Consumes;

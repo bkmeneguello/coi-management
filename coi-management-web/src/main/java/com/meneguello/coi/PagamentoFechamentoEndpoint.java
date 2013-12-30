@@ -1,15 +1,22 @@
 package com.meneguello.coi;
 
 import static com.meneguello.coi.Utils.asTimestamp;
+import static com.meneguello.coi.model.tables.Entrada.ENTRADA;
+import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.Fechamento.FECHAMENTO;
 import static com.meneguello.coi.model.tables.FechamentoSaida.FECHAMENTO_SAIDA;
 import static java.math.BigDecimal.ZERO;
+import static java.util.Collections.reverse;
+import static org.jooq.impl.DSL.sum;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -20,13 +27,23 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import lombok.Data;
+import net.sf.jasperreports.engine.JRExporterParameter;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
+import net.sf.jasperreports.engine.export.JRXlsExporter;
 
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record3;
 import org.jooq.Result;
+import org.jooq.SelectJoinStep;
 
 import com.meneguello.coi.model.tables.records.FechamentoRecord;
 import com.meneguello.coi.model.tables.records.FechamentoSaidaRecord;
@@ -200,6 +217,99 @@ public class PagamentoFechamentoEndpoint {
 				return null;
 			}
 		}.execute();
+	}
+	
+	@GET
+	@Path("imprimir")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response print() throws Exception {
+		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
+			@Override
+			protected ByteArrayOutputStream executeFallible(DSLContext database) throws Exception {
+				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				
+				final Result<FechamentoRecord> fechamentoResult = database
+						.selectFrom(FECHAMENTO)
+						.orderBy(FECHAMENTO.DATA)
+						.fetch();
+				
+				Timestamp lastDate = null;
+				
+				final List<Map<String, ?>> fechamentos = new ArrayList<>();
+				for (Record fechamentoRecord : fechamentoResult) {
+					final Map<String, Object> fechamento = new HashMap<>();
+					final Timestamp dataFechamento = fechamentoRecord.getValue(FECHAMENTO.DATA);
+					final Timestamp date = dataFechamento;
+					
+					fechamento.put("data", date);
+					fechamento.put("valorDinheiro", fechamentoRecord.getValue(FECHAMENTO.VALOR_DINHEIRO));
+					fechamento.put("valorCartao", fechamentoRecord.getValue(FECHAMENTO.VALOR_CARTAO));
+					fechamento.put("valorCheque", fechamentoRecord.getValue(FECHAMENTO.VALOR_CHEQUE));
+					
+					final List<Field<?>> fields = new ArrayList<>();
+					fields.add(ENTRADA.MEIO_PAGAMENTO);
+					fields.add(database.select(
+								sum(ENTRADA_PRODUTO.VALOR.mul(ENTRADA_PRODUTO.QUANTIDADE))
+									.sub(sum(ENTRADA_PRODUTO.DESCONTO)))
+							.from(ENTRADA_PRODUTO)
+							.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(ENTRADA.ID))
+							.asField("VALOR"));
+					
+					final SelectJoinStep<Record> select = database.select(fields).from(ENTRADA);
+					
+					if (lastDate == null) {
+						select.where(ENTRADA.DATA.lt(dataFechamento));						
+					} else {
+						select.where(ENTRADA.DATA.between(lastDate).and(dataFechamento));
+					}
+					
+					BigDecimal valorDinheiroCaixa = BigDecimal.ZERO;
+					BigDecimal valorCartaoCaixa = BigDecimal.ZERO;
+					BigDecimal valorChequeCaixa = BigDecimal.ZERO;
+					final Result<Record> entradaResult = select.fetch();
+					for (Record entradaRecord : entradaResult) {
+						switch (MeioPagamento.valueOf(entradaRecord.getValue(ENTRADA.MEIO_PAGAMENTO))) {
+						case DINHEIRO:
+						case CARTAO_DEBITO:
+							valorDinheiroCaixa = valorDinheiroCaixa.add(entradaRecord.getValue("VALOR", BigDecimal.class));
+							break;
+						case CARTAO_CREDITO:
+						case CARTAO_CREDITO_2X:
+						case CARTAO_CREDITO_3X:
+							valorCartaoCaixa = valorCartaoCaixa.add(entradaRecord.getValue("VALOR", BigDecimal.class));
+							break;
+						case CHEQUE:
+							valorChequeCaixa = valorChequeCaixa.add(entradaRecord.getValue("VALOR", BigDecimal.class));
+							break;
+						}
+					}
+					fechamento.put("valorDinheiroCaixa", valorDinheiroCaixa);
+					fechamento.put("valorCartaoCaixa", valorCartaoCaixa);
+					fechamento.put("valorChequeCaixa", valorChequeCaixa);
+					
+					fechamentos.add(fechamento);
+					
+					lastDate = date;
+				}
+				
+				reverse(fechamentos);
+				
+				final Map<String, Object> parameters = new HashMap<>();
+				final JasperReport jasperReport = JasperCompileManager
+						.compileReport(getClass().getClassLoader().getResourceAsStream("fechamentos.jrxml"));
+				final JasperPrint jasperPrint = JasperFillManager
+						.fillReport(jasperReport, parameters, new JRMapCollectionDataSource(fechamentos));
+				
+				final JRXlsExporter exporter = new JRXlsExporter();
+				exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
+				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
+				exporter.exportReport();
+				
+				return baos;
+			}
+		}.execute();
+		
+		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=fechamentos.xls").build();
 	}
 	
 	@Data
