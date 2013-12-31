@@ -317,7 +317,7 @@ public class PagamentoEndpoint {
 		final Pagamento entidade = new Pagamento();
 		entidade.setId(record.getValue(PAGAMENTO.ID));
 		entidade.setCategoria(record.getValue(PAGAMENTO_CATEGORIA.DESCRICAO));
-		entidade.setTipo(record.getValue(PAGAMENTO.TIPO));
+		entidade.setTipo(TipoPagamento.valueOf(record.getValue(PAGAMENTO.TIPO)).getValue());
 		entidade.setVencimento(record.getValue(PAGAMENTO.VENCIMENTO));
 		entidade.setDescricao(record.getValue(PAGAMENTO.DESCRICAO));
 		entidade.setValor(record.getValue(PAGAMENTO.VALOR));
