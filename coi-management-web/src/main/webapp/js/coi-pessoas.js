@@ -51,8 +51,8 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 	var PessoasImportView = COI.PopupFormView.extend({
 		template: '#pessoas_import_template',
 		header: 'Importar Clientes',
-		height: 200,
-		width: 400,
+		height: 250,
+		width: 600,
 		initialize: function() {
 			_.bindAll(this);
 		},
@@ -75,6 +75,13 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		        progressall: function (e, data) {
 		            var progress = parseInt(data.loaded / data.total * 100, 10);
 		            $('#progress .bar').css('width', progress + '%');
+		            if (progress >= 99) {
+		            	$('#progress .bar').remove();
+		            	$('#progress')
+		            		.append($('<div>', {css: {'width': '100%', 'text-align': 'center'}}).append($('<img>', {src: 'images/loader.gif'})))
+		            		.append($('<div>', {text: 'Processando no servidor. Pode demorar, aguarde...'}))
+		            		.append($('<div>', {text: 'Esta tela será fechada automaticamente quando estiver concluído.'}));
+		            }
 		        }
 		    });
 		},
@@ -83,6 +90,7 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 			this.close();
 		},
 		onConfirm: function(e) {
+			$('#file').hide();
 			this.ui.file.fileupload('send', {fileInput: this.ui.file});
 		}
 	});
