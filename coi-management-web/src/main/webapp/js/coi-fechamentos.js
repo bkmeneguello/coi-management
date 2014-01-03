@@ -1,9 +1,9 @@
 "use strict";
 
-COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $, _) {
+COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 
 	var Fechamento = Backbone.Model.extend({
-		urlRoot: '/rest/pagamentos/fechamentos',
+		urlRoot: '/rest/fechamentos',
 		defaults: {
 			data: null,
 			total: 0
@@ -11,14 +11,14 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 	});
 	
 	var Fechamentos = Backbone.Collection.extend({
-		url: '/rest/pagamentos/fechamentos',
+		url: '/rest/fechamentos',
 		model: Fechamento
 	});
 	
 	var RowView = COI.ActionRowView.extend({
-		template: '#pagamento_fechamento_row_template',
+		template: '#fechamento_row_template',
 		onUpdate: function(e) {
-			Backbone.history.navigate('pagamento-fechamento/' + this.model.get('id'), true);
+			Backbone.history.navigate('fechamento/' + this.model.get('id'), true);
 		},
 		onDelete: function(e) {
 			_promptDelete(function() {
@@ -54,18 +54,18 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 			this.collection.fetch();
 		},
 		onCancel: function(e) {
-			Backbone.history.navigate('pagamentos', true);
+			Backbone.history.navigate('entradas', true);
 		},
 		onCreate: function(e) {
-			Backbone.history.navigate('pagamento-fechamento', true);
+			Backbone.history.navigate('fechamento', true);
 		},
 		onImpressao: function(e) {
-			this.$el.append($('<iframe/>', {'src': '/rest/pagamentos/fechamentos/imprimir'}).hide());
+			this.$el.append($('<iframe/>', {'src': '/rest/fechamentos/imprimir'}).hide());
 		}
 	});
 	
 	Module.on('start', function(options) {
-		COI.router.route('pagamento-fechamentos', function() {
+		COI.router.route('fechamentos', function() {
 			COI.body.show(new View({collection: new Fechamentos()}));
 		});
 	});

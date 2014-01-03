@@ -96,6 +96,7 @@ public class ProducaoEndpoint {
 						final String categoriaDescricao = entradaProdutoRecord.getValue(CATEGORIA.DESCRICAO);
 						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
 						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
+						final BigDecimal produtoCusto = entradaProdutoRecord.getValue(PRODUTO.CUSTO);
 						final BigDecimal produtoDesconto = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.DESCONTO);
 						
 						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
@@ -103,7 +104,7 @@ public class ProducaoEndpoint {
 						for (Record comissaoRecord : comissaoResult) {
 							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
 							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
-							final BigDecimal valor = calculaValor(produtoValor, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
+							final BigDecimal valor = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
 							
 							if (Parte.CONSULTORIO.equals(comissaoParte)) {
 								final String pessoaNome = fetchPessoaParteNome(database, entradaId, Parte.MEDICO);
@@ -173,6 +174,7 @@ public class ProducaoEndpoint {
 						final String produtoDescricao = entradaProdutoRecord.getValue(PRODUTO.DESCRICAO);
 						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
 						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
+						final BigDecimal produtoCusto = entradaProdutoRecord.getValue(PRODUTO.CUSTO);
 						final BigDecimal produtoDesconto = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.DESCONTO);
 						
 						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
@@ -180,7 +182,7 @@ public class ProducaoEndpoint {
 						for (Record comissaoRecord : comissaoResult) {
 							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
 							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
-							final BigDecimal valor = calculaValor(produtoValor, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
+							final BigDecimal valor = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
 							
 							if (!Parte.CONSULTORIO.equals(comissaoParte)) {
 								final String nomeParte = fetchPessoaParteNome(database, entradaId, comissaoParte);
@@ -233,8 +235,9 @@ public class ProducaoEndpoint {
 		return map;
 	}
 
-	private BigDecimal calculaValor(final BigDecimal produtoValor, final Integer produtoQuantidade, final BigDecimal produtoDesconto, final BigDecimal meioPagamentoDesconto, final BigDecimal comissaoPorcentagem) {
+	private BigDecimal calculaValor(BigDecimal produtoValor, BigDecimal produtoCusto, Integer produtoQuantidade, BigDecimal produtoDesconto, BigDecimal meioPagamentoDesconto, BigDecimal comissaoPorcentagem) {
 		return produtoValor
+				.subtract(produtoCusto)
 				.multiply(new BigDecimal(produtoQuantidade))
 				.subtract(produtoDesconto)
 				.multiply(ONE_HUNDRED.subtract(meioPagamentoDesconto).divide(ONE_HUNDRED))

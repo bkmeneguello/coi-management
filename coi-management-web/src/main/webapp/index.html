@@ -38,8 +38,8 @@
 	<script type="text/javascript" src="/js/coi-pagamento.js"></script>
 	<script type="text/javascript" src="/js/coi-pagamentos-categorias.js"></script>
 	<script type="text/javascript" src="/js/coi-pagamentos-categoria.js"></script>
-	<script type="text/javascript" src="/js/coi-pagamentos-fechamentos.js"></script>
-	<script type="text/javascript" src="/js/coi-pagamentos-fechamento.js"></script>
+	<script type="text/javascript" src="/js/coi-fechamentos.js"></script>
+	<script type="text/javascript" src="/js/coi-fechamento.js"></script>
 	<script type="text/javascript" src="/js/coi-start.js"></script>
 	
 	<script type="text/template" id="coi_view_text_template">
@@ -721,7 +721,7 @@ Fêmur total - é utilizado a DMO
 	<button class="coi-action-confirm">Confirmar</button>
 </footer>
 	</script>
-	<script type="text/template" id="pagamento_fechamento_row_template">
+	<script type="text/template" id="fechamento_row_template">
 <td style="text-align: center"><%= timestampConverter('ModelToView', data) %></td>
 <td style="text-align: center"><%= moneyConverter('ModelToView', total) %></td>
 <td style="text-align: center">
@@ -729,7 +729,7 @@ Fêmur total - é utilizado a DMO
 	<button class="coi-action-delete">Remover</button>
 </td>
 	</script>
-	<script type="text/template" id="pagamento_fechamento_template">
+	<script type="text/template" id="fechamento_template">
 <header>Fechamento de Caixa</header>
 <div data-attribute="data" class="coi-view-text" data-label="Data:" data-required="true"/>
 <div data-attribute="valorDinheiro" class="coi-view-text" data-label="Dinheiro:" data-required="true"/>

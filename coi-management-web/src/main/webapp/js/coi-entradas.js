@@ -55,6 +55,10 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			'analitico': {
 				text: 'Analítico',
 				trigger: 'analitico'
+			},
+			'fechamentos': {
+				text: 'Fechamentos',
+				trigger: 'fechamentos'
 			}
 		},
 		initialize: function() {
@@ -71,6 +75,9 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onAnalitico: function(e) {
 			this.$el.append($('<iframe/>', {'src': '/rest/producao/analitico'}).hide());
+		},
+		onFechamentos: function(e) {
+			Backbone.history.navigate('fechamentos', true);
 		}
 	});
 	

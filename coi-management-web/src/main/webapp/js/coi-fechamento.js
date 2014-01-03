@@ -1,6 +1,6 @@
 "use strict";
 
-COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $, _) {
+COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 
 	var Saida = Backbone.Model.extend({
 		defaults: {
@@ -14,7 +14,7 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 	});
 	
 	var Fechamento = Backbone.Model.extend({
-		urlRoot: '/rest/pagamentos/fechamentos',
+		urlRoot: '/rest/fechamentos',
 		defaults: function() {
 			return {
 				data: new Date().getTime(),
@@ -86,7 +86,7 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 	});
 	
 	var View = COI.FormView.extend({
-		template: '#pagamento_fechamento_template',
+		template: '#fechamento_template',
 		regions: {
 			'saidas': '#saidas'
 		},
@@ -116,7 +116,7 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 			this.$el.find('input').first().focus();
 		},
 		onCancel: function(e) {
-			Backbone.history.navigate('pagamento-fechamentos', true);
+			Backbone.history.navigate('fechamentos', true);
 		},
 		onConfirm: function(e) {
 			if (_validate(this)) {
@@ -124,7 +124,7 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 			}
 		},
 		onComplete: function(e) {
-			Backbone.history.navigate('pagamento-fechamentos', true);
+			Backbone.history.navigate('fechamentos', true);
 			_notifySuccess();
 		},
 		onError: function(model, resp, options) {
@@ -133,10 +133,10 @@ COI.module("PagamentosFechamento", function(Module, COI, Backbone, Marionette, $
 	});
 	
 	Module.on('start', function(options) {
-		COI.router.route('pagamento-fechamento', function() {
+		COI.router.route('fechamento', function() {
 			COI.body.show(new View({model: new Fechamento()}));
 		});
-		COI.router.route('pagamento-fechamento(/:id)', function(id) {
+		COI.router.route('fechamento(/:id)', function(id) {
 			COI.body.show(new View({model: new Fechamento({id: id})}));
 		});
 	});

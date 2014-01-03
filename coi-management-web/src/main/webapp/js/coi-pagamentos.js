@@ -175,10 +175,6 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 				text: 'Categorias',
 				trigger: 'categorias'
 			},
-			'fechamentos': {
-				text: 'Fechamentos',
-				trigger: 'fechamentos'
-			},
 			'impressao': {
 				text: 'Impressão',
 				trigger: 'impressao'
@@ -195,9 +191,6 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onCategorias: function(e) {
 			Backbone.history.navigate('pagamento-categorias', true);
-		},
-		onFechamentos: function(e) {
-			Backbone.history.navigate('pagamento-fechamentos', true);
 		},
 		onImpressao: function(e) {
 			var startDate = this._search._send(this._search.startDate);

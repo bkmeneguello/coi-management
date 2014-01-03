@@ -7,6 +7,7 @@ import static com.meneguello.coi.model.tables.Fechamento.FECHAMENTO;
 import static com.meneguello.coi.model.tables.FechamentoSaida.FECHAMENTO_SAIDA;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Collections.reverse;
+import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.sum;
 
 import java.io.ByteArrayOutputStream;
@@ -47,8 +48,9 @@ import org.jooq.SelectJoinStep;
 
 import com.meneguello.coi.model.tables.records.FechamentoRecord;
 import com.meneguello.coi.model.tables.records.FechamentoSaidaRecord;
- 
-public class PagamentoFechamentoEndpoint {
+
+@Path("fechamentos")
+public class FechamentoEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -64,6 +66,10 @@ public class PagamentoFechamentoEndpoint {
 								FECHAMENTO.VALOR_DINHEIRO
 									.add(FECHAMENTO.VALOR_CARTAO)
 									.add(FECHAMENTO.VALOR_CHEQUE)
+									.sub(select(FECHAMENTO_SAIDA.VALOR.sum())
+											.from(FECHAMENTO_SAIDA)
+											.where(FECHAMENTO_SAIDA.FECHAMENTO_ID.eq(FECHAMENTO.ID))
+											.asField())
 									.as("TOTAL")
 						)
 						.from(FECHAMENTO)

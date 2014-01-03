@@ -308,11 +308,6 @@ public class PagamentoEndpoint {
 		return PagamentoCategoriaEndpoint.class;
 	}
 	
-	@Path("fechamentos")
-	public Class<PagamentoFechamentoEndpoint> fechamentos() {
-		return PagamentoFechamentoEndpoint.class;
-	}
-
 	private Pagamento buildEntidade(final Record record) {
 		final Pagamento entidade = new Pagamento();
 		entidade.setId(record.getValue(PAGAMENTO.ID));
