@@ -7,6 +7,7 @@ import static com.meneguello.coi.model.tables.Fechamento.FECHAMENTO;
 import static com.meneguello.coi.model.tables.FechamentoSaida.FECHAMENTO_SAIDA;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Collections.reverse;
+import static org.jooq.impl.DSL.nvl;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.sum;
 
@@ -66,7 +67,7 @@ public class FechamentoEndpoint {
 								FECHAMENTO.VALOR_DINHEIRO
 									.add(FECHAMENTO.VALOR_CARTAO)
 									.add(FECHAMENTO.VALOR_CHEQUE)
-									.sub(select(FECHAMENTO_SAIDA.VALOR.sum())
+									.sub(select(nvl(sum(FECHAMENTO_SAIDA.VALOR), ZERO))
 											.from(FECHAMENTO_SAIDA)
 											.where(FECHAMENTO_SAIDA.FECHAMENTO_ID.eq(FECHAMENTO.ID))
 											.asField())
