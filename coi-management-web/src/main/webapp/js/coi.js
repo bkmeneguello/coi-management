@@ -123,6 +123,7 @@ function dateConverter(direction, value) {
 	case 'ModelToView':
 		try {
 			if (!value) return value;
+			if (typeof(value) == 'string') value += ' GMT-0' + new Date().getTimezoneOffset() / 60 + '00';
 			return formatDateStr(new Date(value));
 		} catch (e) {}
 	case 'ViewToModel':
