@@ -14,7 +14,7 @@ COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Fechamento = Backbone.Model.extend({
-		urlRoot: '/rest/fechamentos',
+		urlRoot: 'rest/fechamentos',
 		defaults: function() {
 			return {
 				data: new Date().getTime(),

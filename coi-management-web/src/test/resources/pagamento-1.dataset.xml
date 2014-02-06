@@ -1,0 +1,5 @@
+ <dataset>
+     <pagamento_categoria id="1" descricao="Aluguel"/>
+     <pagamento_categoria id="2" descricao="Salários"/>
+     <pagamento id="1" categoria_id="1" vencimento="2014-02-01" descricao="Aluguel de Fevereiro" valor="2000" tipo="SAIDA" situacao="PENDENTE"/>
+ </dataset>

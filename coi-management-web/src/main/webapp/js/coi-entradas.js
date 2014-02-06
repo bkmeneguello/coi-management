@@ -12,7 +12,7 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Entradas = Backbone.Collection.extend({
-		url: '/rest/entradas',
+		url: 'rest/entradas',
 		model: Entrada
 	});
 	
@@ -71,10 +71,10 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 			Backbone.history.navigate('entrada', true);
 		},
 		onProducao: function(e) {
-			this.$el.append($('<iframe/>', {'src': '/rest/producao/sintetico'}).hide());
+			this.$el.append($('<iframe/>', {'src': 'rest/producao/sintetico'}).hide());
 		},
 		onAnalitico: function(e) {
-			this.$el.append($('<iframe/>', {'src': '/rest/producao/analitico'}).hide());
+			this.$el.append($('<iframe/>', {'src': 'rest/producao/analitico'}).hide());
 		},
 		onFechamentos: function(e) {
 			Backbone.history.navigate('fechamentos', true);

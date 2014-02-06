@@ -11,7 +11,7 @@ COI.module("Laudos", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Laudos = Backbone.Collection.extend({
-		url: '/rest/laudos',
+		url: 'rest/laudos',
 		model: Laudo
 	});
 	
@@ -47,7 +47,7 @@ COI.module("Laudos", function(Module, COI, Backbone, Marionette, $, _) {
 			});
 		},
 		onPrint: function(e) {
-            this.$el.append($('<iframe/>', {'src': '/rest/laudos/print/' + this.model.get('id')}).hide());
+            this.$el.append($('<iframe/>', {'src': 'rest/laudos/print/' + this.model.get('id')}).hide());
 		}
 	});
 	

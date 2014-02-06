@@ -3,7 +3,7 @@
 COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 
 	var Pagamento = Backbone.Model.extend({
-		urlRoot: '/rest/pagamentos',
+		urlRoot: 'rest/pagamentos',
 		defaults: {
 			categoria: null,
 			tipo: 'Saída',
@@ -18,6 +18,12 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			conta: null,
 			cheque: null,
 			projecao: 1
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.vencimento = toTimestamp(attributes.vencimento);
+			attributes.pagamento = toTimestamp(attributes.pagamento);
+			return attributes;
 		}
 	});
 	
@@ -42,7 +48,7 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 		initialize: function() {
 			var that = this;
 			this.templateHelpers.elementos.length = 0;
-			$.get('/rest/pagamentos/categorias', function(elementos) {
+			$.get('rest/pagamentos/categorias', function(elementos) {
 				$.each(elementos, function(index, element) {
 					that.templateHelpers.elementos.push(element.descricao);
 				});

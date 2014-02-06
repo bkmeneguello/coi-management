@@ -11,7 +11,7 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Cheques = Backbone.Collection.extend({
-		url: '/rest/cheques',
+		url: 'rest/cheques',
 		model: Cheque
 	});
 	

@@ -10,7 +10,7 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Cheque = Backbone.Model.extend({
-		urlRoot: '/rest/cheques',
+		urlRoot: 'rest/cheques',
 		defaults: function() {
 			return {
 				numero: null,
@@ -29,6 +29,11 @@ COI.module("Cheque", function(Module, COI, Backbone, Marionette, $, _) {
 			resp.cliente = new Pessoa(resp.cliente, {parse: true});
 			resp.paciente = new Pessoa(resp.paciente, {parse: true});
 			return resp;
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.dataDeposito = toTimestamp(attributes.dataDeposito);
+			return attributes;
 		}
 	});
 	

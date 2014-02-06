@@ -9,7 +9,7 @@ COI.module("Categorias", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Categorias = Backbone.Collection.extend({
-		url: '/rest/categorias',
+		url: 'rest/categorias',
 		model: Categoria
 	});
 	

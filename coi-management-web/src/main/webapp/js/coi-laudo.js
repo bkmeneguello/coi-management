@@ -34,7 +34,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Laudo = Backbone.Model.extend({
-		urlRoot: '/rest/laudos',
+		urlRoot: 'rest/laudos',
 		defaults: function() {
 			return {
 				data: new Date(),

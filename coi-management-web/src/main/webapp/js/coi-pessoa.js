@@ -3,7 +3,7 @@
 COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Pessoa = Backbone.Model.extend({
-		urlRoot: '/rest/pessoas',
+		urlRoot: 'rest/pessoas',
 		defaults: function() {
 			return {
 				nome: null,
@@ -32,7 +32,7 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			var input = this.$("input[name=codigo]");
 			var codigo = input.val().toUpperCase();
 			if (codigo.length == 1) {
-				$.get('/rest/pessoas/next', {'prefix': codigo}, function(max) {
+				$.get('rest/pessoas/next', {'prefix': codigo}, function(max) {
 					input.val(codigo + "-" + max);
 					input.get(0).setSelectionRange(2, input.val().length);
 					input.change();
@@ -43,9 +43,8 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			Backbone.history.navigate('pessoas', true);
 		},
 		onConfirm: function(e) {
-			var that = this;
 			if (_validate(this)) {
-				this.model.save(null, {wait: true, success: that.onComplete, error: this.onError});
+				this.model.save(null, {wait: true, success: this.onComplete, error: this.onError});
 			}
 		},
 		onComplete: function() {
@@ -53,7 +52,7 @@ COI.module("Pessoa", function(Module, COI, Backbone, Marionette, $, _) {
 			_notifySuccess();
 		},
 		onError: function(model, resp, options) {
-			_notifyError(resp.responseText);
+			_notifyUpdateFailure();
 		}
 	});
 	

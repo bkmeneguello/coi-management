@@ -12,12 +12,12 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Pagamentos = Backbone.Paginator.requestPager.extend({
-		url: '/rest/pagamentos',
+		url: 'rest/pagamentos',
 		model: Pagamento,
 		paginator_core: {
 			type: 'GET',
 			dataType: 'json',
-			url: '/rest/pagamentos'
+			url: 'rest/pagamentos'
 		},
 		paginator_ui: {
 			firstPage: 0,
@@ -195,7 +195,7 @@ COI.module("Pagamentos", function(Module, COI, Backbone, Marionette, $, _) {
 		onImpressao: function(e) {
 			var startDate = this._search._send(this._search.startDate);
 			var endDate = this._search._send(this._search.endDate);
-			this.$el.append($('<iframe/>', {'src': '/rest/pagamentos/imprimir?tipo=' + this._search.tipo.val() + '&situacao=' + this._search.situacao.val() + '&start=' + startDate + '&end=' + endDate}).hide());
+			this.$el.append($('<iframe/>', {'src': 'rest/pagamentos/imprimir?tipo=' + this._search.tipo.val() + '&situacao=' + this._search.situacao.val() + '&start=' + startDate + '&end=' + endDate}).hide());
 		}
 	});
 	

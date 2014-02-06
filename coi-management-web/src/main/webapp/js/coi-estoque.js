@@ -7,11 +7,16 @@ COI.module("Estoque", function(Module, COI, Backbone, Marionette, $, _) {
 			data: null,
 			produto: null,
 			quantidade: null
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.data = toTimestamp(attributes.data);
+			return attributes;
 		}
 	});
 
 	var Estoque = Backbone.Collection.extend({
-		url: '/rest/estoque',
+		url: 'rest/estoque',
 		model: EstoqueItem
 	});
 	

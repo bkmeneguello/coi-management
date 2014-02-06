@@ -1,4 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Context>
     <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <Resource name="jdbc/dataSource" 
+	    auth="Container"
+	    type="javax.sql.DataSource"
+	    username="SA" 
+	    password="" 
+	    driverClassName="org.hsqldb.jdbc.JDBCDriver"
+	    url="jdbc:hsqldb:hsql://localhost/coi"
+	/>
 </Context>

@@ -3,14 +3,14 @@
 COI.module("PagamentosCategorias", function(Module, COI, Backbone, Marionette, $, _) {
 	
 	var Categoria = Backbone.Model.extend({
-		urlRoot: '/rest/pagamentos/categorias',
+		urlRoot: 'rest/pagamentos/categorias',
 		defaults: {
 			descricao: null
 		}
 	});
 	
 	var Categorias = Backbone.Collection.extend({
-		url: '/rest/pagamentos/categorias',
+		url: 'rest/pagamentos/categorias',
 		model: Categoria
 	});
 	

@@ -3,7 +3,7 @@
 COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 
 	var Fechamento = Backbone.Model.extend({
-		urlRoot: '/rest/fechamentos',
+		urlRoot: 'rest/fechamentos',
 		defaults: {
 			data: null,
 			total: 0
@@ -11,7 +11,7 @@ COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Fechamentos = Backbone.Collection.extend({
-		url: '/rest/fechamentos',
+		url: 'rest/fechamentos',
 		model: Fechamento
 	});
 	
@@ -60,7 +60,7 @@ COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 			Backbone.history.navigate('fechamento', true);
 		},
 		onImpressao: function(e) {
-			this.$el.append($('<iframe/>', {'src': '/rest/fechamentos/imprimir'}).hide());
+			this.$el.append($('<iframe/>', {'src': 'rest/fechamentos/imprimir'}).hide());
 		}
 	});
 	

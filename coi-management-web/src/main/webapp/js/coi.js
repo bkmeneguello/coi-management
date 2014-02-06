@@ -123,7 +123,7 @@ function dateConverter(direction, value) {
 	case 'ModelToView':
 		try {
 			if (!value) return value;
-			if (typeof(value) == 'string') value += ' GMT-0' + new Date().getTimezoneOffset() / 60 + '00';
+			if (typeof(value) == 'string') value = strToTimestamp(value);
 			return formatDateStr(new Date(value));
 		} catch (e) {}
 	case 'ViewToModel':
@@ -134,12 +134,28 @@ function dateConverter(direction, value) {
 	}
 };
 
+function strToTimestamp(value) {
+	return new Date(value).setHours(new Date(value).getHours() + new Date(value).getTimezoneOffset() / 60);
+}
+
+function toTimestamp(value) {
+	if (!value) return value;
+	
+	switch(typeof(value)) {
+		case 'string':
+			return strToTimestamp(value);
+		case 'object':
+			return value.getTime();
+	}
+	return value;
+}
+
 function timestampConverter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':
 		try {
 			if (!value) return value;
-			var date = new Date(value);
+			var date = new Date(strToTimestamp(value));
 			return formatDateStr(date) + ' ' + formatTimeStr(date);
 		} catch (e) {}
 	case 'ViewToModel':
@@ -216,6 +232,7 @@ COI.module('Index', function(Module, COI, Backbone, Marionette, $, _) {
 			'click #pagamentos': 'pagamentos'
 		},
 		template: '#index_template',
+		id: 'main',
 		initialize: function() {
 			_.bindAll(this);
 		},
@@ -341,7 +358,7 @@ COI.PessoaView = Marionette.ItemView.extend({
 			var model = this.model;
 			this.ui.input.input();
 			this.ui.input.autocomplete({
-				source: '/rest/pessoas',
+				source: 'rest/pessoas',
 				minLength: 3,
 				appendTo: this.ui.input.closest('.coi-form-item'),
 				response: function(event, ui) {
@@ -425,7 +442,7 @@ COI.PessoaView = Marionette.ItemView.extend({
 		var input = this.ui.inputNewCodigo;
 		var codigo = input.val().toUpperCase();
 		if (codigo.length == 1) {
-			$.get('/rest/pessoas/next', {'prefix': codigo}, function(max) {
+			$.get('rest/pessoas/next', {'prefix': codigo}, function(max) {
 				input.val(codigo + "-" + max);
 				input.get(0).setSelectionRange(2, input.val().length);
 				input.change();
@@ -521,26 +538,34 @@ COI.PopupFormView = COI.Window.extend({
 				height: this.height,
 				width: this.width,
 				modal: true,
-				buttons: {
-					'Cancelar': function(e) {
-						if (e && e.preventDefault){ e.preventDefault(); }
-				        if (e && e.stopPropagation){ e.stopPropagation(); }
-						that.triggerMethod('cancel', {
-							view: that,
-							model: that.model,
-							collection: that.collection
-						});
+				buttons: [
+					{
+						text: 'Cancelar',
+						'class': 'coi-action-cancel',
+						click: function(e) {
+							if (e && e.preventDefault){ e.preventDefault(); }
+					        if (e && e.stopPropagation){ e.stopPropagation(); }
+							that.triggerMethod('cancel', {
+								view: that,
+								model: that.model,
+								collection: that.collection
+							});
+						}
 					},
-					'Confirmar': function(e) {
-						if (e && e.preventDefault){ e.preventDefault(); }
-				        if (e && e.stopPropagation){ e.stopPropagation(); }
-						that.triggerMethod('confirm', {
-							view: that,
-							model: that.model,
-							collection: that.collection
-						});
+					{
+						text: 'Confirmar',
+						'class': 'coi-action-confirm',
+						click: function(e) {
+							if (e && e.preventDefault){ e.preventDefault(); }
+					        if (e && e.stopPropagation){ e.stopPropagation(); }
+							that.triggerMethod('confirm', {
+								view: that,
+								model: that.model,
+								collection: that.collection
+							});
+						}
 					}
-				}
+				]
 			});
 		}, this);
 	}
@@ -601,6 +626,8 @@ COI.GridView = Marionette.CompositeView.extend({
 			var that = this;
 			_.each(this.extras, function(extra) {
 				that.ui.footer.children('div').append($('<button/>', {
+					id: extra.id,
+					'class': extra['class'],
 					text: extra.text,
 					click: function(e) {
 						if (e && e.preventDefault){ e.preventDefault(); }

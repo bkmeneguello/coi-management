@@ -14,9 +14,9 @@
 		<jersey.version>1.17.1</jersey.version>
 		<jooq.version>3.2.2</jooq.version>
 		<javax.servlet.version>3.0.1</javax.servlet.version>
+		<selenium.version>2.39.0</selenium.version>
 	</properties>
 	<build>
-		<finalName>ROOT</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -66,6 +66,17 @@
 					<password></password>
 				</configuration>
 				<executions>
+					<execution>
+						<id>drop-database</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+						<configuration>
+							<autocommit>true</autocommit>
+							<sqlCommand>DROP SCHEMA PUBLIC CASCADE</sqlCommand>
+						</configuration>
+					</execution>
 					<execution>
 						<id>create-database</id>
 						<phase>generate-sources</phase>
@@ -142,7 +153,6 @@
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<version>2.0</version>
 				<configuration>
-					<path>/</path>
 					<tomcatUsers>${basedir}/tomcat-users.xml</tomcatUsers>
 					<systemProperties>
 						<database.driver>org.hsqldb.jdbc.JDBCDriver</database.driver>
@@ -152,14 +162,197 @@
 					</systemProperties>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.cargo</groupId>
+				<artifactId>cargo-maven2-plugin</artifactId>
+				<version>1.4.7</version>
+				<executions>
+					<execution>
+						<id>install</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>install</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>start-container</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start</goal>
+						</goals>
+						<configuration>
+							<wait>false</wait>
+						</configuration>
+					</execution>
+					<execution>
+						<id>stop-container</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<configuration>
+						<configfiles>
+							<configfile>
+								<file>${project.basedir}/tomcat-users.xml</file>
+								<todir>conf</todir>
+							</configfile>
+						</configfiles>
+					</configuration>
+					<container>
+						<containerId>tomcat7x</containerId>
+					</container>
+				</configuration>
+			</plugin>
+			<plugin>
+				<!-- current version -->
+				<groupId>fr.avianey.mojo</groupId>
+				<artifactId>hsqldb-maven-plugin</artifactId>
+				<version>1.0.0</version>
+				<configuration>
+					<driver>org.hsqldb.jdbcDriver</driver>
+					<path>file:${project.build.directory}/db/schema</path>
+					<address>localhost</address>
+					<name>coi</name>
+					<username>sa</username>
+					<password></password>
+					<validationQuery>SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS</validationQuery>
+				</configuration>
+				<executions>
+					<execution>
+						<id>start-hsqldb</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>stop-hsqldb</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.hsqldb</groupId>
+						<artifactId>hsqldb</artifactId>
+						<version>${hsqldb.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<skip>false</skip>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>selenium-maven-plugin</artifactId>
+				<version>2.3</version>
+				<executions>
+					<execution>
+						<id>xvfb</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>xvfb</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>start-selenium</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start-server</goal>
+						</goals>
+					</execution>
+					<execution>
+			            <id>stop-selenium</id>
+			            <phase>post-integration-test</phase>
+			            <goals>
+			                <goal>stop-server</goal>
+			            </goals>
+			        </execution>
+				</executions>
+				<configuration>
+					<background>true</background>
+					<logOutput>true</logOutput>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>dbunit-maven-plugin</artifactId>
+				<version>1.0-beta-3</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.hsqldb</groupId>
+						<artifactId>hsqldb</artifactId>
+						<version>${hsqldb.version}</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<driver>org.hsqldb.jdbcDriver</driver>
+					<url>jdbc:hsqldb:hsql://localhost/coi</url>
+					<username>SA</username>
+					<password></password>
+					<dataTypeFactoryName>org.dbunit.ext.hsqldb.HsqldbDataTypeFactory</dataTypeFactoryName>
+					<format>flat</format>
+					<ordered>true</ordered>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
+			<version>4.11</version>
 			<scope>test</scope>
+		</dependency>
+	  	<dependency>
+	        <groupId>org.seleniumhq.selenium</groupId>
+	        <artifactId>selenium-chrome-driver</artifactId>
+	        <version>${selenium.version}</version>
+	        <scope>test</scope>
+	  	</dependency>
+	  	<dependency>
+	        <groupId>org.seleniumhq.selenium</groupId>
+	        <artifactId>selenium-firefox-driver</artifactId>
+	        <version>${selenium.version}</version>
+	        <scope>test</scope>
+	  	</dependency>
+	  	<dependency>
+			<groupId>org.dbunit</groupId>
+			<artifactId>dbunit</artifactId>
+			<version>2.4.9</version>
+	        <scope>test</scope>
+		</dependency>
+	  	<dependency>
+	        <groupId>org.seleniumhq.selenium</groupId>
+	        <artifactId>selenium-support</artifactId>
+	        <version>${selenium.version}</version>
+	        <scope>test</scope>
+	  	</dependency>
+	  	<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+			<version>1.3</version>
+	        <scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jooq</groupId>
@@ -234,9 +427,14 @@
 			<version>3.7</version>
 		</dependency>
 		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
+		<dependency>
 			<groupId>xml-apis</groupId>
 			<artifactId>xml-apis</artifactId>
-			<version>1.0.b2</version>
+			<version>1.4.01</version>
 		</dependency>
 	</dependencies>
 	<repositories>

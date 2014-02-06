@@ -28,7 +28,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Categoria = Backbone.Model.extend({
-		urlRoot: '/rest/categorias',
+		urlRoot: 'rest/categorias',
 		defaults: function() {
 			return {
 				descricao: null,
@@ -183,7 +183,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			this.ui.parte.input();
 			this.ui.buttonInclude.button();
 			this.ui.parte.autocomplete({
-				source: '/rest/partes/comissionadas',
+				source: 'rest/partes/comissionadas',
 				appendTo: this.ui.parte.closest('.coi-form-item'),
 				response: function(event, ui) {
 					$.each(ui.content, function(index, element) {

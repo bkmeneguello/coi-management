@@ -36,6 +36,11 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		parse: function(resp, options) {
 			resp.cliente = new Pessoa(resp.cliente, {parse: true});
 			return resp;
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.dataDeposito = toTimestamp(attributes.dataDeposito);
+			return attributes;
 		}
 	});
 	
@@ -61,7 +66,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Entrada = Backbone.Model.extend({
-		urlRoot: '/rest/entradas',
+		urlRoot: 'rest/entradas',
 		defaults: function() {
 			return {
 				data: new Date(),
@@ -133,7 +138,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			this.ui.table.table().css('width', '100%');
 			var that = this;
 			this.ui.input.autocomplete({
-				source: '/rest/categorias/produtos',
+				source: 'rest/categorias/produtos',
 				minLength: 3,
 				appendTo: this.ui.input.closest('.coi-form-item'),
 				response: function(event, ui) {
@@ -235,7 +240,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 		initialize: function() {
 			var that = this;
 			this.templateHelpers.tipos_list.length = 0;
-			$.get('/rest/entradas/meios', function(meios) {
+			$.get('rest/entradas/meios', function(meios) {
 				$.each(meios, function(index, value) {
 					that.templateHelpers.tipos_list.push(value);
 				});
@@ -307,7 +312,7 @@ COI.module("Entrada", function(Module, COI, Backbone, Marionette, $, _) {
 			this.ui.parte.input();
 			this.ui.buttonInclude.button();
 			this.ui.parte.autocomplete({
-				source: '/rest/partes/comissionadas',
+				source: 'rest/partes/comissionadas',
 				appendTo: this.ui.parte.closest('.coi-form-item'),
 				response: function(event, ui) {
 					$.each(ui.content, function(index, element) {

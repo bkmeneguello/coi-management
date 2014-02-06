@@ -10,12 +10,12 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Pessoas = Backbone.Paginator.requestPager.extend({
-		url: '/rest/pessoas',
+		url: 'rest/pessoas',
 		model: Pessoa,
 		paginator_core: {
 			type: 'GET',
 			dataType: 'json',
-			url: '/rest/pessoas'
+			url: 'rest/pessoas'
 		},
 		paginator_ui: {
 			firstPage: 0,
@@ -53,6 +53,7 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		header: 'Importar Clientes',
 		height: 250,
 		width: 600,
+		id: 'coi-pessoas-import',
 		initialize: function() {
 			_.bindAll(this);
 		},
@@ -62,7 +63,7 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			var that = this;
 			this.ui.file.fileupload({
-				url: '/rest/pessoas/import',
+				url: 'rest/pessoas/import',
 				autoUpload: false,
 				replaceFileInput: false,
 				acceptFileTypes: /(\.|\/)(csv)$/i,
@@ -107,6 +108,7 @@ COI.module("Pessoas", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		extras: {
 			'import': {
+				id: 'coi-action-pessoas-importar',
 				text: 'Importar',
 				trigger: 'import'
 			}

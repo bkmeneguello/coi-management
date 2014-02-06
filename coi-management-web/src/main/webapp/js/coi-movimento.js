@@ -11,12 +11,12 @@ COI.module("Movimento", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 
 	var Produtos = Backbone.Collection.extend({
-		url: '/rest/produtos',
+		url: 'rest/produtos',
 		model: Produto
 	});
 
 	var Movimento = Backbone.Model.extend({
-		urlRoot: '/rest/estoque',
+		urlRoot: 'rest/estoque',
 		defaults: function() {
 			return {
 				data: new Date(),
@@ -79,7 +79,7 @@ COI.module("Movimento", function(Module, COI, Backbone, Marionette, $, _) {
 			this.ui.table.table().css('width', '100%');
 			var that = this;
 			this.ui.input.autocomplete({
-				source: '/rest/categorias/produtos/estocaveis',
+				source: 'rest/categorias/produtos/estocaveis',
 				minLength: 3,
 				appendTo: this.ui.input.closest('.coi-form-item'),
 				response: function(event, ui) {
