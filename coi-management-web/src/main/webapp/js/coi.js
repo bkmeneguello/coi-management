@@ -66,6 +66,19 @@ function _promptDelete(confirm) {
 	});
 }
 
+function decimal1Converter(direction, value) {
+	switch(direction) {
+	case 'ModelToView':
+		try {
+			return value || value == 0 ? (value.toFixed(1) + '').replace('.', ',') : value;
+		} catch (e) {}
+	case 'ViewToModel':
+		try {
+			return Number(value.replace('.', '').replace(',', '.').replace(/[^0-9\-\.]+/g,""));
+		} catch (e) {}
+	}
+};
+
 function decimalConverter(direction, value) {
 	switch(direction) {
 	case 'ModelToView':

@@ -83,17 +83,17 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['colunaLombarDensidade'].converter = decimal3Converter;
-			bindings['colunaLombarTScore'].converter = decimalConverter;
-			bindings['colunaLombarZScore'].converter = decimalConverter;
+			bindings['colunaLombarTScore'].converter = decimal1Converter;
+			bindings['colunaLombarZScore'].converter = decimal1Converter;
 			bindings['coloFemurDensidade'].converter = decimal3Converter;
-			bindings['coloFemurTScore'].converter = decimalConverter;
-			bindings['coloFemurZScore'].converter = decimalConverter;
+			bindings['coloFemurTScore'].converter = decimal1Converter;
+			bindings['coloFemurZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidade'].converter = decimal3Converter;
-			bindings['femurTotalTScore'].converter = decimalConverter;
-			bindings['femurTotalZScore'].converter = decimalConverter;
+			bindings['femurTotalTScore'].converter = decimal1Converter;
+			bindings['femurTotalZScore'].converter = decimal1Converter;
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
-			bindings['radioTercoTScore'].converter = decimalConverter;
-			bindings['radioTercoZScore'].converter = decimalConverter;
+			bindings['radioTercoTScore'].converter = decimal1Converter;
+			bindings['radioTercoZScore'].converter = decimal1Converter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.$('input[type=text]').input();
@@ -108,15 +108,15 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['colunaLombarDensidade'].converter = decimal3Converter;
-			bindings['colunaLombarZScore'].converter = decimalConverter;
+			bindings['colunaLombarZScore'].converter = decimal1Converter;
 			bindings['coloFemurDensidade'].converter = decimal3Converter;
-			bindings['coloFemurZScore'].converter = decimalConverter;
+			bindings['coloFemurZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidade'].converter = decimal3Converter;
-			bindings['femurTotalZScore'].converter = decimalConverter;
+			bindings['femurTotalZScore'].converter = decimal1Converter;
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
-			bindings['radioTercoZScore'].converter = decimalConverter;
+			bindings['radioTercoZScore'].converter = decimal1Converter;
 			bindings['corpoInteiroDensidade'].converter = decimalConverter;
-			bindings['corpoInteiroZScore'].converter = decimalConverter;
+			bindings['corpoInteiroZScore'].converter = decimal1Converter;
 			this.modelBinder().bind(this.model, this.el, bindings);
 			
 			this.$('input[type=text]').input();
