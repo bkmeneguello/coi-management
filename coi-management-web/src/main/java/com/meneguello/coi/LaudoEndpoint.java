@@ -104,8 +104,14 @@ public class LaudoEndpoint {
 				capaParameters.put("data", new Date(DateTime.now().getMillis()));
 				JasperPrint jasperPrintCapa = JasperFillManager.fillReport(jasperReportCapa, capaParameters, new JREmptyDataSource());
 				
+				final boolean l1 = "S".equals(laudoRecord.getColunaLombarL1());
+				final boolean l2 = "S".equals(laudoRecord.getColunaLombarL2());
+				final boolean l3 = "S".equals(laudoRecord.getColunaLombarL3());
+				final boolean l4 = "S".equals(laudoRecord.getColunaLombarL4());
+				final String vertebras = vertebras(l1, l2, l3, l4);
+				
 				final Map<String, Object> laudoParameters = new HashMap<>();
-				laudoParameters.put("vertebras", "(L1-L4) - L3");
+				laudoParameters.put("vertebras", vertebras);
 				laudoParameters.put("colunaLombarDensidade", laudoRecord.getColunaLombarDensidade());
 				laudoParameters.put("coloFemurDensidade", laudoRecord.getColoFemurDensidade());
 				laudoParameters.put("femurTotalDensidade", laudoRecord.getFemurTotalDensidade());
@@ -150,6 +156,29 @@ public class LaudoEndpoint {
 				return new LaudoPair(name, baos);
 			}
 			
+			private String vertebras(boolean l1, boolean l2, boolean l3, boolean l4) {
+				if (l1 && l2 && l3 && l4) return "(L1-L4)";
+				if (l1 && !l2 && !l3 && l4) return "(L1-L4)-(L2-L3)";
+				if (l1 && l2 && !l3 && l4) return "(L1-L4)-L3";
+				if (l1 && !l2 && l3 && l4) return "(L1-L4)-L2";
+				if (l1 && l2 && l3 && !l4) return "(L1-L3)";
+				if (l1 && !l2 && l3 && !l4) return "(L1-L3)-L2";
+				if (l1 && l2 && !l3 && !l4) return "(L1-L2)";
+				if (l1 && !l2 && !l3 && !l4) return "(L1)";
+				
+				if (!l1 && l2 && l3 && l4) return "(L2-L4)";
+				if (!l1 && l2 && !l3 && l4) return "(L2-L4)-L3";
+				if (!l1 && l2 && l3 && !l4) return "(L2-L3)";
+				if (!l1 && l2 && !l3 && !l4) return "(L2)";
+				
+				if (!l1 && !l2 && l3 && l4) return "(L3-L4)";
+				if (!l1 && !l2 && l3 && !l4) return "(L3)";
+				
+				if (!l1 && !l2 && !l3 && l4) return "(L4)";
+				
+				return (l1 ? "L1 " : "") + (l2 ? "L2 " : "") + (l3 ? "L3 " : "") + (l4 ? "L4 " : "");
+			}
+
 			private BigDecimal risco(BigDecimal tscore) {
 				if (tscore.compareTo(new BigDecimal(-1)) < 0) {
 					return new BigDecimal(String.valueOf(Math.pow(2, tscore.abs().doubleValue())));
@@ -290,7 +319,7 @@ public class LaudoEndpoint {
 							LAUDO.CONCLUSAO
 						)
 						.values(
-								new Date(laudo.getData().getTime()),
+								asSQLDate(laudo.getData()),
 								paciente.getId(),
 								medico.getId(),
 								statusHormonal.name(),
@@ -388,7 +417,7 @@ public class LaudoEndpoint {
 				final ConclusaoLaudo conclusao = ConclusaoLaudo.fromValue(laudo.getConclusao());
 				
 				database.update(LAUDO)
-						.set(LAUDO.DATA, new java.sql.Date(laudo.getData().getTime()))
+						.set(LAUDO.DATA, asSQLDate(laudo.getData()))
 						.set(LAUDO.PACIENTE_ID, paciente.getId())
 						.set(LAUDO.MEDICO_ID, medico.getId())
 						.set(LAUDO.STATUS_HORMONAL, statusHormonal.name())

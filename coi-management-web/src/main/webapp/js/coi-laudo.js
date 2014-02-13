@@ -37,7 +37,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		urlRoot: 'rest/laudos',
 		defaults: function() {
 			return {
-				data: new Date(),
+				data: new Date().getTime(),
 				status: null,
 				paciente: new Pessoa(),
 				medico: new Pessoa(),
@@ -72,6 +72,11 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			resp.observacoes = new Observacoes(resp.observacoes, {parse: true});
 			resp.comparacoes = new Comparacoes(resp.comparacoes, {parse: true});
 			return resp;
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.data = toTimestamp(attributes.data);
+			return attributes;
 		}
 	});
 	
