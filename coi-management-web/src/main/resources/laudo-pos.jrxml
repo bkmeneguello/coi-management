@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="laudo" pageWidth="595" pageHeight="850" columnWidth="523" leftMargin="36" rightMargin="36" topMargin="36" bottomMargin="36" uuid="45665aca-12e0-4f2c-9fae-7ca7cac9881d">
 	<property name="ireport.zoom" value="1.6105100000000014"/>
-	<property name="ireport.x" value="1"/>
+	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
 	<subDataset name="observacoesDataSet" uuid="a1b1d00d-5058-4f57-ab0f-85940a55f13d">
 		<field name="codigo" class="java.lang.Integer"/>
@@ -11,6 +11,12 @@
 		<field name="codigo" class="java.lang.Integer"/>
 		<field name="descricao" class="java.lang.String"/>
 	</subDataset>
+	<parameter name="paciente" class="java.lang.String"/>
+	<parameter name="medico" class="java.lang.String"/>
+	<parameter name="sexo" class="java.lang.String"/>
+	<parameter name="idade" class="java.lang.Integer"/>
+	<parameter name="status" class="java.lang.String"/>
+	<parameter name="data" class="java.util.Date"/>
 	<parameter name="vertebras" class="java.lang.String"/>
 	<parameter name="colunaLombarDensidade" class="java.math.BigDecimal"/>
 	<parameter name="coloFemurDensidade" class="java.math.BigDecimal"/>
@@ -30,10 +36,62 @@
 	<parameter name="conclusao" class="java.lang.String"/>
 	<parameter name="observacoes" class="java.util.Collection"/>
 	<parameter name="comparacoes" class="java.util.Collection"/>
+	<pageHeader>
+		<band height="80">
+			<textField>
+				<reportElement x="0" y="0" width="523" height="20" uuid="bf1f1f11-187b-4e07-93d2-f90890b94059"/>
+				<textElement verticalAlignment="Middle">
+					<font pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Paciente: " + $P{paciente}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="20" width="523" height="20" uuid="1f0fa441-7a20-4621-ba8f-5eb38c9b5a1b"/>
+				<textElement verticalAlignment="Middle">
+					<font pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Médico Solicitante: " + $P{medico}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="40" width="314" height="20" uuid="ac263418-a544-4880-855a-a2870700044e"/>
+				<textElement verticalAlignment="Middle">
+					<font pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Sexo: " + $P{sexo}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="314" y="40" width="209" height="20" uuid="4806191f-6d1d-4855-af9c-ffaf88e81f2f"/>
+				<textElement verticalAlignment="Middle">
+					<font pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Idade: " + $P{idade} + " ANOS"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="60" width="314" height="20" uuid="fd02b9fd-789a-4fab-83ab-e98f4f21ce05"/>
+				<textElement verticalAlignment="Middle">
+					<font pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Status Hormonal: " + $P{status}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="314" y="60" width="209" height="20" uuid="301b88d1-6609-4827-bdfd-f87094a9cab5"/>
+				<textElement verticalAlignment="Middle">
+					<font pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Data: " + new SimpleDateFormat("dd/MM/yyyy").format($P{data})]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
 	<detail>
 		<band height="420" splitType="Stretch">
 			<staticText>
-				<reportElement x="0" y="0" width="523" height="40" uuid="24ad4533-626c-4b25-b882-b10d0d2496a7"/>
+				<reportElement x="0" y="5" width="523" height="30" uuid="24ad4533-626c-4b25-b882-b10d0d2496a7"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
@@ -136,7 +194,7 @@
 				</textElement>
 				<text><![CDATA[CONCLUSÃO: ]]></text>
 			</staticText>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement positionType="Float" x="75" y="320" width="448" height="20" uuid="cfd6e85a-77f5-4f20-b795-3d1722607afc"/>
 				<textElement verticalAlignment="Middle"/>
 				<textFieldExpression><![CDATA[$P{conclusao}]]></textFieldExpression>
@@ -430,6 +488,7 @@
 							<textField isStretchWithOverflow="true">
 								<reportElement positionType="Float" x="0" y="0" width="523" height="20" uuid="92b90d98-44bd-4695-88e6-99c2a4d9dabb"/>
 								<box topPadding="2" bottomPadding="0"/>
+								<textElement textAlignment="Justified"/>
 								<textFieldExpression><![CDATA["- " + $F{descricao}]]></textFieldExpression>
 							</textField>
 						</jr:listContents>
@@ -454,6 +513,7 @@
 							<textField isStretchWithOverflow="true">
 								<reportElement positionType="Float" x="0" y="0" width="523" height="20" uuid="3150904a-0ef8-405e-9831-be5aeb016d85"/>
 								<box topPadding="2" leftPadding="0" bottomPadding="0"/>
+								<textElement textAlignment="Justified"/>
 								<textFieldExpression><![CDATA["- " + $F{descricao}]]></textFieldExpression>
 							</textField>
 						</jr:listContents>

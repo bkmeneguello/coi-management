@@ -94,16 +94,6 @@ public class LaudoEndpoint {
 
 				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				
-				JasperReport jasperReportCapa = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream("laudo-capa.jrxml"));
-				HashMap<String, Object> capaParameters = new HashMap<String, Object>();
-				capaParameters.put("paciente", pacienteRecord.getNome());
-				capaParameters.put("medico", medicoRecord.getNome());
-				capaParameters.put("sexo", Sexo.valueOf(pacienteRecord.getSexo()).getValue());
-				capaParameters.put("idade", Years.yearsBetween(new DateTime(pacienteRecord.getDataNascimento().getTime()), DateTime.now()).getYears());
-				capaParameters.put("status", statusHormonal.getValue());
-				capaParameters.put("data", new Date(DateTime.now().getMillis()));
-				JasperPrint jasperPrintCapa = JasperFillManager.fillReport(jasperReportCapa, capaParameters, new JREmptyDataSource());
-				
 				final boolean l1 = "S".equals(laudoRecord.getColunaLombarL1());
 				final boolean l2 = "S".equals(laudoRecord.getColunaLombarL2());
 				final boolean l3 = "S".equals(laudoRecord.getColunaLombarL3());
@@ -111,6 +101,12 @@ public class LaudoEndpoint {
 				final String vertebras = vertebras(l1, l2, l3, l4);
 				
 				final Map<String, Object> laudoParameters = new HashMap<>();
+				laudoParameters.put("paciente", pacienteRecord.getNome());
+				laudoParameters.put("medico", medicoRecord.getNome());
+				laudoParameters.put("sexo", Sexo.valueOf(pacienteRecord.getSexo()).getValue());
+				laudoParameters.put("idade", Years.yearsBetween(new DateTime(pacienteRecord.getDataNascimento().getTime()), DateTime.now()).getYears());
+				laudoParameters.put("status", statusHormonal.getValue());
+				laudoParameters.put("data", new Date(DateTime.now().getMillis()));
 				laudoParameters.put("vertebras", vertebras);
 				laudoParameters.put("colunaLombarDensidade", laudoRecord.getColunaLombarDensidade());
 				laudoParameters.put("coloFemurDensidade", laudoRecord.getColoFemurDensidade());
@@ -144,15 +140,15 @@ public class LaudoEndpoint {
 					break;
 				}
 				
-				JasperReport jasperReportLaudo = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream(laudoNome));
-				JasperPrint jasperPrintLaudo = JasperFillManager.fillReport(jasperReportLaudo, laudoParameters, new JREmptyDataSource());
+				final JasperReport jasperReportLaudo = JasperCompileManager.compileReport(getClass().getClassLoader().getResourceAsStream(laudoNome));
+				final JasperPrint jasperPrintLaudo = JasperFillManager.fillReport(jasperReportLaudo, laudoParameters, new JREmptyDataSource());
 				
-				JRPdfExporter exporter = new JRPdfExporter();
-				exporter.setParameter(JRExporterParameter.JASPER_PRINT_LIST, Arrays.asList(jasperPrintCapa, jasperPrintLaudo));
+				final JRPdfExporter exporter = new JRPdfExporter();
+				exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrintLaudo);
 				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
 				exporter.exportReport();
 				
-				String name = String.format("%s-%s-%tF", pacienteRecord.getValue(PESSOA.NOME), pacienteRecord.getValue(PESSOA.CODIGO), laudoRecord.getValue(LAUDO.DATA));
+				final String name = String.format("%s-%s-%tF", pacienteRecord.getValue(PESSOA.NOME), pacienteRecord.getValue(PESSOA.CODIGO), laudoRecord.getValue(LAUDO.DATA));
 				return new LaudoPair(name, baos);
 			}
 			
