@@ -74,9 +74,18 @@ public class LaudoEndpoint {
 	@Path("/print/{id}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response print(final @PathParam("id") Long id) throws Exception {
-		ByteArrayOutputStream stream = new FallibleTransaction<ByteArrayOutputStream>() {
+		class LaudoPair {
+			public LaudoPair(String name, ByteArrayOutputStream stream) {
+				this.name = name;
+				this.stream = stream;
+			}
+			public String name;
+			public ByteArrayOutputStream stream;
+		}
+		
+		LaudoPair laudo = new FallibleTransaction<LaudoPair>() {
 			@Override
-			protected ByteArrayOutputStream executeFallible(DSLContext database) throws Exception {
+			protected LaudoPair executeFallible(DSLContext database) throws Exception {
 				final LaudoRecord laudoRecord = database.fetchOne(LAUDO, LAUDO.ID.eq(id));
 				final PessoaRecord pacienteRecord = database.fetchOne(PESSOA, PESSOA.ID.eq(laudoRecord.getPacienteId()));
 				final PessoaRecord medicoRecord = database.fetchOne(PESSOA, PESSOA.ID.eq(laudoRecord.getMedicoId()));
@@ -137,7 +146,8 @@ public class LaudoEndpoint {
 				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
 				exporter.exportReport();
 				
-				return baos;
+				String name = String.format("%s-%s-%tF", pacienteRecord.getValue(PESSOA.NOME), pacienteRecord.getValue(PESSOA.CODIGO), laudoRecord.getValue(LAUDO.DATA));
+				return new LaudoPair(name, baos);
 			}
 			
 			private BigDecimal risco(BigDecimal tscore) {
@@ -182,7 +192,7 @@ public class LaudoEndpoint {
 			}
 		}.execute();
 		
-		return Response.ok(stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename=laudo.pdf").build();
+		return Response.ok(laudo.stream.toByteArray(), MediaType.APPLICATION_OCTET_STREAM).header("Content-Disposition", "attachment; filename="+ laudo.name +".pdf").build();
 	}
 
 	@GET
