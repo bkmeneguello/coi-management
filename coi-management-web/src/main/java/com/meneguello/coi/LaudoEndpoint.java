@@ -3,10 +3,15 @@ package com.meneguello.coi;
 import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Laudo.LAUDO;
 import static com.meneguello.coi.model.tables.LaudoComparacao.LAUDO_COMPARACAO;
+import static com.meneguello.coi.model.tables.LaudoComparacaoOpcao.LAUDO_COMPARACAO_OPCAO;
+import static com.meneguello.coi.model.tables.LaudoComparacaoValue.LAUDO_COMPARACAO_VALUE;
 import static com.meneguello.coi.model.tables.LaudoObservacao.LAUDO_OBSERVACAO;
+import static com.meneguello.coi.model.tables.LaudoObservacaoOpcao.LAUDO_OBSERVACAO_OPCAO;
+import static com.meneguello.coi.model.tables.LaudoObservacaoValue.LAUDO_OBSERVACAO_VALUE;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.io.ByteArrayOutputStream;
@@ -41,7 +46,6 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
 
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.joda.time.DateTime;
 import org.joda.time.Years;
@@ -51,13 +55,63 @@ import org.jooq.Record;
 import org.jooq.Result;
 
 import com.meneguello.coi.model.Keys;
+import com.meneguello.coi.model.tables.records.LaudoComparacaoOpcaoRecord;
 import com.meneguello.coi.model.tables.records.LaudoComparacaoRecord;
+import com.meneguello.coi.model.tables.records.LaudoComparacaoValueRecord;
+import com.meneguello.coi.model.tables.records.LaudoObservacaoOpcaoRecord;
 import com.meneguello.coi.model.tables.records.LaudoObservacaoRecord;
+import com.meneguello.coi.model.tables.records.LaudoObservacaoValueRecord;
 import com.meneguello.coi.model.tables.records.LaudoRecord;
 import com.meneguello.coi.model.tables.records.PessoaRecord;
  
 @Path("/laudos")
 public class LaudoEndpoint {
+	
+	@GET
+	@Path("/observacoes")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<ObservacaoList> listObservacoes() throws Exception {
+		return new Transaction<List<ObservacaoList>>() {
+			@Override
+			protected List<ObservacaoList> execute(DSLContext database) {
+				final List<ObservacaoList> result =  new ArrayList<>();
+				final Result<LaudoObservacaoOpcaoRecord> opcaoResult = database.selectFrom(LAUDO_OBSERVACAO_OPCAO)
+						.orderBy(LAUDO_OBSERVACAO_OPCAO.CODIGO)
+						.fetch();
+				for (LaudoObservacaoOpcaoRecord opcaoRecord : opcaoResult) {
+					final ObservacaoList observacaoList = new ObservacaoList();
+					observacaoList.setCodigo(opcaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.CODIGO));
+					observacaoList.setDescricao(opcaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.DESCRICAO));
+					observacaoList.setRotulo(opcaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.ROTULO));
+					result.add(observacaoList);
+				}
+				return result;
+			}
+		}.execute();
+	}
+	
+	@GET
+	@Path("/comparacoes")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<ComparacaoList> listComparacoes() throws Exception {
+		return new Transaction<List<ComparacaoList>>() {
+			@Override
+			protected List<ComparacaoList> execute(DSLContext database) {
+				final List<ComparacaoList> result =  new ArrayList<>();
+				final Result<LaudoComparacaoOpcaoRecord> opcaoResult = database.selectFrom(LAUDO_COMPARACAO_OPCAO)
+						.orderBy(LAUDO_COMPARACAO_OPCAO.CODIGO)
+						.fetch();
+				for (LaudoComparacaoOpcaoRecord opcaoRecord : opcaoResult) {
+					final ComparacaoList comparacaoList = new ComparacaoList();
+					comparacaoList.setCodigo(opcaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.CODIGO));
+					comparacaoList.setDescricao(opcaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.DESCRICAO));
+					comparacaoList.setRotulo(opcaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.ROTULO));
+					result.add(comparacaoList);
+				}
+				return result;
+			}
+		}.execute();
+	}
 	
 	@GET
 	@Path("/meios")
@@ -183,34 +237,50 @@ public class LaudoEndpoint {
 			}
 
 			private Collection<Map<String, Object>> observacoes(DSLContext database, Long laudoId) {
-				final Result<LaudoObservacaoRecord> observacoesResult = database
-						.selectFrom(LAUDO_OBSERVACAO)
+				final Result<Record> observacoesResult = database
+						.selectFrom(LAUDO_OBSERVACAO.join(LAUDO_OBSERVACAO_OPCAO).onKey())
 						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudoId))
-						.orderBy(LAUDO_OBSERVACAO.CODIGO)
+						.orderBy(LAUDO_OBSERVACAO_OPCAO.CODIGO)
 						.fetch();
 				
 				final List<Map<String, Object>> observacoes = new ArrayList<>();
-				for (LaudoObservacaoRecord observacaoRecord : observacoesResult) {
+				for (Record observacaoRecord : observacoesResult) {
 					final Map<String, Object> observacao = new HashMap<>();
-					observacao.put("codigo", observacaoRecord.getCodigo());
-					observacao.put("descricao", observacaoRecord.getDescricao().replace("{}", StringUtils.trimToEmpty(observacaoRecord.getExtra())));
+					observacao.put("codigo", observacaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.CODIGO));
+					String descricao = observacaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.DESCRICAO);
+					final Result<LaudoObservacaoValueRecord> valueResult = database
+							.selectFrom(LAUDO_OBSERVACAO_VALUE)
+							.where(LAUDO_OBSERVACAO_VALUE.LAUDO_OBSERVACAO_ID.eq(observacaoRecord.getValue(LAUDO_OBSERVACAO.ID)))
+							.fetch();
+					for (LaudoObservacaoValueRecord valueRecord : valueResult) {
+						descricao = descricao.replace("{"+ valueRecord.getValue(LAUDO_OBSERVACAO_VALUE.NOME) +"}", trimToEmpty(valueRecord.getValue(LAUDO_OBSERVACAO_VALUE.VALOR)));
+					}
+					observacao.put("descricao", descricao);
 					observacoes.add(observacao);
 				}
 				return observacoes;
 			}
 			
 			private Collection<Map<String, Object>> comparacoes(DSLContext database, Long laudoId) {
-				final Result<LaudoComparacaoRecord> comparacoesResult = database
-						.selectFrom(LAUDO_COMPARACAO)
+				final Result<Record> comparacoesResult = database
+						.selectFrom(LAUDO_COMPARACAO.join(LAUDO_COMPARACAO_OPCAO).onKey())
 						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudoId))
-						.orderBy(LAUDO_COMPARACAO.CODIGO)
+						.orderBy(LAUDO_COMPARACAO_OPCAO.CODIGO)
 						.fetch();
 				
 				final List<Map<String, Object>> comparacoes = new ArrayList<>();
-				for (LaudoComparacaoRecord comparacaoRecord : comparacoesResult) {
+				for (Record comparacaoRecord : comparacoesResult) {
 					final Map<String, Object> comparacao = new HashMap<>();
-					comparacao.put("codigo", comparacaoRecord.getCodigo());
-					comparacao.put("descricao", comparacaoRecord.getDescricao().replace("{}", StringUtils.trimToEmpty(comparacaoRecord.getExtra())));
+					comparacao.put("codigo", comparacaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.CODIGO));
+					String descricao = comparacaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.DESCRICAO);
+					final Result<LaudoComparacaoValueRecord> valueResult = database
+							.selectFrom(LAUDO_COMPARACAO_VALUE)
+							.where(LAUDO_COMPARACAO_VALUE.LAUDO_COMPARACAO_ID.eq(comparacaoRecord.getValue(LAUDO_COMPARACAO.ID)))
+							.fetch();
+					for (LaudoComparacaoValueRecord valueRecord : valueResult) {
+						descricao = descricao.replace("{"+ valueRecord.getValue(LAUDO_COMPARACAO_VALUE.NOME) +"}", trimToEmpty(valueRecord.getValue(LAUDO_COMPARACAO_VALUE.VALOR)));
+					}
+					comparacao.put("descricao", descricao);
 					comparacoes.add(comparacao);
 				}
 				return comparacoes;
@@ -344,43 +414,80 @@ public class LaudoEndpoint {
 				
 				laudo.setId(record.getId());
 				
-				for (Observacao observacao : laudo.getObservacoes()) {
-					database.insertInto(
-							LAUDO_OBSERVACAO, 
-							LAUDO_OBSERVACAO.LAUDO_ID,
-							LAUDO_OBSERVACAO.CODIGO,
-							LAUDO_OBSERVACAO.DESCRICAO,
-							LAUDO_OBSERVACAO.EXTRA
-						)
-						.values(
-								laudo.getId(),
-								observacao.getCodigo(),
-								observacao.getDescricao(),
-								observacao.getExtra()
-						)
-						.execute();
-				}
-				
-				for (Comparacao comparacao : laudo.getComparacoes()) {
-					database.insertInto(
-							LAUDO_COMPARACAO, 
-							LAUDO_COMPARACAO.LAUDO_ID,
-							LAUDO_COMPARACAO.CODIGO,
-							LAUDO_COMPARACAO.DESCRICAO,
-							LAUDO_COMPARACAO.EXTRA
-						)
-						.values(
-								laudo.getId(),
-								comparacao.getCodigo(),
-								comparacao.getDescricao(),
-								comparacao.getExtra()
-						)
-						.execute();
-				}
+				insertObservacoes(database, laudo);
+				insertComparacoes(database, laudo);
 				
 				return laudo;
 			}
 		}.execute();
+	}
+
+	protected void insertComparacoes(DSLContext database, Laudo laudo) {
+		for (Comparacao comparacao : laudo.getComparacoes()) {
+			final Long opcaoId = database.select(LAUDO_COMPARACAO_OPCAO.ID)
+					.from(LAUDO_COMPARACAO_OPCAO)
+					.where(LAUDO_COMPARACAO_OPCAO.CODIGO.eq(comparacao.getCodigo()))
+					.fetchOne(LAUDO_COMPARACAO_OPCAO.ID);
+			final LaudoComparacaoRecord comparacaoRecord = database.insertInto(
+					LAUDO_COMPARACAO, 
+					LAUDO_COMPARACAO.LAUDO_ID,
+					LAUDO_COMPARACAO.LAUDO_COMPARACAO_OPCAO_ID
+				)
+				.values(
+						laudo.getId(),
+						opcaoId
+				)
+				.returning(LAUDO_COMPARACAO.ID)
+				.fetchOne();
+			for (Valor valor : comparacao.getValores()) {
+				database.insertInto(
+						LAUDO_COMPARACAO_VALUE,
+						LAUDO_COMPARACAO_VALUE.LAUDO_COMPARACAO_ID,
+						LAUDO_COMPARACAO_VALUE.NOME,
+						LAUDO_COMPARACAO_VALUE.VALOR
+					)
+					.values(
+							comparacaoRecord.getValue(LAUDO_COMPARACAO.ID),
+							valor.getNome(),
+							valor.getValor()
+					)
+					.execute();
+			}
+		}
+	}
+
+	protected void insertObservacoes(DSLContext database, Laudo laudo) {
+		for (Observacao observacao : laudo.getObservacoes()) {
+			final Long opcaoId = database.select(LAUDO_OBSERVACAO_OPCAO.ID)
+					.from(LAUDO_OBSERVACAO_OPCAO)
+					.where(LAUDO_OBSERVACAO_OPCAO.CODIGO.eq(observacao.getCodigo()))
+					.fetchOne(LAUDO_OBSERVACAO_OPCAO.ID);
+			final LaudoObservacaoRecord observacaoRecord = database.insertInto(
+					LAUDO_OBSERVACAO, 
+					LAUDO_OBSERVACAO.LAUDO_ID,
+					LAUDO_OBSERVACAO.LAUDO_OBSERVACAO_OPCAO_ID
+				)
+				.values(
+						laudo.getId(),
+						opcaoId
+				)
+				.returning(LAUDO_OBSERVACAO.ID)
+				.fetchOne();
+			for (Valor valor : observacao.getValores()) {
+				database.insertInto(
+						LAUDO_OBSERVACAO_VALUE,
+						LAUDO_OBSERVACAO_VALUE.LAUDO_OBSERVACAO_ID,
+						LAUDO_OBSERVACAO_VALUE.NOME,
+						LAUDO_OBSERVACAO_VALUE.VALOR
+					)
+					.values(
+							observacaoRecord.getValue(LAUDO_OBSERVACAO.ID),
+							valor.getNome(),
+							valor.getValor()
+					)
+					.execute();
+			}
+		}
 	}
 
 	@PUT
@@ -439,51 +546,39 @@ public class LaudoEndpoint {
 						.where(LAUDO.ID.eq(id))
 						.execute();
 				
-				database.delete(LAUDO_OBSERVACAO)
-						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudo.getId()))
-						.execute();
+				deleteObservacoes(database, laudo.getId());
+				insertObservacoes(database, laudo);
 				
-				for (Observacao observacao : laudo.getObservacoes()) {
-					database.insertInto(
-							LAUDO_OBSERVACAO, 
-							LAUDO_OBSERVACAO.LAUDO_ID,
-							LAUDO_OBSERVACAO.CODIGO,
-							LAUDO_OBSERVACAO.DESCRICAO,
-							LAUDO_OBSERVACAO.EXTRA
-						)
-						.values(
-								laudo.getId(),
-								observacao.getCodigo(),
-								observacao.getDescricao(),
-								observacao.getExtra()
-						)
-						.execute();
-				}
-				
-				database.delete(LAUDO_COMPARACAO)
-						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudo.getId()))
-						.execute();
-				
-				for (Comparacao comparacao : laudo.getComparacoes()) {
-					database.insertInto(
-							LAUDO_COMPARACAO, 
-							LAUDO_COMPARACAO.LAUDO_ID,
-							LAUDO_COMPARACAO.CODIGO,
-							LAUDO_COMPARACAO.DESCRICAO,
-							LAUDO_COMPARACAO.EXTRA
-						)
-						.values(
-								laudo.getId(),
-								comparacao.getCodigo(),
-								comparacao.getDescricao(),
-								comparacao.getExtra()
-						)
-						.execute();
-				}
+				deleteComparacoes(database, laudo.getId());
+				insertComparacoes(database, laudo);
 				
 				return laudo;
 			}
 		}.execute();
+	}
+
+	protected void deleteComparacoes(DSLContext database, Long laudoId) {
+		for (LaudoComparacaoRecord record : database.selectFrom(LAUDO_COMPARACAO).where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudoId)).fetch()) {
+			database.delete(LAUDO_COMPARACAO_VALUE)
+					.where(LAUDO_COMPARACAO_VALUE.LAUDO_COMPARACAO_ID.eq(record.getValue(LAUDO_COMPARACAO.ID)))
+					.execute();
+		}
+		
+		database.delete(LAUDO_COMPARACAO)
+				.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudoId))
+				.execute();
+	}
+
+	protected void deleteObservacoes(DSLContext database, Long laudoId) {
+		for (LaudoObservacaoRecord record : database.selectFrom(LAUDO_OBSERVACAO).where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudoId)).fetch()) {
+			database.delete(LAUDO_OBSERVACAO_VALUE)
+					.where(LAUDO_OBSERVACAO_VALUE.LAUDO_OBSERVACAO_ID.eq(record.getValue(LAUDO_OBSERVACAO.ID)))
+					.execute();
+		}
+		
+		database.delete(LAUDO_OBSERVACAO)
+				.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudoId))
+				.execute();
 	}
 
 	@DELETE
@@ -492,13 +587,8 @@ public class LaudoEndpoint {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(DSLContext database) {
-				database.delete(LAUDO_OBSERVACAO)
-						.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(id))
-						.execute();
-				
-				database.delete(LAUDO_COMPARACAO)
-						.where(LAUDO_COMPARACAO.LAUDO_ID.eq(id))
-						.execute();
+				deleteObservacoes(database, id);
+				deleteComparacoes(database, id);
 				
 				database.delete(LAUDO)
 						.where(LAUDO.ID.eq(id))
@@ -556,29 +646,45 @@ public class LaudoEndpoint {
 		
 		laudo.setConclusao(ConclusaoLaudo.valueOf(record.getValue(LAUDO.CONCLUSAO)).getValue());
 		
-		final Result<LaudoObservacaoRecord> observacoesRecord = database
-				.selectFrom(LAUDO_OBSERVACAO)
+		final Result<Record> observacoesRecord = database
+				.selectFrom(LAUDO_OBSERVACAO.join(LAUDO_OBSERVACAO_OPCAO).onKey())
 				.where(LAUDO_OBSERVACAO.LAUDO_ID.eq(laudo.getId()))
-				.orderBy(LAUDO_OBSERVACAO.CODIGO)
+				.orderBy(LAUDO_OBSERVACAO_OPCAO.CODIGO)
 				.fetch();
-		for (LaudoObservacaoRecord observacaoRecord : observacoesRecord) {
+		for (Record observacaoRecord : observacoesRecord) {
 			final Observacao observacao = new Observacao();
-			observacao.setCodigo(observacaoRecord.getCodigo());
-			observacao.setDescricao(observacaoRecord.getDescricao());
-			observacao.setExtra(observacaoRecord.getExtra());
+			observacao.setCodigo(observacaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.CODIGO));
+			observacao.setDescricao(observacaoRecord.getValue(LAUDO_OBSERVACAO_OPCAO.DESCRICAO));
+			final Result<LaudoObservacaoValueRecord> valorResult = database.selectFrom(LAUDO_OBSERVACAO_VALUE)
+					.where(LAUDO_OBSERVACAO_VALUE.LAUDO_OBSERVACAO_ID.eq(observacaoRecord.getValue(LAUDO_OBSERVACAO.ID)))
+					.fetch();
+			for (LaudoObservacaoValueRecord valorRecord : valorResult) {
+				Valor valor = new Valor();
+				valor.setNome(valorRecord.getValue(LAUDO_OBSERVACAO_VALUE.NOME));
+				valor.setValor(valorRecord.getValue(LAUDO_OBSERVACAO_VALUE.VALOR));
+				observacao.getValores().add(valor);
+			}
 			laudo.getObservacoes().add(observacao);
 		}
 		
-		final Result<LaudoComparacaoRecord> comparacoesRecord = database
-				.selectFrom(LAUDO_COMPARACAO)
+		final Result<Record> comparacoesRecord = database
+				.selectFrom(LAUDO_COMPARACAO.join(LAUDO_COMPARACAO_OPCAO).onKey())
 				.where(LAUDO_COMPARACAO.LAUDO_ID.eq(laudo.getId()))
-				.orderBy(LAUDO_COMPARACAO.CODIGO)
+				.orderBy(LAUDO_COMPARACAO_OPCAO.CODIGO)
 				.fetch();
-		for (LaudoComparacaoRecord comparacaoRecord : comparacoesRecord) {
+		for (Record comparacaoRecord : comparacoesRecord) {
 			final Comparacao comparacao = new Comparacao();
-			comparacao.setCodigo(comparacaoRecord.getCodigo());
-			comparacao.setDescricao(comparacaoRecord.getDescricao());
-			comparacao.setExtra(comparacaoRecord.getExtra());
+			comparacao.setCodigo(comparacaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.CODIGO));
+			comparacao.setDescricao(comparacaoRecord.getValue(LAUDO_COMPARACAO_OPCAO.DESCRICAO));
+			final Result<LaudoComparacaoValueRecord> valorResult = database.selectFrom(LAUDO_COMPARACAO_VALUE)
+					.where(LAUDO_COMPARACAO_VALUE.LAUDO_COMPARACAO_ID.eq(comparacaoRecord.getValue(LAUDO_COMPARACAO.ID)))
+					.fetch();
+			for (LaudoComparacaoValueRecord valorRecord : valorResult) {
+				Valor valor = new Valor();
+				valor.setNome(valorRecord.getValue(LAUDO_COMPARACAO_VALUE.NOME));
+				valor.setValor(valorRecord.getValue(LAUDO_COMPARACAO_VALUE.VALOR));
+				comparacao.getValores().add(valor);
+			}
 			laudo.getComparacoes().add(comparacao);
 		}
 		
@@ -672,14 +778,34 @@ public class LaudoEndpoint {
 	private static class Observacao {
 		private Integer codigo;
 		private String descricao;
-		private String extra;
+		private List<Valor> valores = new ArrayList<>();
+	}
+	
+	@Data
+	private static class ObservacaoList {
+		private Integer codigo;
+		private String descricao;
+		private String rotulo;
 	}
 	
 	@Data
 	private static class Comparacao {
 		private Integer codigo;
 		private String descricao;
-		private String extra;
+		private List<Valor> valores = new ArrayList<>();
+	}
+	
+	@Data
+	private static class ComparacaoList {
+		private Integer codigo;
+		private String descricao;
+		private String rotulo;
+	}
+	
+	@Data
+	private static class Valor {
+		private String nome;
+		private String valor;
 	}
 	
 	@Data @JsonIgnoreProperties({"partes", "prefixo", "codigoNumerico"})

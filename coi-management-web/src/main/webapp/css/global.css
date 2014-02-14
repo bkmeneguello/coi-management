@@ -94,6 +94,23 @@ input[type=text].coi-short-text {
 	padding: 5px;
 }
 
+.coi-inline-input {
+	text-align: center;
+	border: 1px solid silver;
+}
+
+.coi-inline-short-text {
+	width: 150px !important;	
+}
+
+.coi-inline-short-number, .coi-inline-percent {
+	width: 80px !important;	
+}
+
+.coi-inline-date {
+	width: 120px !important;	
+}
+
 .coi-action-cancel, 
 .coi-action-create, 
 .coi-action-update, 

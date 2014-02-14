@@ -9,11 +9,26 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var Valor = Backbone.Model.extend({
+		defaults: {
+			nome: null,
+			valor: null
+		}
+	});
+	
+	var Valores = Backbone.Collection.extend({
+		model: Valor
+	});
+	
 	var Observacao = Backbone.Model.extend({
 		defaults: {
 			codigo: null,
 			descricao: null,
-			extra: null
+			valores: new Valores()
+		},
+		parse: function(resp, options) {
+			resp.valores = new Valores(resp.valores, {parse: true});
+			return resp;
 		}
 	});
 	
@@ -25,7 +40,11 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		defaults: {
 			codigo: null,
 			descricao: null,
-			extra: null
+			valores: new Valores()
+		},
+		parse: function(resp, options) {
+			resp.valores = new Valores(resp.valores, {parse: true});
+			return resp;
 		}
 	});
 	
@@ -134,15 +153,12 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		render: function() {
 			var that = this;
 			this.$el.append($('<td>' + this.model.get('codigo') + '</td>'));
-			this.$el.append($('<td>' + this.model.get('descricao').replace('{}', '<input type="text" name="extra"/>') + '</td>'));
+			this.$el.append(parse($('<td>'), this.model.get('descricao'), this.model.get('valores')));
 			this.$el.append($('<td/>').append($('<button/>', {text: 'Remover'}).click(function(e) {
 				if (e && e.preventDefault){ e.preventDefault(); }
 		        if (e && e.stopPropagation){ e.stopPropagation(); }
 				that.model.collection.remove(that.model);
 			}).button()));
-			this.$('input[type=text]').input();
-			
-			new Backbone.ModelBinder().bind(this.model, this.el);
 		}
 	});
 	
@@ -156,17 +172,58 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		render: function() {
 			var that = this;
 			this.$el.append($('<td>' + this.model.get('codigo') + '</td>'));
-			this.$el.append($('<td>' + this.model.get('descricao').replace('{}', '<input type="text" name="extra"/>') + '</td>'));
+			this.$el.append(parse($('<td>'), this.model.get('descricao'), this.model.get('valores')));
 			this.$el.append($('<td/>').append($('<button/>', {text: 'Remover'}).click(function(e) {
 				if (e && e.preventDefault){ e.preventDefault(); }
 				if (e && e.stopPropagation){ e.stopPropagation(); }
 				that.model.collection.remove(that.model);
 			}).button()));
-			this.$('input[type=text]').input();
-			
-			new Backbone.ModelBinder().bind(this.model, this.el);
 		}
 	});
+	
+	function extra($el, name) {
+		if (endsWith(name, 'SText')) {
+			$el.addClass('coi-inline-short-text');
+		} else if (endsWith(name, 'SNumber')) {
+			$el.addClass('coi-inline-short-number');
+		} else if (endsWith(name, 'Date')) {
+			$el.addClass('coi-inline-date');
+		} else if (endsWith(name, 'Percent')) {
+			$el.addClass('coi-inline-percent');
+		}
+		return $el.addClass('coi-inline-input');
+	}
+	
+	function parse($el, descricao, valores) {
+		var index = 0;
+		descricao = descricao.replace(/\n/g, '<br/>');
+		while(~index) {
+			var start = descricao.indexOf('{', index);
+			if (~start) {
+				var end = descricao.indexOf('}', start);
+				var name = descricao.substring(start + 1, end);
+				var text = descricao.substring(index, start);
+				$el.append(text);
+				var $input = extra($('<input>', {type: 'text', name: name}), name)
+					.input()
+					.appendTo($el);
+				var valor = valores.find(function(element) {
+					return element.get('nome') == name;
+				});
+				if (!valor) {
+					valor = new Valor({nome: name});
+					valores.add(valor);
+				}
+				new Backbone.ModelBinder().bind(valor, $input, {valor: ''});
+				index = end + 1;
+			} else {
+				var text = descricao.substring(index);
+				$el.append(text);
+				index = start;
+			}
+		}
+		return $el;
+	}
 	
 	var ComparacoesView = Marionette.CollectionView.extend({
 		itemView: ComparacaoView
@@ -203,6 +260,21 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			if (!this.model.isNew()) {
 				this.model.fetch();
 			}
+			var that = this;
+			$.getJSON('rest/laudos/observacoes', function(data) {
+				$.each(data, function(index, observacao) {
+					$('<option>', {text: observacao.rotulo, value: observacao.codigo})
+						.data('descricao', observacao.descricao)
+						.appendTo(that.ui.observacoes);
+				});
+			});
+			$.getJSON('rest/laudos/comparacoes', function(data) {
+				$.each(data, function(index, comparacao) {
+					$('<option>', {text: comparacao.rotulo, value: comparacao.codigo})
+						.data('descricao', comparacao.descricao)
+						.appendTo(that.ui.comparacoes);
+				});
+			});
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
@@ -243,19 +315,19 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			this.comparacoes.show(new ComparacoesView({collection: this.model.get('comparacoes')}));
 		},
 		onAdicionarObservacao: function(e) {
-			var data = this.ui.observacoes.children('option:selected').data();
+			var selected = this.ui.observacoes.children('option:selected');
 			this.model.get('observacoes').add(new Observacao({
-				codigo: data.code,
-				descricao: data.value
+				codigo: selected.val(),
+				descricao: selected.data('descricao')
 			}));
 			
 			this.ui.observacoes.val(null);
 		},
 		onAdicionarComparacao: function(e) {
-			var data = this.ui.comparacoes.children('option:selected').data();
+			var selected = this.ui.comparacoes.children('option:selected');
 			this.model.get('comparacoes').add(new Comparacao({
-				codigo: data.code,
-				descricao: data.value
+				codigo: selected.val(),
+				descricao: selected.data('descricao')
 			}));
 			
 			this.ui.comparacoes.val(null);
