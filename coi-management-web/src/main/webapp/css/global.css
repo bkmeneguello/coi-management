@@ -57,6 +57,10 @@ th.ui-widget-header {
 	width: 200px;
 }
 
+.coi-cell-item {
+	vertical-align: top;
+}
+
 .coi-cell-item input[type=text] {
 	width: 100px;
 }
@@ -101,6 +105,11 @@ input[type=text].coi-short-text {
 
 .coi-inline-short-text {
 	width: 150px !important;	
+}
+
+.coi-inline-long-text {
+	border: 1px solid silver;
+	width: 555px !important;	
 }
 
 .coi-inline-short-number, .coi-inline-percent {

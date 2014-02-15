@@ -242,6 +242,7 @@ INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(9, 'Sugerim
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(10, 'Presença de alterações estruturais no quadril que podem superestimar a real densidade óssea do fêmur', 'Presença de alterações estruturais...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(11, 'Sugerimos afastar causa secundária de baixa densidade óssea para a idade', 'Sugerimos afastar causa secundária... baixa densidade...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(12, 'Sugerimos afastar causa secundária de osteoporose (Z-score <= -2)', 'Sugerimos afastar causa secundária... osteoporose...');
+INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(13, '{observacaoLText}', 'Observação');
 
 ALTER TABLE LAUDO_OBSERVACAO DROP COLUMN CODIGO;
 ALTER TABLE LAUDO_OBSERVACAO DROP COLUMN DESCRICAO;
@@ -281,6 +282,7 @@ INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(9, 'Sugerim
 INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(10, 'Sugerimos não utilizar o fêmur proximal para diagnóstico, classificação de risco de fraturas ou monitorização terapêutica, devido à presença alterações estruturais', 'Sugerimos não utilizar o fêmur...' );
 INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(11, 'Sugerimos utilizar o segmento {segmentoSText} para diagnóstico, classificação de risco de fraturas e monitorização terapêutica, devido à presença de alterações nas outras vértebras analisadas', 'Sugerimos utilizar o segmento...');
 INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(12, 'À critério clínico, sugere-se controle com densitometria em {intervaloSNumber} meses', 'À critério clínico, sugere-se controle...');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(13, '{observacaoLText}', 'Observação');
 
 ALTER TABLE LAUDO_COMPARACAO DROP COLUMN CODIGO;
 ALTER TABLE LAUDO_COMPARACAO DROP COLUMN DESCRICAO;

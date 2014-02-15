@@ -181,7 +181,8 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	function extra($el, name) {
+	function extra(name) {
+		var $el = $('<input>', {type: 'text', name: name, 'class': 'coi-inline-input'});
 		if (endsWith(name, 'SText')) {
 			$el.addClass('coi-inline-short-text');
 		} else if (endsWith(name, 'SNumber')) {
@@ -190,8 +191,11 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			$el.addClass('coi-inline-date');
 		} else if (endsWith(name, 'Percent')) {
 			$el.addClass('coi-inline-percent');
+		} else if (endsWith(name, 'LText')) {
+			$el = $('<textarea>', {name: name});
+			$el.addClass('coi-inline-long-text');
 		}
-		return $el.addClass('coi-inline-input');
+		return $el;
 	}
 	
 	function parse($el, descricao, valores) {
@@ -204,7 +208,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 				var name = descricao.substring(start + 1, end);
 				var text = descricao.substring(index, start);
 				$el.append(text);
-				var $input = extra($('<input>', {type: 'text', name: name}), name)
+				var $input = extra(name)
 					.input()
 					.appendTo($el);
 				var valor = valores.find(function(element) {
