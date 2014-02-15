@@ -4,14 +4,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class PessoasPage extends GridPage {
+public class PessoasPage extends GridPage<PessoaPage> {
 	
 	private static final int ACAO_EDITAR = 1;
 	
 	private static final int ACAO_EXCLUIR = 2;
-
-	@FindBy(className = "coi-action-create")
-	private WebElement adicionar;
 	
 	@FindBy(id = "coi-action-pessoas-importar")
 	private WebElement importar;
@@ -29,10 +26,6 @@ public class PessoasPage extends GridPage {
 	protected int getColunaAcao() {
 		return 3;
 	}
-	
-	public PessoaPage clickAdicionar() {
-		return click(adicionar, PessoaPage.class);
-	}
 
 	public PessoaPage clickEditar(int row) {
 		clickBotaoAcao(row, ACAO_EDITAR);
@@ -46,6 +39,11 @@ public class PessoasPage extends GridPage {
 
 	public ImportarPessoasPopup clickImportar() {
 		return click(importar, ImportarPessoasPopup.class);
+	}
+
+	@Override
+	protected Class<PessoaPage> getFormClass() {
+		return PessoaPage.class;
 	}
 	
 }

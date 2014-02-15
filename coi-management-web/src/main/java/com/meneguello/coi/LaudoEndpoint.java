@@ -36,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import lombok.Data;
 import net.sf.jasperreports.engine.JREmptyDataSource;
@@ -324,7 +325,7 @@ public class LaudoEndpoint {
 						.fetchOne();
 				
 				final Laudo laudo = buildLaudo(database, record);
-	
+				
 				return laudo;
 			}
 		}.execute();
@@ -691,6 +692,81 @@ public class LaudoEndpoint {
 		return laudo;
 	}
 	
+	@GET
+	@Path("/anterior/{codigoPaciente:[a-zA-Z]-\\d+}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public LaudoAnterior getLaudoAnterior(final @PathParam("codigoPaciente") String codigoPaciente) {
+		return new FallibleTransaction<LaudoAnterior>() {
+			@Override
+			protected LaudoAnterior executeFallible(DSLContext database) {
+				String[] split = codigoPaciente.split("-");
+				String prefixo = split[0];
+				int codigo = Integer.parseInt(split[1]);
+				final Record record = database
+						.selectFrom(LAUDO.join(PESSOA).onKey(Keys.LAUDO_FK_PACIENTE))
+						.where(PESSOA.PREFIXO.eq(prefixo))
+						.and(PESSOA.CODIGO.eq(codigo))
+						.orderBy(LAUDO.DATA.desc())
+						.limit(1)
+						.fetchOne();
+				if (record == null) throw new WebApplicationException(Status.NOT_FOUND);
+				
+				LaudoAnterior laudo = buildLaudoAnterior(database, record);
+				laudo.setId(record.getValue(PESSOA.PREFIXO) + "-" + record.getValue(PESSOA.CODIGO));
+				return laudo;
+			}
+		}.execute();
+	}
+	
+	@GET
+	@Path("/anterior/{id:\\d+}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public LaudoAnterior getLaudoAnterior(final @PathParam("id") Long id) {
+		return new FallibleTransaction<LaudoAnterior>() {
+			@Override
+			protected LaudoAnterior executeFallible(DSLContext database) {
+				final Record recordAtual = database
+						.selectFrom(LAUDO.join(PESSOA).onKey(Keys.LAUDO_FK_PACIENTE))
+						.where(LAUDO.ID.eq(id))
+						.fetchOne();
+				
+				final Record record = database
+						.selectFrom(LAUDO.join(PESSOA).onKey(Keys.LAUDO_FK_PACIENTE))
+						.where(PESSOA.PREFIXO.eq(recordAtual.getValue(PESSOA.PREFIXO)))
+						.and(PESSOA.CODIGO.eq(recordAtual.getValue(PESSOA.CODIGO)))
+						.and(LAUDO.DATA.lt(recordAtual.getValue(LAUDO.DATA)))
+						.orderBy(LAUDO.DATA.desc())
+						.limit(1)
+						.fetchOne();
+				if (record == null) throw new WebApplicationException(Status.NOT_FOUND);
+				
+				LaudoAnterior laudo = buildLaudoAnterior(database, record);
+				laudo.setId(id.toString());
+				return laudo;
+			}
+		}.execute();
+	}
+	
+	private LaudoAnterior buildLaudoAnterior(DSLContext database, Record record) {
+		final LaudoAnterior laudo = new LaudoAnterior();
+		laudo.setDataAnt(record.getValue(LAUDO.DATA));
+		
+		laudo.setColunaLombarL1Ant(record.getValue(LAUDO.COLUNA_LOMBAR_L1).equals("S"));
+		laudo.setColunaLombarL2Ant(record.getValue(LAUDO.COLUNA_LOMBAR_L2).equals("S"));
+		laudo.setColunaLombarL3Ant(record.getValue(LAUDO.COLUNA_LOMBAR_L3).equals("S"));
+		laudo.setColunaLombarL4Ant(record.getValue(LAUDO.COLUNA_LOMBAR_L4).equals("S"));
+		
+		laudo.setColunaLombarDensidadeAnt(record.getValue(LAUDO.COLUNA_LOMBAR_DENSIDADE));
+		laudo.setColunaLombarTScoreAnt(record.getValue(LAUDO.COLUNA_LOMBAR_TSCORE));
+		laudo.setColunaLombarZScoreAnt(record.getValue(LAUDO.COLUNA_LOMBAR_ZSCORE));
+		
+		laudo.setFemurTotalDensidadeAnt(record.getValue(LAUDO.FEMUR_TOTAL_DENSIDADE));
+		laudo.setFemurTotalTScoreAnt(record.getValue(LAUDO.FEMUR_TOTAL_TSCORE));
+		laudo.setFemurTotalZScoreAnt(record.getValue(LAUDO.FEMUR_TOTAL_ZSCORE));
+		
+		return laudo;
+	}
+	
 	private Pessoa getPessoa(DSLContext database, final Long id) {
 		final PessoaRecord pessoaRecord = database.selectFrom(PESSOA)
 				.where(PESSOA.ID.eq(id))
@@ -772,6 +848,22 @@ public class LaudoEndpoint {
 		private String conclusao;
 		private List<Observacao> observacoes = new ArrayList<>();
 		private List<Comparacao> comparacoes = new ArrayList<>();
+	}
+	
+	@Data
+	private static class LaudoAnterior {
+		private String id;
+		private Date dataAnt;
+		private boolean colunaLombarL1Ant;
+		private boolean colunaLombarL2Ant;
+		private boolean colunaLombarL3Ant;
+		private boolean colunaLombarL4Ant;
+		private BigDecimal colunaLombarDensidadeAnt;
+		private BigDecimal colunaLombarTScoreAnt;
+		private BigDecimal colunaLombarZScoreAnt;
+		private BigDecimal femurTotalDensidadeAnt;
+		private BigDecimal femurTotalTScoreAnt;
+		private BigDecimal femurTotalZScoreAnt;
 	}
 	
 	@Data

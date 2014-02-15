@@ -7,7 +7,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class PagamentosPage extends GridPage {
+public class PagamentosPage extends GridPage<PagamentoPage> {
 
 	private static final int COLUNA_VENCIMENTO = 1;
 	
@@ -18,9 +18,6 @@ public class PagamentosPage extends GridPage {
 	private static final int COLUNA_VALOR = 4;
 
 	private static final int ACAO_EDITAR = 1;
-	
-	@FindBy(className = "coi-action-create")
-	private WebElement adicionar;
 	
 	private WebElement situacao;
 	
@@ -42,10 +39,6 @@ public class PagamentosPage extends GridPage {
 	@Override
 	protected int getColunaAcao() {
 		return 5;
-	}
-
-	public PagamentoPage clickAdicionar() {
-		return click(adicionar, PagamentoPage.class);
 	}
 	
 	public String getVencimento(int row) {
@@ -83,6 +76,11 @@ public class PagamentosPage extends GridPage {
 
 	public void selectSituacao(String situacao) {
 		selectValue(this.situacao, situacao);
+	}
+
+	@Override
+	protected Class<PagamentoPage> getFormClass() {
+		return PagamentoPage.class;
 	}
 
 }

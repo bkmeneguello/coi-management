@@ -17,6 +17,8 @@ public class MainPage extends DefaultPage {
 	
 	private WebElement pagamentos;
 	
+	private WebElement laudos;
+	
 	public static MainPage page(WebDriver driver) {
 		return PageFactory.initElements(driver, MainPage.class);
 	}
@@ -27,6 +29,10 @@ public class MainPage extends DefaultPage {
 
 	public PagamentosPage clickPagamentos() {
 		return click(pagamentos, PagamentosPage.class);
+	}
+
+	public LaudosPage clickLaudos() {
+		return click(laudos, LaudosPage.class);
 	}
 	
 }

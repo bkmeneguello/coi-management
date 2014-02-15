@@ -1,8 +1,12 @@
 package com.meneguello.coi.test;
 
+import static org.openqa.selenium.Keys.DOWN;
+import static org.openqa.selenium.Keys.TAB;
 import static org.openqa.selenium.support.ui.ExpectedConditions.elementToBeClickable;
+import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOf;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -68,6 +72,33 @@ public abstract class DefaultPage {
 
 	protected void selectValue(WebElement element, String value) {
 		new Select(element).selectByVisibleText(value);
+	}
+	
+	protected void selectIndex(WebElement element, int index) {
+		new Select(element).selectByIndex(index - 1);
+	}
+	
+	protected void selectAutocomplete(WebElement autocomplete, int index) {
+		waitUntil(visibilityOfAnyElementLocated(By.className("ui-autocomplete")));
+		for (int i = 0; i < index; i++) {
+			autocomplete.sendKeys(DOWN);
+		}
+		autocomplete.sendKeys(TAB);
+		waitUntil(not(visibilityOfAnyElementLocated(By.className("ui-autocomplete"))));
+	}
+
+	private ExpectedCondition<WebElement> visibilityOfAnyElementLocated(final By by) {
+		return new ExpectedCondition<WebElement>() {
+			@Override
+			public WebElement apply(WebDriver input) {
+				for (WebElement element : input.findElements(by)) {
+					if (element.isDisplayed()) {
+						return element;
+					}
+				}
+				return null;
+			}
+		};
 	}
 
 }

@@ -99,6 +99,30 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var LaudoAnterior = Backbone.Model.extend({
+		urlRoot: 'rest/laudos/anterior',
+		defaults: function() {
+			return {
+				dataAnt: null,
+				colunaLombarL1Ant: true,
+				colunaLombarL2Ant: true,
+				colunaLombarL3Ant: true,
+				colunaLombarL4Ant: true,
+				colunaLombarDensidadeAnt: null,
+				colunaLombarTScoreAnt: null,
+				colunaLombarZScoreAnt: null,
+				femurTotalDensidadeAnt: null,
+				femurTotalTScoreAnt: null,
+				femurTotalZScoreAnt: null,
+			};
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.dataAnt = toTimestamp(attributes.dataAnt);
+			return attributes;
+		}
+	});
+	
 	var ExamePosMenopausaView = Marionette.ItemView.extend({
 		template: '#exame_pos_menopausa_template',
 		modelBinder: function() {
@@ -109,18 +133,32 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['colunaLombarDensidade'].converter = decimal3Converter;
 			bindings['colunaLombarTScore'].converter = decimal1Converter;
 			bindings['colunaLombarZScore'].converter = decimal1Converter;
+			bindings['colunaLombarDensidadeAnt'].converter = decimal3Converter;
+			bindings['colunaLombarTScoreAnt'].converter = decimal1Converter;
+			bindings['colunaLombarZScoreAnt'].converter = decimal1Converter;
+			bindings['colunaLombarRazaoAnt'].converter = percentageConverter;
 			bindings['coloFemurDensidade'].converter = decimal3Converter;
 			bindings['coloFemurTScore'].converter = decimal1Converter;
 			bindings['coloFemurZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidade'].converter = decimal3Converter;
 			bindings['femurTotalTScore'].converter = decimal1Converter;
 			bindings['femurTotalZScore'].converter = decimal1Converter;
+			bindings['femurTotalDensidadeAnt'].converter = decimal3Converter;
+			bindings['femurTotalTScoreAnt'].converter = decimal1Converter;
+			bindings['femurTotalZScoreAnt'].converter = decimal1Converter;
+			bindings['femurTotalRazaoAnt'].converter = percentageConverter;
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
 			bindings['radioTercoTScore'].converter = decimal1Converter;
 			bindings['radioTercoZScore'].converter = decimal1Converter;
 			this.modelBinder().bind(this.model, this.el, bindings);
+			this.modelBinder().bind(this.options.laudoAnterior, this.el, bindings);
 			
 			this.$('input[type=text]').input();
+			this.$('.coi-exame-anterior').toggle(!!this.options.laudoAnterior.get('id'));
+			var view = this;
+			this.options.laudoAnterior.on('change:id', function() {
+				view.$('.coi-exame-anterior').toggle(!!this.get('id'));
+			});
 		}
 	});
 	
@@ -133,17 +171,29 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
 			bindings['colunaLombarDensidade'].converter = decimal3Converter;
 			bindings['colunaLombarZScore'].converter = decimal1Converter;
+			bindings['colunaLombarDensidadeAnt'].converter = decimal3Converter;
+			bindings['colunaLombarZScoreAnt'].converter = decimal1Converter;
+			bindings['colunaLombarRazaoAnt'].converter = percentageConverter;
 			bindings['coloFemurDensidade'].converter = decimal3Converter;
 			bindings['coloFemurZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidade'].converter = decimal3Converter;
 			bindings['femurTotalZScore'].converter = decimal1Converter;
+			bindings['femurTotalDensidadeAnt'].converter = decimal3Converter;
+			bindings['femurTotalZScoreAnt'].converter = decimal1Converter;
+			bindings['femurTotalRazaoAnt'].converter = percentageConverter;
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
 			bindings['radioTercoZScore'].converter = decimal1Converter;
 			bindings['corpoInteiroDensidade'].converter = decimalConverter;
 			bindings['corpoInteiroZScore'].converter = decimal1Converter;
 			this.modelBinder().bind(this.model, this.el, bindings);
+			this.modelBinder().bind(this.options.laudoAnterior, this.el, bindings);
 			
 			this.$('input[type=text]').input();
+			this.$('.coi-exame-anterior').toggle(!!this.options.laudoAnterior.get('id'));
+			var view = this;
+			this.options.laudoAnterior.on('change:id', function() {
+				view.$('.coi-exame-anterior').toggle(!!this.get('id'));
+			});
 		}
 	});
 	
@@ -247,7 +297,9 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			'change:medico': 'renderMedico',
 			'change:status': 'updateExame',
 			'change:observacoes': 'renderObservacoes',
-			'change:comparacoes': 'renderComparacoes'
+			'change:comparacoes': 'renderComparacoes',
+			'change:colunaLombarDensidade': 'updateColunaLombarDensidade',
+			'change:femurTotalDensidade': 'updateFemurTotalDensidade'
 		},
 		ui: {
 			'conclusao': '[name=conclusao]',
@@ -261,6 +313,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			'click #adicionar-comparacao': 'adicionarComparacao'
 		},
 		initialize: function() {
+			_.bindAll(this);
 			if (!this.model.isNew()) {
 				this.model.fetch();
 			}
@@ -279,6 +332,8 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 						.appendTo(that.ui.comparacoes);
 				});
 			});
+			this.laudoAnterior = new LaudoAnterior();
+			this.model.get("paciente").on("change:codigo", this.updateLaudoAnterior);
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
@@ -307,16 +362,40 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			this.medico.show(new COI.PessoaView({model: this.model.get('medico'), label: 'Médico:', attribute: 'cliente', required: true}));
 		},
 		renderExamePreMenopausa: function() {
-			this.exame.show(new ExamePreMenopausaView({model: this.model}));
+			this.exame.show(new ExamePreMenopausaView({model: this.model, laudoAnterior: this.laudoAnterior}));
 		},
 		renderExamePosMenopausa: function() {
-			this.exame.show(new ExamePosMenopausaView({model: this.model}));
+			this.exame.show(new ExamePosMenopausaView({model: this.model, laudoAnterior: this.laudoAnterior}));
 		},
 		renderObservacoes: function() {
 			this.observacoes.show(new ObservacoesView({collection: this.model.get('observacoes')}));
 		},
 		renderComparacoes: function() {
 			this.comparacoes.show(new ComparacoesView({collection: this.model.get('comparacoes')}));
+		},
+		updateLaudoAnterior: function() {
+			var codigo = this.model.get('paciente').get('codigo');
+			if (codigo) {
+				this.laudoAnterior.set('id', codigo).fetch({error: function(model) {
+					model.clear();
+				}});
+			} else {
+				this.laudoAnterior.clear();
+			}
+		},
+		updateColunaLombarDensidade: function() {
+			var anterior = this.laudoAnterior.get('colunaLombarDensidadeAnt');
+			if (anterior) {
+				var atual = this.model.get('colunaLombarDensidade');
+				this.laudoAnterior.set('colunaLombarRazaoAnt', ((atual - anterior) / anterior));
+			}
+		},
+		updateFemurTotalDensidade: function() {
+			var anterior = this.laudoAnterior.get('femurTotalDensidadeAnt');
+			if (anterior) {
+				var atual = this.model.get('femurTotalDensidade');
+				this.laudoAnterior.set('femurTotalRazaoAnt', ((atual - anterior) / anterior));
+			}
 		},
 		onAdicionarObservacao: function(e) {
 			var selected = this.ui.observacoes.children('option:selected');

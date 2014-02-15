@@ -6,10 +6,13 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-public abstract class GridPage extends FormPage {
+public abstract class GridPage<T extends DefaultPage> extends FormPage {
 	
 	@FindBy(xpath = "/html/body/form/table/tbody")
 	private WebElement gridData;
+
+	@FindBy(className = "coi-action-create")
+	private WebElement adicionar;
 
 	public GridPage(WebDriver driver) {
 		super(driver);
@@ -30,5 +33,11 @@ public abstract class GridPage extends FormPage {
 	}
 	
 	protected abstract int getColunaAcao();
+	
+	public T clickAdicionar() {
+		return click(adicionar, getFormClass());
+	}
+	
+	protected abstract Class<T> getFormClass();
 	
 }

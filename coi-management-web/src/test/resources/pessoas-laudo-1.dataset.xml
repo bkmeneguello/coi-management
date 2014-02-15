@@ -1,0 +1,10 @@
+ <dataset>
+     <pessoa id="1" nome="Dr. Fulano de Tal" prefixo="M" codigo="1"/>
+     <pessoa id="2" nome="Maria da Silva" prefixo="P" codigo="1" sexo="FEMININO" data_nascimento="1973-02-21"/>
+     <pessoa id="3" nome="Joaquina de Castro" prefixo="P" codigo="2" sexo="FEMININO" data_nascimento="1953-09-15"/>
+     <laudo id="1" data="2013-02-01" medico_id="1" paciente_id="2" status_hormonal="POS_MENOPAUSAL" coluna_lombar_l1="S" coluna_lombar_l2="N" coluna_lombar_l3="S" coluna_lombar_l4="S" coluna_lombar_densidade="0.868" coluna_lombar_tscore="-2.5" coluna_lombar_zscore="-0.5" colo_femur_densidade="0.633" colo_femur_tscore="-3.4" colo_femur_zscore="-1.1" femur_total_densidade="0.674" femur_total_tscore="-2.7" femur_total_zscore="-1.1" radio_terco_densidade="0.608" radio_terco_tscore="-1.5" radio_terco_zscore="0.5" conclusao="OSTEOPOROSE"/>
+     <laudo_observacao/>
+     <laudo_observacao_value/>
+     <laudo_comparacao/>
+     <laudo_comparacao_value/>
+ </dataset>
