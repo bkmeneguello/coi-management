@@ -433,9 +433,13 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		renderExamePreMenopausa: function() {
 			this.exame.show(new ExamePreMenopausaView({model: this.model, laudoAnterior: this.laudoAnterior}));
+			this.$el.find('.pre-menopausa').show();
+			this.$el.find('.pos-menopausa').hide();
 		},
 		renderExamePosMenopausa: function() {
 			this.exame.show(new ExamePosMenopausaView({model: this.model, laudoAnterior: this.laudoAnterior}));
+			this.$el.find('.pos-menopausa').show();
+			this.$el.find('.pre-menopausa').hide();
 		},
 		renderObservacoes: function() {
 			this.observacoes.show(new ObservacoesView({collection: this.model.get('observacoes')}));
