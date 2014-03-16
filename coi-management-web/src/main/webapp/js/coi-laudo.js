@@ -142,8 +142,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
 			bindings['radioTercoTScore'].converter = decimal1Converter;
 			bindings['radioTercoZScore'].converter = decimal1Converter;
-			this.modelBinder().bind(this.model, this.el, bindings);
-			this.modelBinder().bind(this.options.laudoAnterior, this.el, {
+			var bindingsAnt = {
 				colunaLombarL1Ant: {selector: '[name=colunaLombarL1Ant]'},
 				colunaLombarL2Ant: {selector: '[name=colunaLombarL2Ant]'},
 				colunaLombarL3Ant: {selector: '[name=colunaLombarL3Ant]'},
@@ -180,7 +179,9 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 					selector: '[name=femurTotalRazaoAnt]',
 					converter: decimal3Converter
 				}
-			});
+			};
+			this.modelBinder().bind(this.options.laudoAnterior, this.el, bindingsAnt);
+			this.modelBinder().bind(this.model, this.el, _.omit(bindings, _.keys(bindingsAnt)));
 			
 			this.$('input[type=text]').input();
 			this.$('.coi-exame-anterior').toggle(!!this.options.laudoAnterior.get('id'));
@@ -214,8 +215,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['radioTercoZScore'].converter = decimal1Converter;
 			bindings['corpoInteiroDensidade'].converter = decimal3Converter;
 			bindings['corpoInteiroZScore'].converter = decimal1Converter;
-			this.modelBinder().bind(this.model, this.el, bindings);
-			this.modelBinder().bind(this.options.laudoAnterior, this.el, {
+			var bindingsAnt = {
 				colunaLombarL1Ant: {selector: '[name=colunaLombarL1Ant]'},
 				colunaLombarL2Ant: {selector: '[name=colunaLombarL2Ant]'},
 				colunaLombarL3Ant: {selector: '[name=colunaLombarL3Ant]'},
@@ -244,7 +244,9 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 					selector: '[name=femurTotalRazaoAnt]',
 					converter: decimal3Converter
 				}
-			});
+			};
+			this.modelBinder().bind(this.options.laudoAnterior, this.el, bindingsAnt);
+			this.modelBinder().bind(this.model, this.el, _.omit(bindings, _.keys(bindingsAnt)));
 			
 			this.$('input[type=text]').input();
 			this.$('.coi-exame-anterior').toggle(!!this.options.laudoAnterior.get('id'));
@@ -393,6 +395,8 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			this.laudoAnterior = new LaudoAnterior();
 			this.model.get("paciente").on("change:codigo", this.updateLaudoAnterior);
 			this.model.on('change:paciente', this.updateLaudoAnterior);
+			this.laudoAnterior.on('change:colunaLombarDensidadeAnt', this.updateColunaLombarDensidade);
+			this.laudoAnterior.on('change:femurTotalDensidadeAnt', this.updateFemurTotalDensidade);
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
@@ -410,6 +414,9 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			this.renderMedico();
 			this.renderObservacoes();
 			this.renderComparacoes();
+			
+			this.updateColunaLombarDensidade();
+			this.updateFemurTotalDensidade();
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();
