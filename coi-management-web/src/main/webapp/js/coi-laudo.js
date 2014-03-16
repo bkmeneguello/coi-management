@@ -21,10 +21,12 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Observacao = Backbone.Model.extend({
-		defaults: {
-			codigo: null,
-			descricao: null,
-			valores: new Valores()
+		defaults: function() {
+			return {
+				codigo: null,
+				descricao: null,
+				valores: new Valores()
+			};
 		},
 		parse: function(resp, options) {
 			resp.valores = new Valores(resp.valores, {parse: true});
@@ -37,10 +39,12 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var Comparacao = Backbone.Model.extend({
-		defaults: {
-			codigo: null,
-			descricao: null,
-			valores: new Valores()
+		defaults: function() { 
+			return {
+				codigo: null,
+				descricao: null,
+				valores: new Valores()
+			};
 		},
 		parse: function(resp, options) {
 			resp.valores = new Valores(resp.valores, {parse: true});
