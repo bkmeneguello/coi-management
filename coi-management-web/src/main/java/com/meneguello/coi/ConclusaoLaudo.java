@@ -5,7 +5,7 @@ public enum ConclusaoLaudo {
 	NORMAL("Normal"),
 	OSTEOPENIA("Osteopenia"),
 	OSTEOPOROSE("Osteoporose"),
-	EPERADO_PARA_IDADE("Dentro do esperado para a idade"),
+	ESPERADO_PARA_IDADE("Dentro do esperado para a idade"),
 	BAIXA_DENSIDADE_OSSEA("Baixa densidade óssea para a idade");
 	
 	private String value;
