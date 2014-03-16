@@ -235,9 +235,9 @@ INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(2, 'À crit
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(3, 'À critério clínico, sugerimos estudo radiográfico da coluna lombar para avaliar fraturas ou alterações degenerativas, devido à diferença de densidade mineral óssea observada entre {segmentoSText}', 'À critério clínico, sugerimos estudo radiográfico...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(4, 'Devido à presença de alterações estruturais na coluna lombar procedemos a análise no antebraço', 'Devido à presença de alterações estruturais...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(5, 'Presença de artefato ao nível de {segmentoSText}', 'Presença de artefato ao nível de...');
-INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(6, 'Presença de vértebra de transição (VT)', 'Presença de vértebra de transição...');
-INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(7, 'Devido dificuldade de rotação do quadril ou presença de material cirúrgico, não foi possível análise válida do fêmur direito. Por esse motivo, procedemos a análise de fêmur esquerdo', 'Devido dificuldade de rotação do quadril... fêmur direito...');
-INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(8, 'Devido dificuldade de rotação do quadril ou presença de material cirúrgico, não foi possível análise válida de fêmur, tanto a direita quanto a esquerda', 'Devido dificuldade de rotação do quadril... ambos...');
+INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(6, 'Presença de provável vértebra de transição (VT). Sugerimos estudo radiográfico para melhor análise', 'Presença de provável vértebra de transição...');
+INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(7, 'Devido {impedimentoSText}, não foi possível análise válida do fêmur direito. Por esse motivo, procedemos a análise de fêmur esquerdo', 'Devido dificuldade de rotação do quadril... fêmur direito...');
+INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(8, 'Devido {impedimentoSText}, não foi possível análise válida de fêmur, tanto a direita quanto a esquerda', 'Devido dificuldade de rotação do quadril... ambos...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(9, 'Sugerimos densitometria óssea de antebraço (Radio 33%)', 'Sugerimos densitometria óssea...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(10, 'Presença de alterações estruturais no quadril que podem superestimar a real densidade óssea do fêmur', 'Presença de alterações estruturais...');
 INSERT INTO LAUDO_OBSERVACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(11, 'Sugerimos afastar causa secundária de baixa densidade óssea para a idade', 'Sugerimos afastar causa secundária... baixa densidade...');
@@ -268,21 +268,20 @@ CREATE TABLE LAUDO_COMPARACAO_VALUE (
 );
 
 INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(1, 'Não há exames anteriores neste serviço para comparação', 'Não há exames anteriores...');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(2, 'Comparação com densitometria óssea de {comparacaoDate}:
-Coluna lombar {segmentoSText} - é utilizado a DMO
-Fêmur total - é utilizado a DMO
-* Não compara-se radio 33% ou colo de fêmur', 'Comparação com densitometria óssea de...');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(3, 'Massa óssea mantida na coluna lombar', 'Massa óssea mantida na coluna lombar');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(4, 'Massa óssea mantida no fêmur total', 'Massa óssea mantida no fêmur total');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(5, 'Perda de densidade óssea de {densidadePercent} ± 2% na coluna lombar', 'Perda de densidade óssea ± 2%');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(6, 'Perda de densidade óssea de {densidadePercent} ± 3% no fêmur total', 'Perda de densidade óssea ± 3%');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(7, 'Ganho de densidade óssea de {densidadePercent} ± 2% na coluna lombar', 'Ganho de densidade óssea ± 2%');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(8, 'Ganho de densidade óssea de {densidadePercent} ± 3% no fêmur total', 'Ganho de densidade óssea ± 3%');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(2, 'Considerando-se a mínima variação significativa (MVS) deste serviço de {densidadeColunaSText}g/cm² para coluna e de {densidadeFemurSText}g/cm²  para fêmur total, em comparação com a DMO de {dataDate} houve:', 'Considerando-se a mínima variação significativa...');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(3, 'Manutenção da massa óssea na coluna lombar', 'Manutenção da massa óssea na coluna lombar');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(4, 'Manutenção da massa óssea no fêmur total', 'Manutenção da massa óssea no fêmur total');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(5, 'Perda de densidade mineral óssea de {densidadePercent} ± {mvcSText}g/cm² na coluna lombar', 'Perda de densidade óssea na coluna');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(6, 'Perda de densidade mineral óssea de {densidadePercent} ± {mvcSText}g/cm² no fêmur total', 'Perda de densidade óssea no fêmur');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(7, 'Ganho de densidade mineral óssea de {densidadePercent} ± {mvcSText}g/cm² na coluna lombar', 'Ganho de densidade óssea na coluna');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(8, 'Ganho de densidade mineral óssea de {densidadePercent} ± {mvcSText}g/cm² no fêmur total', 'Ganho de densidade óssea no fêmur');
 INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(9, 'Sugerimos não utilizar a coluna lombar para diagnóstico, classificação de risco de fraturas ou monitorização terapêutica, devido à presença de alterações vertebrais', 'Sugerimos não utilizar a coluna lombar...');
 INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(10, 'Sugerimos não utilizar o fêmur proximal para diagnóstico, classificação de risco de fraturas ou monitorização terapêutica, devido à presença alterações estruturais', 'Sugerimos não utilizar o fêmur...' );
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(11, 'Sugerimos utilizar o segmento {segmentoSText} para diagnóstico, classificação de risco de fraturas e monitorização terapêutica, devido à presença de alterações nas outras vértebras analisadas', 'Sugerimos utilizar o segmento...');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(12, 'À critério clínico, sugere-se controle com densitometria em {intervaloSNumber} meses', 'À critério clínico, sugere-se controle...');
-INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(13, '{observacaoLText}', 'Observação');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(11, 'Sugerimos utilizar o fêmur esquerdo para diagnóstico, classificação de risco de fraturas ou monitorização terapêutica, devido à presença alterações estruturais a direita', 'Sugerimos utilizar o fêmur esquerdo...' );
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(12, 'Sugerimos utilizar o segmento {segmentoSText} para diagnóstico, classificação de risco de fraturas e monitorização terapêutica, devido à presença de alterações nas outras vértebras analisadas', 'Sugerimos utilizar o segmento...');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(13, 'Sugerimos utilizar o segmento {segmentoSText} e o fêmur esquerdo para diagnóstico, classificação de risco de fraturas e monitorização terapêutica, devido à presença de alterações nas outras vértebras analisadas e no fêmur direito', 'Sugerimos utilizar o segmento... e fêmur...');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(14, 'À critério clínico, sugere-se controle com densitometria em {intervaloSNumber} meses', 'À critério clínico, sugere-se controle...');
+INSERT INTO LAUDO_COMPARACAO_OPCAO(CODIGO, DESCRICAO, ROTULO) VALUES(15, '{observacaoLText}', 'Observação');
 
 ALTER TABLE LAUDO_COMPARACAO DROP COLUMN CODIGO;
 ALTER TABLE LAUDO_COMPARACAO DROP COLUMN DESCRICAO;

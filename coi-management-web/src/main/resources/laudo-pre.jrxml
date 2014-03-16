@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="laudo" pageWidth="595" pageHeight="850" columnWidth="523" leftMargin="36" rightMargin="36" topMargin="36" bottomMargin="36" uuid="45665aca-12e0-4f2c-9fae-7ca7cac9881d">
 	<property name="ireport.zoom" value="1.6105100000000032"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.y" value="336"/>
 	<subDataset name="observacoesDataSet" uuid="a1b1d00d-5058-4f57-ab0f-85940a55f13d">
 		<field name="codigo" class="java.lang.Integer"/>
 		<field name="descricao" class="java.lang.String"/>
@@ -103,8 +103,8 @@
 			</staticText>
 			<staticText>
 				<reportElement x="0" y="90" width="523" height="30" uuid="84ecfab6-b4e6-4544-b26e-1cebbb4ccb9f"/>
-				<text><![CDATA[-Índice Z-score ≥ -2,0 DP = NORMAL
--Índice Z-score de < -2,0 DP = BAIXA DENSIDADE ÓSSEA PARA IDADE]]></text>
+				<text><![CDATA[-Índice Z-score > -2,0 DP = NORMAL
+-Índice Z-score de <= -2,0 DP = BAIXA DENSIDADE ÓSSEA PARA IDADE]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="0" y="120" width="523" height="20" uuid="4e35c4d6-81da-427a-8948-b897c99d61cc"/>

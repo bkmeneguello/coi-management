@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="laudo" pageWidth="595" pageHeight="850" columnWidth="523" leftMargin="36" rightMargin="36" topMargin="36" bottomMargin="36" uuid="45665aca-12e0-4f2c-9fae-7ca7cac9881d">
 	<property name="ireport.zoom" value="1.6105100000000014"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.x" value="48"/>
+	<property name="ireport.y" value="336"/>
 	<subDataset name="observacoesDataSet" uuid="a1b1d00d-5058-4f57-ab0f-85940a55f13d">
 		<field name="codigo" class="java.lang.Integer"/>
 		<field name="descricao" class="java.lang.String"/>
@@ -108,9 +108,12 @@
 			</staticText>
 			<staticText>
 				<reportElement x="0" y="110" width="523" height="50" uuid="84ecfab6-b4e6-4544-b26e-1cebbb4ccb9f"/>
-				<text><![CDATA[-Índice T-score ≥ -1 DP = NORMAL
+				<textElement>
+					<font isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[-Índice T-score >= -1 DP = NORMAL
 -Índice T-score  entre -1,0 e  -2,5 DP = OSTEOPENIA
--Índice T-score ≤ -2,5 DP = OSTEOPOROSE]]></text>
+-Índice T-score <= -2,5 DP = OSTEOPOROSE]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="0" y="160" width="523" height="20" uuid="4e35c4d6-81da-427a-8948-b897c99d61cc"/>
@@ -132,7 +135,7 @@
 				<text><![CDATA[Local]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="178" y="180" width="145" height="20" uuid="6b6aa5b2-609f-468e-9e27-f4fb2cd034d0"/>
+				<reportElement x="178" y="180" width="110" height="20" uuid="6b6aa5b2-609f-468e-9e27-f4fb2cd034d0"/>
 				<box>
 					<topPen lineWidth="1.0"/>
 					<leftPen lineWidth="1.0"/>
@@ -141,10 +144,10 @@
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font isBold="true" isItalic="false" pdfFontName="Helvetica-Bold"/>
 				</textElement>
-				<text><![CDATA[Densidade Óssea (g/cm²)]]></text>
+				<text><![CDATA[Densidade (g/cm²)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="323" y="180" width="50" height="20" uuid="b5b01ddd-0dc4-4cc0-9d05-6a57dae203e2"/>
+				<reportElement x="288" y="180" width="50" height="20" uuid="b5b01ddd-0dc4-4cc0-9d05-6a57dae203e2"/>
 				<box>
 					<topPen lineWidth="1.0"/>
 					<leftPen lineWidth="1.0"/>
@@ -156,7 +159,7 @@
 				<text><![CDATA[T-score]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="373" y="180" width="50" height="20" uuid="8ad28ef5-2649-4513-8898-238e4d542b60"/>
+				<reportElement x="338" y="180" width="50" height="20" uuid="8ad28ef5-2649-4513-8898-238e4d542b60"/>
 				<box>
 					<topPen lineWidth="1.0"/>
 					<leftPen lineWidth="1.0"/>
@@ -168,7 +171,7 @@
 				<text><![CDATA[Z-score]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="423" y="180" width="100" height="20" uuid="de920664-3832-4426-a0f8-921b7516b5fb"/>
+				<reportElement x="388" y="180" width="135" height="20" uuid="de920664-3832-4426-a0f8-921b7516b5fb"/>
 				<box>
 					<topPen lineWidth="1.0"/>
 					<leftPen lineWidth="1.0"/>
@@ -212,7 +215,7 @@
 					<textFieldExpression><![CDATA["Coluna Lombar " + $P{vertebras}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
-					<reportElement stretchType="RelativeToTallestObject" x="178" y="200" width="145" height="20" uuid="6cdcf895-22bb-4910-b16e-1e746d3354af"/>
+					<reportElement stretchType="RelativeToTallestObject" x="178" y="200" width="110" height="20" uuid="6cdcf895-22bb-4910-b16e-1e746d3354af"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -223,7 +226,7 @@
 					<textFieldExpression><![CDATA[$P{colunaLombarDensidade}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement stretchType="RelativeToTallestObject" x="323" y="200" width="50" height="20" uuid="ea7d6671-c712-4f30-9ab6-c8e65a117055"/>
+					<reportElement stretchType="RelativeToTallestObject" x="288" y="200" width="50" height="20" uuid="ea7d6671-c712-4f30-9ab6-c8e65a117055"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -236,7 +239,7 @@
 					<textFieldExpression><![CDATA[$P{colunaLombarTScore}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement stretchType="RelativeToTallestObject" x="373" y="200" width="50" height="20" uuid="41f1d4de-67a8-4b65-820d-2657be71413a"/>
+					<reportElement stretchType="RelativeToTallestObject" x="338" y="200" width="50" height="20" uuid="41f1d4de-67a8-4b65-820d-2657be71413a"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -247,7 +250,7 @@
 					<textFieldExpression><![CDATA[$P{colunaLombarZScore}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-					<reportElement stretchType="RelativeToTallestObject" x="423" y="200" width="100" height="20" uuid="3635a397-402e-4d29-8929-b220ae8b8aa8"/>
+					<reportElement stretchType="RelativeToTallestObject" x="388" y="200" width="135" height="20" uuid="3635a397-402e-4d29-8929-b220ae8b8aa8"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -282,7 +285,7 @@
 					<text><![CDATA[Colo do Fêmur]]></text>
 				</staticText>
 				<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
-					<reportElement positionType="Float" x="178" y="220" width="145" height="20" uuid="f1d8ad50-d2e4-45ac-9f42-e131ff7ed58c"/>
+					<reportElement positionType="Float" x="178" y="220" width="110" height="20" uuid="f1d8ad50-d2e4-45ac-9f42-e131ff7ed58c"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -293,7 +296,7 @@
 					<textFieldExpression><![CDATA[$P{coloFemurDensidade}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement positionType="Float" x="323" y="220" width="50" height="20" uuid="844aeeeb-0660-411e-8f7b-9b61677b8f64"/>
+					<reportElement positionType="Float" x="288" y="220" width="50" height="20" uuid="844aeeeb-0660-411e-8f7b-9b61677b8f64"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -306,7 +309,7 @@
 					<textFieldExpression><![CDATA[$P{coloFemurTScore}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement positionType="Float" x="373" y="220" width="50" height="20" uuid="f68666c7-2e99-43d8-be2c-d884c023adb1"/>
+					<reportElement positionType="Float" x="338" y="220" width="50" height="20" uuid="f68666c7-2e99-43d8-be2c-d884c023adb1"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -317,7 +320,7 @@
 					<textFieldExpression><![CDATA[$P{coloFemurZScore}]]></textFieldExpression>
 				</textField>
 				<staticText>
-					<reportElement positionType="Float" x="423" y="220" width="100" height="20" uuid="99bb8743-d601-4fe4-b0ee-ddd0c978bf7b"/>
+					<reportElement positionType="Float" x="388" y="220" width="135" height="20" uuid="99bb8743-d601-4fe4-b0ee-ddd0c978bf7b"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -343,7 +346,7 @@
 					<text><![CDATA[Fêmur Total]]></text>
 				</staticText>
 				<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="178" y="240" width="145" height="20" uuid="5fa19a57-5bc7-4827-a14f-606f4d603dce"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="178" y="240" width="110" height="20" uuid="5fa19a57-5bc7-4827-a14f-606f4d603dce"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -354,7 +357,7 @@
 					<textFieldExpression><![CDATA[$P{femurTotalDensidade}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="323" y="240" width="50" height="20" uuid="196ec721-d97c-4407-9f1d-fdc7ed304895"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="288" y="240" width="50" height="20" uuid="196ec721-d97c-4407-9f1d-fdc7ed304895"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -367,7 +370,7 @@
 					<textFieldExpression><![CDATA[$P{femurTotalTScore}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="373" y="240" width="50" height="20" uuid="a1b24b08-09a0-4f1c-af37-35489a4e42e9"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="338" y="240" width="50" height="20" uuid="a1b24b08-09a0-4f1c-af37-35489a4e42e9"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -378,7 +381,7 @@
 					<textFieldExpression><![CDATA[$P{femurTotalZScore}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="423" y="240" width="100" height="20" uuid="57c66231-56e3-4938-a75a-cd7e72a0f857"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="388" y="240" width="135" height="20" uuid="57c66231-56e3-4938-a75a-cd7e72a0f857"/>
 					<box>
 						<topPen lineWidth="0.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -413,7 +416,7 @@
 					<text><![CDATA[Rádio 33%]]></text>
 				</staticText>
 				<textField pattern="###0.000;-###0.000" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="178" y="260" width="145" height="20" uuid="5f4d9470-3178-45b4-867b-d9cc31e8524e"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="178" y="260" width="110" height="20" uuid="5f4d9470-3178-45b4-867b-d9cc31e8524e"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -424,7 +427,7 @@
 					<textFieldExpression><![CDATA[$P{radioTercoDensidade}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="323" y="260" width="50" height="20" uuid="6b99e527-9531-4dee-92ed-b5fb479ff90c"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="288" y="260" width="50" height="20" uuid="6b99e527-9531-4dee-92ed-b5fb479ff90c"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -437,7 +440,7 @@
 					<textFieldExpression><![CDATA[$P{radioTercoTScore}]]></textFieldExpression>
 				</textField>
 				<textField pattern="###0.0;-###0.0" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="373" y="260" width="50" height="20" uuid="d8e8ac80-7b7e-4516-807e-e608a975c721"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="338" y="260" width="50" height="20" uuid="d8e8ac80-7b7e-4516-807e-e608a975c721"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
@@ -448,7 +451,7 @@
 					<textFieldExpression><![CDATA[$P{radioTercoZScore}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="423" y="260" width="100" height="20" uuid="85a7a39f-b434-4663-a5d9-84358f8d41fc"/>
+					<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="388" y="260" width="135" height="20" uuid="85a7a39f-b434-4663-a5d9-84358f8d41fc"/>
 					<box>
 						<topPen lineWidth="1.0"/>
 						<leftPen lineWidth="1.0"/>
