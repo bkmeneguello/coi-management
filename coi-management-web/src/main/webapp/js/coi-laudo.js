@@ -133,25 +133,54 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['colunaLombarDensidade'].converter = decimal3Converter;
 			bindings['colunaLombarTScore'].converter = decimal1Converter;
 			bindings['colunaLombarZScore'].converter = decimal1Converter;
-			bindings['colunaLombarDensidadeAnt'].converter = decimal3Converter;
-			bindings['colunaLombarTScoreAnt'].converter = decimal1Converter;
-			bindings['colunaLombarZScoreAnt'].converter = decimal1Converter;
-			bindings['colunaLombarRazaoAnt'].converter = percentageConverter;
 			bindings['coloFemurDensidade'].converter = decimal3Converter;
 			bindings['coloFemurTScore'].converter = decimal1Converter;
 			bindings['coloFemurZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidade'].converter = decimal3Converter;
 			bindings['femurTotalTScore'].converter = decimal1Converter;
 			bindings['femurTotalZScore'].converter = decimal1Converter;
-			bindings['femurTotalDensidadeAnt'].converter = decimal3Converter;
-			bindings['femurTotalTScoreAnt'].converter = decimal1Converter;
-			bindings['femurTotalZScoreAnt'].converter = decimal1Converter;
-			bindings['femurTotalRazaoAnt'].converter = percentageConverter;
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
 			bindings['radioTercoTScore'].converter = decimal1Converter;
 			bindings['radioTercoZScore'].converter = decimal1Converter;
 			this.modelBinder().bind(this.model, this.el, bindings);
-			this.modelBinder().bind(this.options.laudoAnterior, this.el, bindings);
+			this.modelBinder().bind(this.options.laudoAnterior, this.el, {
+				colunaLombarL1Ant: {selector: '[name=colunaLombarL1Ant]'},
+				colunaLombarL2Ant: {selector: '[name=colunaLombarL2Ant]'},
+				colunaLombarL3Ant: {selector: '[name=colunaLombarL3Ant]'},
+				colunaLombarL4Ant: {selector: '[name=colunaLombarL4Ant]'},
+				colunaLombarDensidadeAnt: {
+					selector: '[name=colunaLombarDensidadeAnt]',
+					converter: decimal3Converter
+				},
+				colunaLombarTScoreAnt: {
+					selector: '[name=colunaLombarTScoreAnt]',
+					converter: decimal1Converter
+				},
+				colunaLombarZScoreAnt: {
+					selector: '[name=colunaLombarZScoreAnt]',
+					converter: decimal1Converter
+				},
+				colunaLombarRazaoAnt: {
+					selector: '[name=colunaLombarRazaoAnt]',
+					converter: decimal3Converter
+				},
+				femurTotalDensidadeAnt: {
+					selector: '[name=femurTotalDensidadeAnt]',
+					converter: decimal3Converter
+				},
+				femurTotalTScoreAnt: {
+					selector: '[name=femurTotalTScoreAnt]',
+					converter: decimal1Converter
+				},
+				femurTotalZScoreAnt: {
+					selector: '[name=femurTotalZScoreAnt]',
+					converter: decimal1Converter
+				},
+				femurTotalRazaoAnt: {
+					selector: '[name=femurTotalRazaoAnt]',
+					converter: decimal3Converter
+				}
+			});
 			
 			this.$('input[type=text]').input();
 			this.$('.coi-exame-anterior').toggle(!!this.options.laudoAnterior.get('id'));
@@ -173,20 +202,49 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			bindings['colunaLombarZScore'].converter = decimal1Converter;
 			bindings['colunaLombarDensidadeAnt'].converter = decimal3Converter;
 			bindings['colunaLombarZScoreAnt'].converter = decimal1Converter;
-			bindings['colunaLombarRazaoAnt'].converter = percentageConverter;
+			bindings['colunaLombarRazaoAnt'].converter = decimal3Converter;
 			bindings['coloFemurDensidade'].converter = decimal3Converter;
 			bindings['coloFemurZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidade'].converter = decimal3Converter;
 			bindings['femurTotalZScore'].converter = decimal1Converter;
 			bindings['femurTotalDensidadeAnt'].converter = decimal3Converter;
 			bindings['femurTotalZScoreAnt'].converter = decimal1Converter;
-			bindings['femurTotalRazaoAnt'].converter = percentageConverter;
+			bindings['femurTotalRazaoAnt'].converter = decimal3Converter;
 			bindings['radioTercoDensidade'].converter = decimal3Converter;
 			bindings['radioTercoZScore'].converter = decimal1Converter;
-			bindings['corpoInteiroDensidade'].converter = decimalConverter;
+			bindings['corpoInteiroDensidade'].converter = decimal3Converter;
 			bindings['corpoInteiroZScore'].converter = decimal1Converter;
 			this.modelBinder().bind(this.model, this.el, bindings);
-			this.modelBinder().bind(this.options.laudoAnterior, this.el, bindings);
+			this.modelBinder().bind(this.options.laudoAnterior, this.el, {
+				colunaLombarL1Ant: {selector: '[name=colunaLombarL1Ant]'},
+				colunaLombarL2Ant: {selector: '[name=colunaLombarL2Ant]'},
+				colunaLombarL3Ant: {selector: '[name=colunaLombarL3Ant]'},
+				colunaLombarL4Ant: {selector: '[name=colunaLombarL4Ant]'},
+				colunaLombarDensidadeAnt: {
+					selector: '[name=colunaLombarDensidadeAnt]',
+					converter: decimal3Converter
+				},
+				colunaLombarZScoreAnt: {
+					selector: '[name=colunaLombarZScoreAnt]',
+					converter: decimal1Converter
+				},
+				colunaLombarRazaoAnt: {
+					selector: '[name=colunaLombarRazaoAnt]',
+					converter: decimal3Converter
+				},
+				femurTotalDensidadeAnt: {
+					selector: '[name=femurTotalDensidadeAnt]',
+					converter: decimal3Converter
+				},
+				femurTotalZScoreAnt: {
+					selector: '[name=femurTotalZScoreAnt]',
+					converter: decimal1Converter
+				},
+				femurTotalRazaoAnt: {
+					selector: '[name=femurTotalRazaoAnt]',
+					converter: decimal3Converter
+				}
+			});
 			
 			this.$('input[type=text]').input();
 			this.$('.coi-exame-anterior').toggle(!!this.options.laudoAnterior.get('id'));
@@ -334,6 +392,7 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			});
 			this.laudoAnterior = new LaudoAnterior();
 			this.model.get("paciente").on("change:codigo", this.updateLaudoAnterior);
+			this.model.on('change:paciente', this.updateLaudoAnterior);
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
@@ -376,6 +435,10 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 		updateLaudoAnterior: function() {
 			var codigo = this.model.get('paciente').get('codigo');
 			if (codigo) {
+				if (this.model.get('id')) {
+					codigo = this.model.get('id');
+				}
+				
 				this.laudoAnterior.set('id', codigo).fetch({error: function(model) {
 					model.clear();
 				}});
@@ -387,14 +450,14 @@ COI.module("Laudo", function(Module, COI, Backbone, Marionette, $, _) {
 			var anterior = this.laudoAnterior.get('colunaLombarDensidadeAnt');
 			if (anterior) {
 				var atual = this.model.get('colunaLombarDensidade');
-				this.laudoAnterior.set('colunaLombarRazaoAnt', ((atual - anterior) / anterior));
+				this.laudoAnterior.set('colunaLombarRazaoAnt', atual - anterior);
 			}
 		},
 		updateFemurTotalDensidade: function() {
 			var anterior = this.laudoAnterior.get('femurTotalDensidadeAnt');
 			if (anterior) {
 				var atual = this.model.get('femurTotalDensidade');
-				this.laudoAnterior.set('femurTotalRazaoAnt', ((atual - anterior) / anterior));
+				this.laudoAnterior.set('femurTotalRazaoAnt', atual - anterior);
 			}
 		},
 		onAdicionarObservacao: function(e) {
