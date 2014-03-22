@@ -1,12 +1,15 @@
 package com.meneguello.coi;
 
+import static com.meneguello.coi.Utils.asSQLDate;
 import static com.meneguello.coi.model.tables.Categoria.CATEGORIA;
 import static com.meneguello.coi.model.tables.Comissao.COMISSAO;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static com.meneguello.coi.model.tables.ProdutoCusto.PRODUTO_CUSTO;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -24,12 +27,13 @@ import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.DSLContext;
-import org.jooq.DeleteConditionStep;
 import org.jooq.Result;
+import org.jooq.SelectConditionStep;
 import org.jooq.SelectWhereStep;
 
 import com.meneguello.coi.model.tables.records.CategoriaRecord;
 import com.meneguello.coi.model.tables.records.ComissaoRecord;
+import com.meneguello.coi.model.tables.records.ProdutoCustoRecord;
 import com.meneguello.coi.model.tables.records.ProdutoRecord;
  
 @Path("/categorias")
@@ -67,7 +71,7 @@ public class CategoriaEndpoint {
 				}
 				final Result<ProdutoRecord> resultRecord = select.fetch();
 				for (ProdutoRecord record : resultRecord) {
-					produtos.add(buildProduto(record));
+					produtos.add(buildProduto(database, record));
 				}
 				return produtos;
 			}
@@ -91,7 +95,7 @@ public class CategoriaEndpoint {
 				}
 				final Result<ProdutoRecord> resultRecord = select.fetch();
 				for (ProdutoRecord record : resultRecord) {
-					produtos.add(buildProduto(record));
+					produtos.add(buildProduto(database, record));
 				}
 				return produtos;
 			}
@@ -122,7 +126,7 @@ public class CategoriaEndpoint {
 						.where(PRODUTO.CATEGORIA_ID.eq(categoriaRecord.getId()))
 						.fetch();
 				for (ProdutoRecord produtoRecord : resultProdutoRecord) {
-					categoria.getProdutos().add(buildProduto(produtoRecord));
+					categoria.getProdutos().add(buildProduto(database, produtoRecord));
 				}
 				
 				final Result<ComissaoRecord> recordsComissao = database
@@ -143,12 +147,28 @@ public class CategoriaEndpoint {
 		}.execute();
 	}
 	
-	private Produto buildProduto(ProdutoRecord produtoRecord) {
+	private Produto buildProduto(DSLContext database, ProdutoRecord produtoRecord) {
 		final Produto produto = new Produto();
 		produto.setId(produtoRecord.getId());
 		produto.setCodigo(produtoRecord.getCodigo());
 		produto.setDescricao(produtoRecord.getDescricao());
-		produto.setCusto(produtoRecord.getCusto());
+		final List<Custo> custos = new ArrayList<>();
+		final Result<ProdutoCustoRecord> custoRecords = database
+				.selectFrom(PRODUTO_CUSTO)
+				.where(PRODUTO_CUSTO.PRODUTO_ID.eq(produtoRecord.getId()))
+				.fetch();
+		for (ProdutoCustoRecord custoRecord : custoRecords) {
+			final Custo custo = new Custo();
+			custo.setCusto(custoRecord.getValue(PRODUTO_CUSTO.CUSTO));
+			custo.setDataInicioVigencia(custoRecord.getValue(PRODUTO_CUSTO.DATA_INICIO_VIGENCIA));
+			custo.setDataFimVigencia(custoRecord.getValue(PRODUTO_CUSTO.DATA_FIM_VIGENCIA));
+			custos.add(custo);
+			Date now = new Date();
+			if (custo.getDataInicioVigencia().compareTo(now) <= 0 && (custo.getDataFimVigencia() == null || custo.getDataFimVigencia().compareTo(now) >= 0)) {
+				produto.setCusto(custo.getCusto());
+			}
+		}
+		produto.setCustos(custos);
 		produto.setPreco(produtoRecord.getPreco());
 		produto.setEstocavel("S".equals(produtoRecord.getEstocavel()));
 		return produto;
@@ -171,11 +191,11 @@ public class CategoriaEndpoint {
 				
 				final Long id = categoriaRecord.getId();
 				for (Produto produto : categoria.getProdutos()) {
-					database.insertInto(PRODUTO, 
+					final ProdutoRecord produtoRecord = database
+						.insertInto(PRODUTO, 
 								PRODUTO.CATEGORIA_ID, 
 								PRODUTO.CODIGO, 
 								PRODUTO.DESCRICAO, 
-								PRODUTO.CUSTO, 
 								PRODUTO.PRECO,
 								PRODUTO.ESTOCAVEL
 							)
@@ -183,11 +203,15 @@ public class CategoriaEndpoint {
 									id, 
 									trimToNull(produto.getCodigo()), 
 									trimToNull(produto.getDescricao()), 
-									produto.getCusto(), 
 									produto.getPreco(),
 									produto.isEstocavel() ? "S" : "N"
 							)
-							.execute();
+							.returning(PRODUTO_CUSTO.ID)
+							.fetchOne();
+					
+					for (Custo custo : produto.getCustos()) {
+						insertCusto(database, produtoRecord.getId(), custo);
+					}
 				}
 				for (Comissao comissao : categoria.getComissoes()) {
 					final Parte parte = Parte.fromValue(comissao.getParte());
@@ -209,6 +233,21 @@ public class CategoriaEndpoint {
 		
 		return read(categoriaId);
 	}
+
+	protected void insertCusto(DSLContext database, Long produtoId, Custo custo) {
+		database.insertInto(PRODUTO_CUSTO,
+				PRODUTO_CUSTO.PRODUTO_ID,
+				PRODUTO_CUSTO.DATA_INICIO_VIGENCIA,
+				PRODUTO_CUSTO.DATA_FIM_VIGENCIA,
+				PRODUTO_CUSTO.CUSTO
+			).values(
+					produtoId,
+					asSQLDate(custo.getDataInicioVigencia()),
+					asSQLDate(custo.getDataFimVigencia()),
+					custo.getCusto()
+			)
+			.execute();
+	}
 	
 	@PUT
 	@Path("/{id}")
@@ -225,12 +264,12 @@ public class CategoriaEndpoint {
 				
 				final List<Long> produtoIds = new ArrayList<>(categoria.getProdutos().size());
 				for (Produto produto : categoria.getProdutos()) {
-					if (produto.getId() == null) {
+					final Long produtoId = produto.getId();
+					if (produtoId == null) {
 						final ProdutoRecord produtoRecord = database.insertInto(PRODUTO, 
 									PRODUTO.CATEGORIA_ID, 
 									PRODUTO.CODIGO, 
 									PRODUTO.DESCRICAO, 
-									PRODUTO.CUSTO, 
 									PRODUTO.PRECO,
 									PRODUTO.ESTOCAVEL
 								)
@@ -238,32 +277,51 @@ public class CategoriaEndpoint {
 										id, 
 										trimToNull(produto.getCodigo()), 
 										trimToNull(produto.getDescricao()), 
-										produto.getCusto(), 
 										produto.getPreco(),
 										produto.isEstocavel() ? "S" : "N")
 								.returning(PRODUTO.ID)
 								.fetchOne();
 						produto.setId(produtoRecord.getId());
+						
+						for (Custo custo : produto.getCustos()) {
+							insertCusto(database, produtoRecord.getId(), custo);
+						}
 					} else {
 						database.update(PRODUTO)
 							.set(PRODUTO.CATEGORIA_ID, id)
 							.set(PRODUTO.CODIGO, trimToNull(produto.getCodigo()))
 							.set(PRODUTO.DESCRICAO, trimToNull(produto.getDescricao()))
-							.set(PRODUTO.CUSTO, produto.getCusto())
 							.set(PRODUTO.PRECO, produto.getPreco())
 							.set(PRODUTO.ESTOCAVEL, produto.isEstocavel() ? "S" : "N")
-							.where(PRODUTO.ID.eq(produto.getId()))
+							.where(PRODUTO.ID.eq(produtoId))
 							.execute();
+						
+						database.delete(PRODUTO_CUSTO)
+								.where(PRODUTO_CUSTO.PRODUTO_ID.eq(produtoId))
+								.execute();
+						for (Custo custo : produto.getCustos()) {
+							insertCusto(database, produtoId, custo);
+						}
 					}
-					produtoIds.add(produto.getId());
+					produtoIds.add(produtoId);
 				}
 				
-				final DeleteConditionStep<ProdutoRecord> delete = database.delete(PRODUTO)
+				final SelectConditionStep<ProdutoRecord> selectProdutosNaoUsados = database
+						.selectFrom(PRODUTO)
 						.where(PRODUTO.CATEGORIA_ID.eq(id));
 				if (!produtoIds.isEmpty()) {
-					delete.and(PRODUTO.ID.notIn(produtoIds));
+					selectProdutosNaoUsados.and(PRODUTO.ID.notIn(produtoIds));
 				}
-				delete.execute();
+				final List<Long> produtosNaoUsados = selectProdutosNaoUsados
+						.fetch(PRODUTO.ID);
+				
+				database.delete(PRODUTO_CUSTO)
+						.where(PRODUTO_CUSTO.PRODUTO_ID.in(produtosNaoUsados))
+						.execute();
+				
+				database.delete(PRODUTO)
+						.where(PRODUTO.ID.in(produtosNaoUsados))
+						.execute();
 				
 				database.delete(COMISSAO)
 						.where(COMISSAO.CATEGORIA_ID.eq(id))
@@ -289,13 +347,21 @@ public class CategoriaEndpoint {
 		
 		return read(id);
 	}
-	
+
 	@DELETE
 	@Path("/{id}")
 	public void delete(final @PathParam("id") Long id) throws Exception {
 		new Transaction<Void>(true) {
 			@Override
 			protected Void execute(DSLContext database) {
+				final List<Long> produtoIds = database.selectFrom(PRODUTO)
+						.where(PRODUTO.CATEGORIA_ID.eq(id))
+						.fetch(PRODUTO.ID);
+				
+				database.delete(PRODUTO_CUSTO)
+						.where(PRODUTO_CUSTO.PRODUTO_ID.in(produtoIds))
+						.execute();
+				
 				database.delete(PRODUTO)
 						.where(PRODUTO.CATEGORIA_ID.eq(id))
 						.execute();
@@ -326,9 +392,17 @@ public class CategoriaEndpoint {
 		private Long id;
 		private String codigo;
 		private String descricao;
+		private List<Custo> custos = new ArrayList<>();
 		private BigDecimal custo = BigDecimal.ZERO;
 		private BigDecimal preco = BigDecimal.ZERO;
 		private boolean estocavel;
+	}
+	
+	@Data
+	private static class Custo {
+		private Date dataInicioVigencia;
+		private Date dataFimVigencia;
+		private BigDecimal custo = BigDecimal.ZERO;
 	}
 	
 	@Data

@@ -9,10 +9,14 @@ import static com.meneguello.coi.model.tables.EntradaParte.ENTRADA_PARTE;
 import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static com.meneguello.coi.model.tables.ProdutoCusto.PRODUTO_CUSTO;
+import static java.math.BigDecimal.ZERO;
 import static javax.ws.rs.core.Response.status;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.jooq.impl.DSL.currentDate;
+import static org.jooq.impl.DSL.nvl;
 import static org.jooq.impl.DSL.sum;
 
 import java.math.BigDecimal;
@@ -110,7 +114,19 @@ public class EntradaEndpoint {
 					entrada.getPartes().add(buildParte(recordParte));
 				}
 				
-				final Result<Record> recordsProduto = database.selectFrom(PRODUTO
+				final List<Field<?>> fields = new ArrayList<>();
+				fields.addAll(Arrays.asList(PRODUTO.fields()));
+				fields.addAll(Arrays.asList(ENTRADA_PRODUTO.fields()));
+				fields.add(database
+					.select(nvl(PRODUTO_CUSTO.CUSTO, ZERO))
+					.from(PRODUTO_CUSTO)
+					.where(PRODUTO_CUSTO.DATA_INICIO_VIGENCIA.le(currentDate()))
+					.and(PRODUTO_CUSTO.DATA_FIM_VIGENCIA.isNull().or(PRODUTO_CUSTO.DATA_FIM_VIGENCIA.ge(currentDate()))
+					.and(PRODUTO_CUSTO.PRODUTO_ID.eq(PRODUTO.ID)))
+					.asField("CUSTO"));
+				
+				final Result<Record> recordsProduto = database.select(fields)
+							.from(PRODUTO
 							.join(ENTRADA_PRODUTO).onKey()
 						)
 						.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(record.getValue(ENTRADA.ID)))
@@ -423,7 +439,7 @@ public class EntradaEndpoint {
 		produto.setId(recordProduto.getValue(PRODUTO.ID));
 		produto.setCodigo(recordProduto.getValue(PRODUTO.CODIGO));
 		produto.setDescricao(recordProduto.getValue(PRODUTO.DESCRICAO));
-		produto.setCusto(recordProduto.getValue(PRODUTO.CUSTO));
+		produto.setCusto(recordProduto.getValue("CUSTO", BigDecimal.class));
 		produto.setPreco(recordProduto.getValue(ENTRADA_PRODUTO.VALOR));
 		produto.setDesconto(recordProduto.getValue(ENTRADA_PRODUTO.DESCONTO));
 		produto.setQuantidade(recordProduto.getValue(ENTRADA_PRODUTO.QUANTIDADE));
@@ -505,7 +521,7 @@ public class EntradaEndpoint {
 		private String parte;
 	}
 	
-	@Data @JsonIgnoreProperties({"estocavel"})
+	@Data @JsonIgnoreProperties({"estocavel", "custos"})
 	private static class Produto {
 		private Long id;
 		private String codigo;

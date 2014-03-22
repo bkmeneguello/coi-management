@@ -178,7 +178,7 @@
 	<script type="text/template" id="categoria_produto_template">
 <div class="coi-view-text" data-attribute="codigo" data-label="Código:" data-required="true"/>
 <div class="coi-view-text" data-attribute="descricao" data-label="Descrição:" data-required="true"/>
-<div class="coi-view-text" data-attribute="custo" data-label="Custo:" data-required="true"/>
+<div id="custos"></div>
 <div class="coi-view-text" data-attribute="preco" data-label="Preço:" data-required="true"/>
 <dl class="coi-form-item">
 	<dt>Estocável</dt>
@@ -186,6 +186,38 @@
 		<input type="checkbox" name="estocavel" />
 	<dd>
 </dl>
+	</script>
+	<script type="text/template" id="categoria_produto_custos_template">
+<dl class="coi-form-item">
+	<dt>Custo:</dt>
+	<dd>
+		<table>
+			<thead>
+				<tr>
+					<td>Início</td>
+					<td>Fim</td>
+					<td>Custo</td>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</dd>
+</dl>
+<button class="coi-action-include">Adicionar Custo</button>
+	</script>
+	<script type="text/template" id="categoria_produto_custo_template">
+<td>
+	<input type="text" name="dataInicioVigencia" class="coi-short-text"/>
+</td>
+<td>
+	<input type="text" name="dataFimVigencia" class="coi-short-text"/>
+</td>
+<td>
+	<input type="text" name="custo" class="coi-short-text"/>
+</td>
+<td>
+	<button class="coi-action-delete">Remover</button>
+</td>
 	</script>
 	<script type="text/template" id="pessoas_import_template">
 <style>

@@ -8,11 +8,16 @@ import static com.meneguello.coi.model.tables.EntradaParte.ENTRADA_PARTE;
 import static com.meneguello.coi.model.tables.EntradaProduto.ENTRADA_PRODUTO;
 import static com.meneguello.coi.model.tables.Pessoa.PESSOA;
 import static com.meneguello.coi.model.tables.Produto.PRODUTO;
+import static com.meneguello.coi.model.tables.ProdutoCusto.PRODUTO_CUSTO;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Collections.sort;
+import static org.jooq.impl.DSL.currentDate;
+import static org.jooq.impl.DSL.nvl;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -40,6 +45,7 @@ import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
 import org.joda.time.DateTime;
 import org.joda.time.DateTime.Property;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 
@@ -96,7 +102,7 @@ public class ProducaoEndpoint {
 						final String categoriaDescricao = entradaProdutoRecord.getValue(CATEGORIA.DESCRICAO);
 						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
 						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
-						final BigDecimal produtoCusto = entradaProdutoRecord.getValue(PRODUTO.CUSTO);
+						final BigDecimal produtoCusto = entradaProdutoRecord.getValue("CUSTO", BigDecimal.class);
 						final BigDecimal produtoDesconto = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.DESCONTO);
 						
 						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
@@ -174,7 +180,7 @@ public class ProducaoEndpoint {
 						final String produtoDescricao = entradaProdutoRecord.getValue(PRODUTO.DESCRICAO);
 						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
 						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
-						final BigDecimal produtoCusto = entradaProdutoRecord.getValue(PRODUTO.CUSTO);
+						final BigDecimal produtoCusto = entradaProdutoRecord.getValue("CUSTO", BigDecimal.class);
 						final BigDecimal produtoDesconto = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.DESCONTO);
 						
 						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
@@ -259,9 +265,20 @@ public class ProducaoEndpoint {
 	}
 
 	private Result<Record> fetchEntradaProdutos(DSLContext database, Long entradaId) {
-		return database.selectFrom(ENTRADA_PRODUTO
-				.join(PRODUTO).onKey()
-				.join(CATEGORIA).onKey())
+		final List<Field<?>> fields = new ArrayList<>();
+		fields.addAll(Arrays.asList(ENTRADA_PRODUTO.fields()));
+		fields.addAll(Arrays.asList(PRODUTO.fields()));
+		fields.addAll(Arrays.asList(CATEGORIA.fields()));
+		fields.add(database.select(nvl(PRODUTO_CUSTO.CUSTO, ZERO))
+				.from(PRODUTO_CUSTO)
+				.where(PRODUTO_CUSTO.DATA_INICIO_VIGENCIA.le(currentDate()))
+				.and(PRODUTO_CUSTO.DATA_FIM_VIGENCIA.isNull().or(PRODUTO_CUSTO.DATA_FIM_VIGENCIA.ge(currentDate()))
+				.and(PRODUTO_CUSTO.PRODUTO_ID.eq(PRODUTO.ID)))
+				.asField("CUSTO"));
+		return database.select(fields)
+				.from(ENTRADA_PRODUTO
+					.join(PRODUTO).onKey()
+					.join(CATEGORIA).onKey())
 			.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(entradaId))
 			.fetch();
 	}

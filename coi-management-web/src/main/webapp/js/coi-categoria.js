@@ -2,13 +2,38 @@
 
 COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	
-	var Produto = Backbone.Model.extend({
+	var Custo = Backbone.Model.extend({
 		defaults: {
-			codigo: null,
-			descricao: null,
-			custo: null,
-			preco: null,
-			estocavel: false,
+			dataInicioVigencia: null,
+			dataFimVigencia: null,
+			custo: 0
+		},
+		toJSON: function(options) {
+			var attributes = _.clone(this.attributes);
+			attributes.dataInicioVigencia = toTimestamp(attributes.dataInicioVigencia);
+			attributes.dataFimVigencia = toTimestamp(attributes.dataFimVigencia);
+			return attributes;
+		}
+	});
+
+	var Custos = Backbone.Collection.extend({
+		model: Custo
+	});
+	
+	var Produto = Backbone.Model.extend({
+		defaults: function() {
+			return {
+				codigo: null,
+				descricao: null,
+				custos: new Custos(),
+				custo: null,
+				preco: null,
+				estocavel: false
+			};
+		},
+		parse: function(resp, options) {
+			resp.custos = new Custos(resp.custos, {parse: true});
+			return resp;
 		}
 	});
 
@@ -52,11 +77,67 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
+	var CustoView = Marionette.ItemView.extend({
+		template: '#categoria_produto_custo_template',
+		tagName: 'tr',
+		modelBinder: function() {
+			return new Backbone.ModelBinder();
+		},
+		triggers: {
+			'click .coi-action-delete': 'remover'
+		},
+		ui: {
+			'dataInicioVigencia': 'input[name=dataInicioVigencia]',
+			'dataFimVigencia': 'input[name=dataFimVigencia]',
+			'custo': 'input[name=custo]',
+			'removerButton': 'button.coi-action-delete'
+		},
+		onRender: function() {
+			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
+			bindings['dataInicioVigencia'].converter = dateConverter;
+			bindings['dataFimVigencia'].converter = dateConverter;
+			bindings['custo'].converter = moneyConverter;
+			this.modelBinder().bind(this.model, this.el, bindings);
+			
+			this.ui.dataInicioVigencia.input();
+			this.ui.dataFimVigencia.input();
+			this.ui.custo.input();
+			this.ui.removerButton.button();
+		},
+		onRemover: function(e) {
+			e.model.collection.remove(e.model);
+		}
+	});
+	
+	var CustosView =  Marionette.CompositeView.extend({
+		template: '#categoria_produto_custos_template',
+		itemView: CustoView,
+		itemViewContainer: 'tbody',
+		ui: {
+			'includeCusto': '.coi-action-include'
+		},
+		triggers: {
+			'click .coi-action-include': 'adicionarCusto'
+		},
+		onRender: function() {
+			this.ui.includeCusto.button();
+		},
+		onAdicionarCusto: function() {
+			this.collection.add(new Custo());
+		}
+	});
+	
 	var CategoriaProdutoView = COI.PopupFormView.extend({
 		template: '#categoria_produto_template',
 		header: 'Produto',
-		width: 450,
+		width: 550,
 		height: 500,
+		regions: {
+			'custos': '#custos'
+		},
+		modelEvents: {
+			'change:custos': 'renderCustos'
+		},
 		initialize: function() {
 			_.bindAll(this);
 			this.original = this.model;
@@ -64,9 +145,9 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		},
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'name');
-			bindings['custo'].converter = moneyConverter;
 			bindings['preco'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.el, bindings);
+			this.renderCustos();
 		},
 		onCancel: function(e) {
 			this.$el.dialog('close');
@@ -75,10 +156,21 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		onConfirm: function(e) {
 			if (_validate(e.view)) {
 				this.original.set(e.model.attributes);
+				var custos = this.original.get('custos');
+				for (var i = 0; i < custos.length; i++) {
+					var now = new Date();
+					var custo = custos.at(i);
+					if (custo.get('dataInicioVigencia') <= now.getTime() && (custo.get('dataFimVigencia') == null || custo.get('dataFimVigencia') >= now.getTime())) {
+						this.original.set('custo', custo.get('custo'));
+					}
+				}
 				this.collection.add(this.original);
 				this.$el.dialog('close');
 				this.close();
 			}
+		},
+		renderCustos: function() {
+			this.custos.show(new CustosView({collection: this.model.get('custos')}));
 		}
 	});
 	

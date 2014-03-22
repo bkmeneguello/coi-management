@@ -212,7 +212,7 @@ public class EstoqueEndpoint {
 		private List<Produto> produtos = new ArrayList<>();
 	}
 	
-	@Data @JsonIgnoreProperties({"custo", "preco", "estocavel"})
+	@Data @JsonIgnoreProperties({"custo", "custos", "preco", "estocavel"})
 	private static class Produto {
 		private Long id;
 		private String codigo;
