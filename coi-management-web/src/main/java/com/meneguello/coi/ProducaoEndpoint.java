@@ -99,6 +99,7 @@ public class ProducaoEndpoint {
 					
 					final Result<Record> entradaProdutoResult = fetchEntradaProdutos(database, entradaId);
 					for (Record entradaProdutoRecord : entradaProdutoResult) {
+						final TipoComissao tipoComissao = TipoComissao.valueOf(entradaProdutoRecord.getValue(CATEGORIA.TIPO_COMISSAO));
 						final String categoriaDescricao = entradaProdutoRecord.getValue(CATEGORIA.DESCRICAO);
 						final Integer produtoQuantidade = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.QUANTIDADE);
 						final BigDecimal produtoValor = entradaProdutoRecord.getValue(ENTRADA_PRODUTO.VALOR);
@@ -107,10 +108,33 @@ public class ProducaoEndpoint {
 						
 						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
 						final Result<ComissaoRecord> comissaoResult = fetchComissoes(database, categoriaId);
+						BigDecimal valorComissaoRestante = null;
 						for (Record comissaoRecord : comissaoResult) {
 							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
 							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
-							final BigDecimal valor = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
+							final BigDecimal comissaoValor = comissaoRecord.getValue(COMISSAO.VALOR);
+							final boolean comissaoRestante = "S".equals(comissaoRecord.getValue(COMISSAO.RESTANTE));
+							final BigDecimal valor;
+							switch (tipoComissao) {
+							case PERCENTUAL:
+								valor = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
+								break;
+							case VALOR:
+								if (valorComissaoRestante == null) {
+									valorComissaoRestante = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, BigDecimal.valueOf(100));
+								}
+								
+								if (comissaoRestante) {
+									valor = valorComissaoRestante;
+								} else {
+									valor = comissaoValor;
+									valorComissaoRestante = valorComissaoRestante.subtract(valor);
+								}
+								break;
+							default:
+								valor = null;
+								break;
+							}
 							
 							if (Parte.CONSULTORIO.equals(comissaoParte)) {
 								final String pessoaNome = fetchPessoaParteNome(database, entradaId, Parte.MEDICO);
@@ -175,6 +199,7 @@ public class ProducaoEndpoint {
 					
 					final Result<Record> entradaProdutoResult = fetchEntradaProdutos(database, entradaId);
 					for (Record entradaProdutoRecord : entradaProdutoResult) {
+						final TipoComissao tipoComissao = TipoComissao.valueOf(entradaProdutoRecord.getValue(CATEGORIA.TIPO_COMISSAO));
 						final String categoriaDescricao = entradaProdutoRecord.getValue(CATEGORIA.DESCRICAO);
 						final String produtoCodigo = entradaProdutoRecord.getValue(PRODUTO.CODIGO);
 						final String produtoDescricao = entradaProdutoRecord.getValue(PRODUTO.DESCRICAO);
@@ -185,10 +210,33 @@ public class ProducaoEndpoint {
 						
 						final Long categoriaId = entradaProdutoRecord.getValue(CATEGORIA.ID);
 						final Result<ComissaoRecord> comissaoResult = fetchComissoes(database, categoriaId);
+						BigDecimal valorComissaoRestante = null;
 						for (Record comissaoRecord : comissaoResult) {
 							final Parte comissaoParte = Parte.valueOf(comissaoRecord.getValue(COMISSAO.PARTE));
 							final BigDecimal comissaoPorcentagem = comissaoRecord.getValue(COMISSAO.PORCENTAGEM);
-							final BigDecimal valor = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
+							final BigDecimal comissaoValor = comissaoRecord.getValue(COMISSAO.VALOR);
+							final boolean comissaoRestante = "S".equals(comissaoRecord.getValue(COMISSAO.RESTANTE));
+							final BigDecimal valor;
+							switch (tipoComissao) {
+							case PERCENTUAL:
+								valor = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, comissaoPorcentagem);
+								break;
+							case VALOR:
+								if (valorComissaoRestante == null) {
+									valorComissaoRestante = calculaValor(produtoValor, produtoCusto, produtoQuantidade, produtoDesconto, meioPagamentoDesconto, BigDecimal.valueOf(100));
+								}
+								
+								if (comissaoRestante) {
+									valor = valorComissaoRestante;
+								} else {
+									valor = comissaoValor;
+									valorComissaoRestante = valorComissaoRestante.subtract(valor);
+								}
+								break;
+							default:
+								valor = null;
+								break;
+							}
 							
 							if (!Parte.CONSULTORIO.equals(comissaoParte)) {
 								final String nomeParte = fetchPessoaParteNome(database, entradaId, comissaoParte);
@@ -249,7 +297,7 @@ public class ProducaoEndpoint {
 				.multiply(ONE_HUNDRED.subtract(meioPagamentoDesconto).divide(ONE_HUNDRED))
 				.multiply(comissaoPorcentagem.divide(ONE_HUNDRED));
 	}
-
+	
 	private String fetchPessoaParteNome(DSLContext database, final Long entradaId, final Parte comissaoParte) {
 		return database.select(PESSOA.NOME)
 			.from(ENTRADA_PARTE.join(PESSOA).onKey())
@@ -261,6 +309,7 @@ public class ProducaoEndpoint {
 	private Result<ComissaoRecord> fetchComissoes(DSLContext database, Long categoriaId) {
 		return database.selectFrom(COMISSAO)
 			.where(COMISSAO.CATEGORIA_ID.eq(categoriaId))
+			.orderBy(COMISSAO.RESTANTE)
 			.fetch();
 	}
 

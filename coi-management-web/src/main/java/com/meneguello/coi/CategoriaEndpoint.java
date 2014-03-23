@@ -107,6 +107,7 @@ public class CategoriaEndpoint {
 		final Categoria categoria = new Categoria();
 		categoria.setId(categoriaRecord.getId());
 		categoria.setDescricao(categoriaRecord.getDescricao());
+		categoria.setTipo(TipoComissao.valueOf(categoriaRecord.getValue(CATEGORIA.TIPO_COMISSAO)).getValue());
 		return categoria;
 	}
 	
@@ -138,6 +139,8 @@ public class CategoriaEndpoint {
 					final Comissao comissao = new Comissao();
 					comissao.setParte(Parte.valueOf(recordComissao.getValue(COMISSAO.PARTE)).getValue());
 					comissao.setPorcentagem(recordComissao.getValue(COMISSAO.PORCENTAGEM));
+					comissao.setValor(recordComissao.getValue(COMISSAO.VALOR));
+					comissao.setRestante("S".equals(recordComissao.getValue(COMISSAO.RESTANTE)));
 					categoria.getComissoes().add(comissao);
 				}
 				
@@ -183,9 +186,13 @@ public class CategoriaEndpoint {
 			public Long execute(DSLContext database) {
 				final CategoriaRecord categoriaRecord = database.insertInto(
 							CATEGORIA, 
-							CATEGORIA.DESCRICAO
+							CATEGORIA.DESCRICAO,
+							CATEGORIA.TIPO_COMISSAO
 						)
-						.values(trimToNull(categoria.getDescricao()))
+						.values(
+								trimToNull(categoria.getDescricao()),
+								TipoComissao.fromValue(categoria.getTipo()).name()
+						)
 						.returning(CATEGORIA.ID)
 						.fetchOne();
 				
@@ -218,12 +225,16 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE, 
-								COMISSAO.PORCENTAGEM
+								COMISSAO.PORCENTAGEM,
+								COMISSAO.VALOR,
+								COMISSAO.RESTANTE
 							)
 							.values(
 									id, 
 									parte.name(), 
-									comissao.getPorcentagem())
+									comissao.getPorcentagem(),
+									comissao.getValor(),
+									comissao.isRestante() ? "S" : "N")
 							.execute();
 				}
 				
@@ -259,6 +270,7 @@ public class CategoriaEndpoint {
 			public Void execute(DSLContext database) {
 				database.update(CATEGORIA)
 						.set(CATEGORIA.DESCRICAO, trimToNull(categoria.getDescricao()))
+						.set(CATEGORIA.TIPO_COMISSAO, TipoComissao.fromValue(categoria.getTipo()).name())
 						.where(CATEGORIA.ID.eq(id))
 						.execute();
 				
@@ -332,12 +344,16 @@ public class CategoriaEndpoint {
 					database.insertInto(COMISSAO, 
 								COMISSAO.CATEGORIA_ID, 
 								COMISSAO.PARTE, 
-								COMISSAO.PORCENTAGEM
+								COMISSAO.PORCENTAGEM,
+								COMISSAO.VALOR,
+								COMISSAO.RESTANTE
 							)
 							.values(
 									id, 
 									parte.name(), 
-									comissao.getPorcentagem())
+									comissao.getPorcentagem(),
+									comissao.getValor(),
+									comissao.isRestante() ? "S" : "N")
 							.execute();
 				}
 				
@@ -383,6 +399,7 @@ public class CategoriaEndpoint {
 	private static class Categoria {
 		private Long id;
 		private String descricao;
+		private String tipo;
 		private List<Produto> produtos = new ArrayList<>();
 		private List<Comissao> comissoes = new ArrayList<>();
 	}
@@ -409,6 +426,8 @@ public class CategoriaEndpoint {
 	private static class Comissao {
 		private String parte;
 		private BigDecimal porcentagem = BigDecimal.ZERO;
+		private BigDecimal valor = BigDecimal.ZERO;
+		private boolean restante;
 	}
 
 }

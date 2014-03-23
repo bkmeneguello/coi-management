@@ -44,7 +44,9 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 	var Comissao = Backbone.Model.extend({
 		defaults: {
 			parte: null,
-			porcentagem: null
+			porcentagem: null,
+			valor: null,
+			restante: false
 		}
 	});
 
@@ -57,6 +59,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		defaults: function() {
 			return {
 				descricao: null,
+				tipo: 'Percentual',
 				produtos: new Produtos(),
 				comissoes: new Comissoes()
 			};
@@ -232,11 +235,16 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		template: '#categoria_comissao_template',
 		tagName: 'tr',
 		ui: {
-			'input': 'input[type=text]',
+			'porcentagem': 'input[name=porcentagem]',
+			'valor': 'input[name=valor]',
+			'restante': 'input[name=restante]',
 			'actionRemove': 'button'
 		},
 		triggers: {
 			'click .coi-action-remove': 'remove'
+		},
+		modelEvents: {
+			'change:restante': 'updateRestante'
 		},
 		modelBinder: function() {
 			return new Backbone.ModelBinder();
@@ -247,13 +255,25 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		onRender: function() {
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.$el, 'name');
 			bindings['porcentagem'].converter = percentageConverter;
+			bindings['valor'].converter = moneyConverter;
 			this.modelBinder().bind(this.model, this.$el, bindings);
 			
-			this.ui.input.input();
+			this.ui.porcentagem.input();
+			this.ui.valor.input();
 			this.ui.actionRemove.button();
+			
+			this.updateRestante();
 		},
 		onRemove: function(e) {
 			this.model.collection.remove(this.model);
+		},
+		updateRestante: function() {
+			if (this.model.get('restante')) {
+				this.ui.valor.val('').disable();
+				$('input[name=restante]:checked').not(this.ui.restante).click();
+			} else {
+				this.ui.valor.enable();
+			}
 		}
 	});
 	
@@ -262,6 +282,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		itemView: CategoriaComissaoView,
 		itemViewContainer: 'table',
 		ui : {
+			'tipo': '#tipo',
 			'parte': '#parte',
 			'buttonInclude': '.coi-action-include'
 		},
@@ -271,8 +292,15 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 		initialize: function() {
 			_.bindAll(this);
 		},
+		modelEvents: {
+			'change:tipo': 'updateTipoComissao'
+		},
 		onRender: function() {
+			this.modelBinder().bind(this.model, this.$el, {
+				tipo: {selector: '[name=tipo]'}
+			});
 			this.ui.parte.input();
+			this.ui.tipo.input();
 			this.ui.buttonInclude.button();
 			this.ui.parte.autocomplete({
 				source: 'rest/partes/comissionadas',
@@ -286,11 +314,26 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			})
 			.autocomplete('widget')
 			.css('z-index', 100);
+			
+			this.updateTipoComissao();
 		},
 		onInclude: function(e) {
 			this.collection.add(new Comissao({
 				parte: this.ui.parte.val()
 			}));
+			this.updateTipoComissao();
+		},
+		updateTipoComissao: function() {
+			switch (this.model.get('tipo')) {
+			case 'Percentual':
+				this.$('.tipo-porcentagem').show();
+				this.$('.tipo-valor').hide();
+				break;
+			case 'Valor':
+				this.$('.tipo-porcentagem').hide();
+				this.$('.tipo-valor').show();
+				break;
+			}
 		}
 	});
 	
@@ -320,7 +363,7 @@ COI.module("Categoria", function(Module, COI, Backbone, Marionette, $, _) {
 			this.produtos.show(new CategoriaProdutosView({collection: this.model.get('produtos')}));
 		},
 		renderComissoes: function() {
-			this.comissoes.show(new CategoriaComissoesView({collection: this.model.get('comissoes')}));
+			this.comissoes.show(new CategoriaComissoesView({model: this.model, collection: this.model.get('comissoes')}));
 		},
 		onShow: function() {
 			this.$el.find('input').first().focus();

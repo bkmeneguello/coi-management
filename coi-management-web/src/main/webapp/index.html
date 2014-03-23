@@ -149,6 +149,13 @@
 </dd>
 	</script>
 	<script type="text/template" id="categoria_comissoes_template">
+<dt>Tipo de Comissão:</dt>
+<dd>
+	<select name="tipo" id="tipo">
+		<option>Percentual</option>
+		<option>Valor</option>
+	</select>
+</dd>
 <dt>Comissões:</dt>
 <dd>
 	<input type="text" id="parte"/>
@@ -158,8 +165,14 @@
 	</script>
 	<script type="text/template" id="categoria_comissao_template">
 <td class="coi-row-label"><%= parte %>:</td>
-<td class="coi-row-item">
+<td class="coi-row-item tipo-porcentagem">
 	<input type="text" name="porcentagem" placeholder=" porcentagem"/>
+</td>
+<td class="coi-row-item tipo-valor">
+	<input type="text" name="valor" placeholder=" valor"/>
+</td>
+<td class="coi-row-item tipo-valor">
+	<input type="checkbox" name="restante"/>
 </td>
 <td class="coi-row-item">
 	<button class="coi-action-remove">Remover</button>
