@@ -34,6 +34,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
@@ -66,7 +67,7 @@ public class EntradaEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<EntradaList> list() throws Exception {
+	public List<EntradaList> list(final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<EntradaList>>() {
 			@Override
 			protected List<EntradaList> execute(DSLContext database) {
@@ -82,6 +83,7 @@ public class EntradaEndpoint {
 						.asField("VALOR"));
 				final Result<Record> resultRecord = database.select(fields)
 						.from(ENTRADA.join(PESSOA).onKey())
+						.limit(10).offset(10 * (page != null ? page : 0))
 						.fetch();
 				for (Record record : resultRecord) {
 					result.add(buildEntradaList(database, record));

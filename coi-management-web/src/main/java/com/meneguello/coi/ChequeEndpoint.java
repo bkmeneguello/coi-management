@@ -21,6 +21,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
@@ -40,13 +41,14 @@ public class ChequeEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<ChequeList> list() throws Exception {
+	public List<ChequeList> list(final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<ChequeList>>() {
 			@Override
 			protected List<ChequeList> execute(DSLContext database) {
 				final ArrayList<ChequeList> result = new ArrayList<>();
 				final Result<Record> resultRecord = database.selectFrom(CHEQUE
 						.join(PESSOA).onKey(Keys.CHEQUE_FK_PACIENTE))
+						.limit(10).offset(10 * (page != null ? page : 0))
 						.fetch();
 				for (Record record : resultRecord) {
 					result.add(buildChequeList(record));

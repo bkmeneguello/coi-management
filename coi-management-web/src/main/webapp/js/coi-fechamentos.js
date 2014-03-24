@@ -10,9 +10,23 @@ COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 	
-	var Fechamentos = Backbone.Collection.extend({
+	var Fechamentos = Backbone.Paginator.requestPager.extend({
 		url: 'rest/fechamentos',
-		model: Fechamento
+		model: Fechamento,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/fechamentos'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var RowView = COI.ActionRowView.extend({
@@ -36,6 +50,7 @@ COI.module("Fechamento", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var View = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: RowView,
 		templateHelpers: {
 			header: 'Fechamentos',

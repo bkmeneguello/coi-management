@@ -17,6 +17,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import lombok.Data;
@@ -33,13 +34,14 @@ public class EstoqueEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<EstoqueList> list() throws Exception {
+	public List<EstoqueList> list(final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<EstoqueList>>() {
 			@Override
 			protected List<EstoqueList> execute(DSLContext database) {
 				final ArrayList<EstoqueList> result = new ArrayList<EstoqueList>();
 				final Result<MovimentoRecord> resultRecord = database.selectFrom(MOVIMENTO)
 						.orderBy(MOVIMENTO.DATA)
+						.limit(10).offset(10 * (page != null ? page : 0))
 						.fetch();
 				for (Record record : resultRecord) {
 					result.add(buildEstoqueList(database, record));

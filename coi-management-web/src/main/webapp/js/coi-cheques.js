@@ -10,9 +10,23 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 
-	var Cheques = Backbone.Collection.extend({
+	var Cheques = Backbone.Paginator.requestPager.extend({
 		url: 'rest/cheques',
-		model: Cheque
+		model: Cheque,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/cheques'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var RowView = COI.ActionRowView.extend({
@@ -36,6 +50,7 @@ COI.module("Cheques", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var ChequesView = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: RowView,
 		templateHelpers: {
 			header: 'Cheques',

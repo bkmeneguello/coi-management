@@ -11,9 +11,23 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 
-	var Entradas = Backbone.Collection.extend({
+	var Entradas = Backbone.Paginator.requestPager.extend({
 		url: 'rest/entradas',
-		model: Entrada
+		model: Entrada,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/entradas'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var EntradaRowView = COI.ActionRowView.extend({
@@ -37,6 +51,7 @@ COI.module("Entradas", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var EntradasView = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: EntradaRowView,
 		templateHelpers: {
 			header: 'Entradas',

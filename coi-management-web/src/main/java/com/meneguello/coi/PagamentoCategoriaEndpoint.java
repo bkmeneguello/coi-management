@@ -13,6 +13,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import lombok.Data;
@@ -27,7 +28,7 @@ public class PagamentoCategoriaEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Categoria> list() throws Exception {
+	public List<Categoria> list(final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<Categoria>>() {
 			@Override
 			protected List<Categoria> execute(DSLContext database) {
@@ -35,6 +36,7 @@ public class PagamentoCategoriaEndpoint {
 				final Result<PagamentoCategoriaRecord> resultRecord = database
 						.selectFrom(PAGAMENTO_CATEGORIA)
 						.orderBy(PAGAMENTO_CATEGORIA.DESCRICAO)
+						.limit(10).offset(10 * (page != null ? page : 0))
 						.fetch();
 				for (Record record : resultRecord) {
 					final Categoria element = new Categoria();

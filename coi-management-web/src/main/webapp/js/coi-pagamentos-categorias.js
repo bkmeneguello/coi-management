@@ -9,9 +9,23 @@ COI.module("PagamentosCategorias", function(Module, COI, Backbone, Marionette, $
 		}
 	});
 	
-	var Categorias = Backbone.Collection.extend({
+	var Categorias = Backbone.Paginator.requestPager.extend({
 		url: 'rest/pagamentos/categorias',
-		model: Categoria
+		model: Categoria,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/pagamentos/categorias'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var RowView = COI.ActionRowView.extend({
@@ -35,6 +49,7 @@ COI.module("PagamentosCategorias", function(Module, COI, Backbone, Marionette, $
 	});
 	
 	var View = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: RowView,
 		templateHelpers: {
 			header: 'Categorias',

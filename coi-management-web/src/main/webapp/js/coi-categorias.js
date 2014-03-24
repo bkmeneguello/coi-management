@@ -8,9 +8,23 @@ COI.module("Categorias", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 
-	var Categorias = Backbone.Collection.extend({
+	var Categorias = Backbone.Paginator.requestPager.extend({
 		url: 'rest/categorias',
-		model: Categoria
+		model: Categoria,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/categorias'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var CategoriaRowView = COI.ActionRowView.extend({
@@ -37,6 +51,7 @@ COI.module("Categorias", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var CategoriasView = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: CategoriaRowView,
 		templateHelpers: {
 			header: 'Categorias',

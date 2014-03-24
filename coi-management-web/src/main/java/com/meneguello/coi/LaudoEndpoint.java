@@ -33,6 +33,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -293,14 +294,16 @@ public class LaudoEndpoint {
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<LaudoList> list() throws Exception {
+	public List<LaudoList> list(final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<LaudoList>>() {
 			@Override
 			protected List<LaudoList> execute(DSLContext database) {
 				final ArrayList<LaudoList> result = new ArrayList<LaudoList>();
 				final Result<Record> resultRecord = database.selectFrom(LAUDO
 							.join(PESSOA).onKey(Keys.LAUDO_FK_PACIENTE)
-						).fetch();
+						)
+						.limit(10).offset(10 * (page != null ? page : 0))
+						.fetch();
 				for (Record record : resultRecord) {
 					result.add(buildLaudoList(database, record));
 				}

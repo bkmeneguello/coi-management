@@ -10,9 +10,23 @@ COI.module("Laudos", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 
-	var Laudos = Backbone.Collection.extend({
+	var Laudos = Backbone.Paginator.requestPager.extend({
 		url: 'rest/laudos',
-		model: Laudo
+		model: Laudo,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/laudos'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var RowView = COI.ActionRowView.extend({
@@ -52,6 +66,7 @@ COI.module("Laudos", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var LaudosView = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: RowView,
 		templateHelpers: {
 			header: 'Laudos',

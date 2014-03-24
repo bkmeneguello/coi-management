@@ -588,6 +588,27 @@ COI.PopupFormView = COI.Window.extend({
 	}
 });
 
+COI.SimplePageView = Backbone.View.extend({
+	initialize: function() {
+		_.bindAll(this);
+	},
+	render: function() {
+		this.$el
+		.append($('<button/>' , {text: 'Anterior', 'class': 'coi-action-prev', click: this.prev}).button())
+		.append($('<button/>' , {text: 'Próxima', 'class': 'coi-action-prox', click: this.next}).button());
+	},
+	prev: function(e) {
+		if (e && e.preventDefault){ e.preventDefault(); }
+		if (e && e.stopPropagation){ e.stopPropagation(); }
+		this.collection.prevPage();
+	},
+	next: function(e) {
+		if (e && e.preventDefault){ e.preventDefault(); }
+		if (e && e.stopPropagation){ e.stopPropagation(); }
+		this.collection.nextPage();
+	}
+});
+
 COI.SimpleFilterView = Backbone.View.extend({
 	initialize: function() {
 		_.bindAll(this);

@@ -15,9 +15,23 @@ COI.module("Estoque", function(Module, COI, Backbone, Marionette, $, _) {
 		}
 	});
 
-	var Estoque = Backbone.Collection.extend({
+	var Estoque = Backbone.Paginator.requestPager.extend({
 		url: 'rest/estoque',
-		model: EstoqueItem
+		model: EstoqueItem,
+		paginator_core: {
+			type: 'GET',
+			dataType: 'json',
+			url: 'rest/estoque'
+		},
+		paginator_ui: {
+			firstPage: 0,
+			currentPage: 0
+		},
+		server_api: {
+			'page' : function() {
+				return this.currentPage;
+			}
+		}
 	});
 	
 	var RowView = COI.ActionRowView.extend({
@@ -41,6 +55,7 @@ COI.module("Estoque", function(Module, COI, Backbone, Marionette, $, _) {
 	});
 	
 	var EstoqueView = COI.GridView.extend({
+		searchView: COI.SimplePageView,
 		itemView: RowView,
 		templateHelpers: {
 			header: 'Estoque',

@@ -41,12 +41,15 @@ public class CategoriaEndpoint {
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Categoria> list() throws Exception {
+	public List<Categoria> list(final @QueryParam("page") Integer page) throws Exception {
 		return new Transaction<List<Categoria>>() {
 			@Override
 			protected List<Categoria> execute(DSLContext database) {
 				ArrayList<Categoria> categorias = new ArrayList<Categoria>();
-				Result<CategoriaRecord> resultCategoriaRecord = database.fetch(CATEGORIA);
+				Result<CategoriaRecord> resultCategoriaRecord = database
+						.selectFrom(CATEGORIA)
+						.limit(10).offset(10 * (page != null ? page : 0))
+						.fetch();
 				for (CategoriaRecord categoriaRecord : resultCategoriaRecord) {
 					categorias.add(buildCategoria(categoriaRecord));
 				}
