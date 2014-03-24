@@ -256,8 +256,8 @@ public class FechamentoEndpoint {
 					final List<Field<?>> fields = new ArrayList<>();
 					fields.add(ENTRADA.MEIO_PAGAMENTO);
 					fields.add(database.select(
-								sum(ENTRADA_PRODUTO.VALOR.mul(ENTRADA_PRODUTO.QUANTIDADE))
-									.sub(sum(ENTRADA_PRODUTO.DESCONTO)))
+							nvl(sum(ENTRADA_PRODUTO.VALOR.mul(ENTRADA_PRODUTO.QUANTIDADE))
+									.sub(sum(ENTRADA_PRODUTO.DESCONTO)), BigDecimal.ZERO))
 							.from(ENTRADA_PRODUTO)
 							.where(ENTRADA_PRODUTO.ENTRADA_ID.eq(ENTRADA.ID))
 							.asField("VALOR"));
