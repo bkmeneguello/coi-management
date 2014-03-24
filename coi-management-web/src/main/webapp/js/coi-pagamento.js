@@ -17,7 +17,8 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			agencia: null,
 			conta: null,
 			cheque: null,
-			projecao: 1
+			projecao: 1,
+			documento: null
 		},
 		toJSON: function(options) {
 			var attributes = _.clone(this.attributes);
@@ -71,7 +72,8 @@ COI.module("Pagamento", function(Module, COI, Backbone, Marionette, $, _) {
 			'cheque': '#cheque',
 			'situacao': '#situacao',
 			'formaPagamento': '#formaPagamento',
-			'projecao': '#projecao'
+			'projecao': '#projecao',
+			'documento': '#documento'
 		},
 		triggers: {
 			'change #categoria': 'changeCategoria'

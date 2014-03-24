@@ -132,7 +132,8 @@ public class PagamentoEndpoint {
 								PAGAMENTO.BANCO,
 								PAGAMENTO.AGENCIA,
 								PAGAMENTO.CONTA,
-								PAGAMENTO.CHEQUE
+								PAGAMENTO.CHEQUE,
+								PAGAMENTO.DOCUMENTO
 							)
 							.values(
 									categoria.getValue(PAGAMENTO_CATEGORIA.ID),
@@ -146,7 +147,8 @@ public class PagamentoEndpoint {
 									registro.getBanco(),
 									registro.getAgencia(),
 									registro.getConta(),
-									registro.getCheque()
+									registro.getCheque(),
+									registro.getDocumento()
 							)
 							.returning(PAGAMENTO.ID)
 							.fetchOne();
@@ -191,6 +193,7 @@ public class PagamentoEndpoint {
 						.set(PAGAMENTO.AGENCIA, registro.getAgencia())
 						.set(PAGAMENTO.CONTA, registro.getConta())
 						.set(PAGAMENTO.CHEQUE, registro.getCheque())
+						.set(PAGAMENTO.DOCUMENTO, registro.getDocumento())
 						.where(PAGAMENTO.ID.eq(id))
 						.execute();
 				
@@ -250,6 +253,7 @@ public class PagamentoEndpoint {
 					pagamento.put("agencia", pagamentoRecord.getValue(PAGAMENTO.AGENCIA));
 					pagamento.put("conta", pagamentoRecord.getValue(PAGAMENTO.CONTA));
 					pagamento.put("cheque", pagamentoRecord.getValue(PAGAMENTO.CHEQUE));
+					pagamento.put("documento", pagamentoRecord.getValue(PAGAMENTO.DOCUMENTO));
 					
 					pagamentos.add(pagamento);
 				}
@@ -324,6 +328,7 @@ public class PagamentoEndpoint {
 		entidade.setAgencia(record.getValue(PAGAMENTO.AGENCIA));
 		entidade.setConta(record.getValue(PAGAMENTO.CONTA));
 		entidade.setCheque(record.getValue(PAGAMENTO.CHEQUE));
+		entidade.setDocumento(record.getValue(PAGAMENTO.DOCUMENTO));
 		return entidade;
 	}
 
@@ -358,6 +363,7 @@ public class PagamentoEndpoint {
 		private String conta;
 		private String cheque;
 		private Integer projecao;
+		private String documento;
 	}
 	
 }
